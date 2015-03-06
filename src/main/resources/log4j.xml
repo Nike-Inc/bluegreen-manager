@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE log4j:configuration PUBLIC "-//APACHE//DTD LOG4J 1.2//EN" "http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/xml/doc-files/log4j.dtd">
 <log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
+
   <appender name="consoleAppender" class="org.apache.log4j.ConsoleAppender">
     <layout class="org.apache.log4j.PatternLayout">
       <param name="ConversionPattern" value="%d{MM/dd/yy HH:mm:ss} %5p %C.%M(%L) - %m%n"/>
@@ -16,6 +17,37 @@
     <priority value="INFO"/>
   </category>
 
+  <category name="org.hibernate">
+    <priority value="INFO"/>
+    <!-- just startup messages -->
+  </category>
+  <category name="org.hibernate.SQL">
+    <priority value="TRACE"/>
+  </category>
+  <!--JDBC bind parameter runtime args
+  <category name="org.hibernate.type">
+    <priority value="TRACE"/>
+  </category> -->
+  <category name="org.hibernate.jpa.internal.util.LogHelper">
+    <priority value="DEBUG"/>
+    <!--shows list of managed classes-->
+  </category>
+  <category name="org.hibernate.tool.hbm2ddl.SchemaExport">
+    <priority value="DEBUG"/>
+  </category>
+
+  <category name="org.springframework">
+    <priority value="INFO"/>
+  </category>
+  <category name="org.springframework.orm.jpa">
+    <priority value="DEBUG"/>
+  </category>
+  <category name="org.springframework.transaction">
+    <priority value="DEBUG"/>
+  </category>
+  <category name="org.springframework.transaction.interceptor">
+    <priority value="DEBUG"/>
+  </category>
 
   <root>
     <level value="INFO"/>
