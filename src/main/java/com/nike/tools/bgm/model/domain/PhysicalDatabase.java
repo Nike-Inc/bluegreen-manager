@@ -15,9 +15,11 @@ import com.nike.tools.bgm.utils.HashUtil;
 /**
  * A physical database has database connection parameters, and when in use maps to a logical database in an environment.
  * <p/>
- * A given logical database can have at most one live physical and one "other" physical, but only the logical knows
- * which is which.  The physical does not track its own liveness because you couldn't set a constraint this way to
- * ensure that only one physical is deemed live.
+ * A physical database knows whether it is the live db or not.  It belongs to only one logical database, in one env.
+ * <p/>
+ * Liveness is different from freeze status.  During steady state operation, the live db is the one currently pointed
+ * to by the live app.  During blue/green transition, the live db will freeze and thaw as the old app hands off to the
+ * new app.  But it remains the live db the whole time.
  */
 @Entity
 @Table(name = PhysicalDatabase.TABLE_NAME)
@@ -25,6 +27,7 @@ public class PhysicalDatabase
 {
   public static final String TABLE_NAME = "PHYSICAL_DATABASE";
   public static final String COLUMN_ID = "PHYSICAL_ID";
+  public static final String COLUMN_LIVE = "IS_LIVE";
   public static final String COLUMN_FK_LOGICAL_ID = "FK_LOGICAL_ID";
   public static final String COLUMN_DRIVER_CLASS_NAME = "DRIVER_CLASS_NAME";
   public static final String COLUMN_URL = "URL";
@@ -45,9 +48,11 @@ public class PhysicalDatabase
   @JoinColumn(name = COLUMN_FK_LOGICAL_ID)
   private LogicalDatabase logicalDatabase; //FIELD_LOGICAL_DATABASE
 
+  @Column(name = COLUMN_LIVE, nullable = false)
+  private boolean live;
+
   /*
   The following is based on connection parameters relevant to a MySQL database.
-  TODO - Generalize to support multiple kinds of physical database technologies
    */
 
   @Column(name = COLUMN_DRIVER_CLASS_NAME, nullable = false, length = LENGTH_DRIVER_CLASS_NAME)
@@ -80,6 +85,16 @@ public class PhysicalDatabase
   public void setLogicalDatabase(LogicalDatabase logicalDatabase)
   {
     this.logicalDatabase = logicalDatabase;
+  }
+
+  public boolean isLive()
+  {
+    return live;
+  }
+
+  public void setLive(boolean live)
+  {
+    this.live = live;
   }
 
   public String getDriverClassName()
@@ -157,7 +172,7 @@ public class PhysicalDatabase
   }
 
   /**
-   * Equality based on non-id, non-fk fields.
+   * Equality based on connection parameters.
    */
   public boolean isEquivalentTo(PhysicalDatabase other)
   {
@@ -175,6 +190,8 @@ public class PhysicalDatabase
     sb.append("PhysicalDatabase[");
     sb.append("physicalId: ");
     sb.append(physicalId);
+    sb.append(", live: ");
+    sb.append(live);
     sb.append(", driverClassName: ");
     sb.append(driverClassName);
     sb.append(", url: ");

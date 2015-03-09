@@ -11,18 +11,15 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import com.nike.tools.bgm.model.constraints.LogicalDatabaseConstraint;
 import com.nike.tools.bgm.utils.HashUtil;
 
 /**
  * Apps in an environment will be configured to use a particular logical database (by name).  The bluegreen manager
- * maps it to physical databases with actual connection info.
+ * maps it to a physical database with actual connection info.
  * <p/>
- * A logical database can have at most one live physical and at most one "other" (test, staging) physical.
+ * A logical database has at most one physical database.  Zero if the logical is about to be torn down.
  * <p/>
- * One environment can have many logical databases.
- * <p/>
- * Constraint on the physicals: live != other.
+ * One environment can have many logical databases.  A logical db can only belong to one env.
  */
 @Entity
 @Table(
@@ -31,7 +28,6 @@ import com.nike.tools.bgm.utils.HashUtil;
         LogicalDatabase.COLUMN_FK_ENV_ID, LogicalDatabase.COLUMN_LOGICAL_NAME
     })
 )
-@LogicalDatabaseConstraint
 public class LogicalDatabase
 {
   public static final String TABLE_NAME = "LOGICAL_DATABASE";
@@ -54,10 +50,7 @@ public class LogicalDatabase
   private String logicalName;
 
   @OneToOne(mappedBy = PhysicalDatabase.FIELD_LOGICAL_DATABASE, cascade = CascadeType.ALL)
-  private PhysicalDatabase livePhysicalDatabase;
-
-  @OneToOne(mappedBy = PhysicalDatabase.FIELD_LOGICAL_DATABASE, cascade = CascadeType.ALL)
-  private PhysicalDatabase otherPhysicalDatabase;
+  private PhysicalDatabase physicalDatabase;
 
   public long getLogicalId()
   {
@@ -89,24 +82,14 @@ public class LogicalDatabase
     this.logicalName = logicalName;
   }
 
-  public PhysicalDatabase getLivePhysicalDatabase()
+  public PhysicalDatabase getPhysicalDatabase()
   {
-    return livePhysicalDatabase;
+    return physicalDatabase;
   }
 
-  public void setLivePhysicalDatabase(PhysicalDatabase livePhysicalDatabase)
+  public void setPhysicalDatabase(PhysicalDatabase physicalDatabase)
   {
-    this.livePhysicalDatabase = livePhysicalDatabase;
-  }
-
-  public PhysicalDatabase getOtherPhysicalDatabase()
-  {
-    return otherPhysicalDatabase;
-  }
-
-  public void setOtherPhysicalDatabase(PhysicalDatabase otherPhysicalDatabase)
-  {
-    this.otherPhysicalDatabase = otherPhysicalDatabase;
+    this.physicalDatabase = physicalDatabase;
   }
 
   /**
@@ -141,10 +124,8 @@ public class LogicalDatabase
     sb.append(logicalId);
     sb.append(", logicalName: ");
     sb.append(logicalName);
-    sb.append(", livePhysicalDatabase: ");
-    sb.append(livePhysicalDatabase.toString());
-    sb.append(", otherPhysicalDatabase: ");
-    sb.append(otherPhysicalDatabase.toString());
+    sb.append(", physicalDatabase: ");
+    sb.append(physicalDatabase.toString());
     sb.append("]");
     return sb.toString();
   }

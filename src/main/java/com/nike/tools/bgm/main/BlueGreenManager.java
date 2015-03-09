@@ -18,20 +18,7 @@ public class BlueGreenManager
   private static Logger LOGGER = LoggerFactory.getLogger(BlueGreenManager.class);
 
   @Autowired
-  private Widget widget;
-
-  @Autowired
   private EnvironmentDAO environmentDAO;
-
-  public Widget getWidget()
-  {
-    return widget;
-  }
-
-  public void setWidget(Widget widget)
-  {
-    this.widget = widget;
-  }
 
   private void messWithEnvironments()
   {
@@ -45,7 +32,6 @@ public class BlueGreenManager
         new ClassPathXmlApplicationContext(new String[] { "applicationContext/main.xml" });
 
     BlueGreenManager blueGreenManager = context.getBean(BlueGreenManager.class);
-    LOGGER.info("Hello {}!", blueGreenManager.getWidget().getName());
 
     blueGreenManager.messWithEnvironments();
   }

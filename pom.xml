@@ -9,8 +9,6 @@
   <name>bluegreen-manager</name>
   <url>http://maven.apache.org</url>
 
-  <!-- temp change - make teamcity build this again -->
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <org.springframework.version>4.1.5.RELEASE</org.springframework.version>
@@ -84,7 +82,7 @@
     </dependency>
 
     <dependency>
-    <groupId>org.springframework</groupId>
+      <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
@@ -144,7 +142,7 @@
     </dependency>
 
     <dependency>
-    <groupId>org.slf4j</groupId>
+      <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.7.6</version>
     </dependency>

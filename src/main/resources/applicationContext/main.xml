@@ -10,8 +10,4 @@
 
   <import resource="persist.xml"/>
 
-  <bean id="theWidget" class="com.nike.tools.bgm.main.Widget">
-    <property name="name" value="#{systemProperties['user.name']}"/>
-  </bean>
-
 </beans>
