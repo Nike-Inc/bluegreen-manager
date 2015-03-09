@@ -9,6 +9,8 @@
   <name>bluegreen-manager</name>
   <url>http://maven.apache.org</url>
 
+  <!-- temp change - make teamcity build this again -->
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <org.springframework.version>4.1.5.RELEASE</org.springframework.version>
