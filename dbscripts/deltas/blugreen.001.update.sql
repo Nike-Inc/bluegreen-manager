@@ -15,7 +15,7 @@ VALUES
   (7, 'krakenprd-blue'),
   (8, 'krakenprd-green'),
   (9, '%%env.name%%');
--- teamcity
+-- teamcity won't substitute %%
 
 INSERT INTO LOGICAL_DATABASE (LOGICAL_ID, LOGICAL_NAME, FK_ENV_ID)
 VALUES
@@ -46,6 +46,18 @@ VALUES
   (8, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 8),
   (9, 0, 'com.mysql.jdbc.Driver',
    'jdbc:mysql://krakendevdb.nikedev.com:3306/krakendev?zeroDateTimeBehavior=convertToNull', 'admin', 'password', 9);
+
+INSERT INTO APPLICATION_VM (APPVM_ID, APPVM_SIN_NUMBER, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID)
+VALUES
+  (1, 1, 'aws-233-54.nike.com', '10.194.233.54', 1),
+  (2, 0, 'aws-233-36.nike.com', '10.194.233.36', 2),
+  (3, 5, 'aws-233-56.nike.com', '10.194.233.56', 3),
+  (4, 1, 'fakeHostname-krakendev', 'fakeip-krakendev', 4),
+  (5, 1, 'fakeHostname-krakenqa-blue', 'fakeip-krakenqa-blue', 5),
+  (6, 1, 'fakeHostname-krakenqa-green', 'fakeip-krakenqa-green', 6),
+  (7, 1, 'fakeHostname-krakenprd-blue', 'fakeip-krakenprd-blue', 7),
+  (8, 1, 'fakeHostname-krakenprd-green', 'fakeip-krakenprd-green', 8),
+  (9, 1, 'fakeHostname-%%env.name%%', 'fakeip-%%env.name%%', 9);
 
 COMMIT;
 

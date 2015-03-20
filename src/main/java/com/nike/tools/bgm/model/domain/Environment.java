@@ -21,17 +21,21 @@ public class Environment
   public static final String TABLE_NAME = "ENVIRONMENT";
   public static final String COLUMN_ID = "ENV_ID";
   public static final String COLUMN_ENV_NAME = "ENV_NAME";
+  public static final int LENGTH_ENV_NAME = 32;
 
   @Id
   @GeneratedValue
   @Column(name = COLUMN_ID)
   private long envId;
 
-  @Column(name = COLUMN_ENV_NAME, nullable = false, unique = true)
+  @Column(name = COLUMN_ENV_NAME, nullable = false, unique = true, length = LENGTH_ENV_NAME)
   private String envName;
 
   @OneToMany(mappedBy = LogicalDatabase.FIELD_ENVIRONMENT, cascade = CascadeType.ALL)
   private List<LogicalDatabase> logicalDatabases;
+
+  @OneToMany(mappedBy = ApplicationVm.FIELD_ENVIRONMENT, cascade = CascadeType.ALL)
+  private List<ApplicationVm> applicationVms;
 
   public long getEnvId()
   {
@@ -61,6 +65,16 @@ public class Environment
   public void setLogicalDatabases(List<LogicalDatabase> logicalDatabases)
   {
     this.logicalDatabases = logicalDatabases;
+  }
+
+  public List<ApplicationVm> getApplicationVms()
+  {
+    return applicationVms;
+  }
+
+  public void setApplicationVms(List<ApplicationVm> applicationVms)
+  {
+    this.applicationVms = applicationVms;
   }
 
   /**
@@ -94,14 +108,9 @@ public class Environment
     sb.append("envId: ");
     sb.append(envId);
     sb.append(", logicalDatabases: ");
-    if (logicalDatabases == null)
-    {
-      sb.append("null");
-    }
-    else
-    {
-      sb.append(logicalDatabases.toString());
-    }
+    sb.append(logicalDatabases == null ? "null" : logicalDatabases.toString());
+    sb.append(", applicationVms: ");
+    sb.append(applicationVms == null ? "null" : applicationVms.toString());
     sb.append("]");
     return sb.toString();
   }
