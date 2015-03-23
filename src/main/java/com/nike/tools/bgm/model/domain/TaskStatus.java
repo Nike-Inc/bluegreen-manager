@@ -5,6 +5,7 @@ package com.nike.tools.bgm.model.domain;
  */
 public enum TaskStatus
 {
+  NOOP,
   SKIPPED,
   PROCESSING,
   DONE,

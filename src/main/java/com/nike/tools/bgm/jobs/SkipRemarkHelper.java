@@ -6,7 +6,11 @@ import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
 /**
- * Makes the little SkipRemark object.
+ * Makes the little SkipRemark object.  (Should we skip the current task?  Answer: depends on the prior status,
+ * and whether user asked to force all tasks.)
+ * <p/>
+ * Note: there's an assumption here that prior status exists.  If there is no prior relevant status, then there is
+ * no question that the task must run and you should not call here.
  */
 @Component
 public class SkipRemarkHelper
@@ -92,7 +96,7 @@ public class SkipRemarkHelper
   public String useRemark(SkipRemark skipRemark, TaskHistory priorTaskHistory)
   {
     return "Prior task execution on " + priorTaskHistory.getStartTime() + ": " + priorTaskHistory.getStatus()
-        + "" + skipRemark.getRemark();
+        + ", " + skipRemark.getRemark();
   }
 
 }

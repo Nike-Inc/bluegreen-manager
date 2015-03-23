@@ -13,7 +13,8 @@ import com.nike.tools.bgm.model.domain.JobStatus;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.tasks.Task;
-import com.nike.tools.bgm.tasks.TaskAndHistoryProcessor;
+import com.nike.tools.bgm.tasks.TaskRun;
+import com.nike.tools.bgm.tasks.TaskRunProcessor;
 import com.nike.tools.bgm.utils.NowFactory;
 
 /**
@@ -32,6 +33,9 @@ public abstract class TaskSequenceJob implements Job
 
   @Autowired
   private JobHistoryTx jobHistoryTx;
+
+  @Autowired
+  private TaskRunProcessor taskRunProcessor;
 
   /**
    * The sequence of tasks.  Initialized by PostConstruct method in derived class.
@@ -104,10 +108,8 @@ public abstract class TaskSequenceJob implements Job
   /**
    * Executes the tasks of the job.  Returns silently if success, throws if error.
    */
-  public JobStatus processTasks()
+  private JobStatus processTasks()
   {
-    TaskAndHistoryProcessor taskAndHistoryProcessor = applicationContext.getBean(TaskAndHistoryProcessor.class,
-        noop, force, newJobHistory, oldJobHistory);
     for (int idx = 0; idx < tasks.size(); ++idx)
     {
       Task task = tasks.get(idx);
@@ -116,7 +118,8 @@ public abstract class TaskSequenceJob implements Job
         throw new IllegalStateException("Invalid task position: " + task.getPosition() + ", expected " + (idx + 1));
       }
       LOGGER.info("TASK #" + task.getPosition() + " of " + tasks.size() + " BEGIN: " + task.getName());
-      TaskStatus taskStatus = taskAndHistoryProcessor.attemptTask(task);
+      TaskRun taskRun = new TaskRun(task, noop, force, nowFactory.now(), newJobHistory, oldJobHistory);
+      TaskStatus taskStatus = taskRunProcessor.attemptTask(taskRun);
       LOGGER.info("TASK #" + task.getPosition() + " of " + tasks.size() + " END: " + task.getName() + " " + taskStatus);
     }
     return JobStatus.DONE;

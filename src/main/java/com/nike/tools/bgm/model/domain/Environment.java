@@ -107,6 +107,8 @@ public class Environment
     sb.append("Environment[");
     sb.append("envId: ");
     sb.append(envId);
+    sb.append("envName: ");
+    sb.append(envName);
     sb.append(", logicalDatabases: ");
     sb.append(logicalDatabases == null ? "null" : logicalDatabases.toString());
     sb.append(", applicationVms: ");

@@ -1,7 +1,5 @@
 package com.nike.tools.bgm.tasks;
 
-import java.util.Date;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,19 +12,15 @@ import com.nike.tools.bgm.jobs.SkipRemarkHelper;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
-import com.nike.tools.bgm.utils.NowFactory;
 
 /**
  * Processes tasks, writes their task history, and considers the context of prior tasks in old job history.
  */
 @Lazy
 @Component
-public class TaskAndHistoryProcessor
+public class TaskRunProcessor
 {
-  private static Logger LOGGER = LoggerFactory.getLogger(TaskAndHistoryProcessor.class);
-
-  @Autowired
-  NowFactory nowFactory;
+  private static Logger LOGGER = LoggerFactory.getLogger(TaskRunProcessor.class);
 
   @Autowired
   private SkipRemarkHelper skipRemarkHelper;
@@ -35,52 +29,19 @@ public class TaskAndHistoryProcessor
   private TaskHistoryTx taskHistoryTx;
 
   /**
-   * If true, just display what this job WOULD do.  Makes this job harmless.
-   */
-  private boolean noop;
-
-  /**
-   * Forces the job to attempt all tasks, instead of skipping previously successful tasks in the last relevant run.
-   */
-  private boolean force;
-
-  /**
-   * Persistent record of the current job run.
-   */
-  private JobHistory newJobHistory;
-
-  /**
-   * The last relevant job run.  Null if any prior job runs are too old to be considered.
-   */
-  private JobHistory oldJobHistory;
-
-  public TaskAndHistoryProcessor(boolean noop,
-                                 boolean force,
-                                 JobHistory newJobHistory,
-                                 JobHistory oldJobHistory)
-  {
-    this.noop = noop;
-    this.force = force;
-    this.newJobHistory = newJobHistory;
-    this.oldJobHistory = oldJobHistory;
-  }
-
-  /**
    * Attempts to process the task, according to noop/force settings and prior task history.
    * Persists new task history with the result.
    */
-  public TaskStatus attemptTask(Task task)
+  public TaskStatus attemptTask(TaskRun taskRun)
   {
-    Date taskStartTime = nowFactory.now();
-    TaskStatus taskStatus = null;
-    boolean skip = chooseToSkipOrForce(task);
+    boolean skip = chooseToSkipOrForce(taskRun);
     if (skip)
     {
-      return skipTaskHistory(task, taskStartTime);
+      return skipTaskHistory(taskRun);
     }
     else
     {
-      return openProcessCloseTask(task, taskStartTime);
+      return openProcessCloseTask(taskRun);
     }
   }
 
@@ -89,13 +50,13 @@ public class TaskAndHistoryProcessor
    * <p/>
    * Exceptions thrown here propagate up and cause the job to end with an error.
    */
-  private TaskStatus openProcessCloseTask(Task task, Date taskStartTime)
+  TaskStatus openProcessCloseTask(TaskRun taskRun)
   {
     TaskStatus taskStatus = null;
-    TaskHistory taskHistory = openTaskHistory(task, taskStartTime);
+    TaskHistory taskHistory = openTaskHistory(taskRun);
     try
     {
-      taskStatus = task.process(noop);
+      taskStatus = taskRun.getTask().process(taskRun.isNoop());
     }
     finally
     {
@@ -103,7 +64,7 @@ public class TaskAndHistoryProcessor
       {
         taskStatus = TaskStatus.ERROR;
       }
-      closeTaskHistory(taskHistory, taskStatus);
+      closeTaskHistory(taskRun.isNoop(), taskHistory, taskStatus);
     }
     return taskStatus;
   }
@@ -111,22 +72,23 @@ public class TaskAndHistoryProcessor
   /**
    * Calls to persist a new TaskHistory in PROCESSING state.
    */
-  private TaskHistory openTaskHistory(Task task, Date taskStartTime)
+  private TaskHistory openTaskHistory(TaskRun taskRun)
   {
-    if (noop)
+    if (taskRun.isNoop())
     {
       return null;
     }
     else
     {
-      return taskHistoryTx.newTaskHistoryProcessing(task, taskStartTime, newJobHistory);
+      return taskHistoryTx.newTaskHistoryProcessing(
+          taskRun.getTask(), taskRun.getStartTime(), taskRun.getNewJobHistory());
     }
   }
 
   /**
    * Calls to persist a closed TaskHistory, which means setting endTime and final status.
    */
-  private void closeTaskHistory(TaskHistory taskHistory, TaskStatus taskStatus)
+  private void closeTaskHistory(boolean noop, TaskHistory taskHistory, TaskStatus taskStatus)
   {
     if (!noop)
     {
@@ -137,11 +99,12 @@ public class TaskAndHistoryProcessor
   /**
    * In the SKIP case, calls to persist a new TaskHistory with an endTime and skip status.
    */
-  private TaskStatus skipTaskHistory(Task task, Date taskStartTime)
+  TaskStatus skipTaskHistory(TaskRun taskRun)
   {
-    if (!noop)
+    if (!taskRun.isNoop())
     {
-      taskHistoryTx.newTaskHistorySkipped(task, taskStartTime, newJobHistory);
+      taskHistoryTx.newTaskHistorySkipped(
+          taskRun.getTask(), taskRun.getStartTime(), taskRun.getNewJobHistory());
     }
     return TaskStatus.SKIPPED;
   }
@@ -150,14 +113,14 @@ public class TaskAndHistoryProcessor
    * Returns true if prior task history indicates that we should skip this task.
    * Force flag can override it to false.
    */
-  private boolean chooseToSkipOrForce(Task task)
+  boolean chooseToSkipOrForce(TaskRun taskRun)
   {
-    TaskHistory priorTaskHistory = findPriorTaskHistory(task);
+    TaskHistory priorTaskHistory = findPriorTaskHistory(taskRun.getTask(), taskRun.getOldJobHistory());
     boolean skip = false;
     if (priorTaskHistory != null)
     {
       TaskStatus priorStatus = priorTaskHistory.getStatus();
-      SkipRemark skipRemark = skipRemarkHelper.make(priorStatus, force);
+      SkipRemark skipRemark = skipRemarkHelper.make(priorStatus, taskRun.isForce());
       LOGGER.info(skipRemarkHelper.useRemark(skipRemark, priorTaskHistory));
       skip = skipRemark.isSkip();
     }
@@ -171,7 +134,7 @@ public class TaskAndHistoryProcessor
    * changed then this probably will produce incorrect results and bluegreen users should force a
    * complete job run.
    */
-  private TaskHistory findPriorTaskHistory(Task task)
+  TaskHistory findPriorTaskHistory(Task task, JobHistory oldJobHistory)
   {
     if (oldJobHistory != null && oldJobHistory.getTaskHistories() != null)
     {
