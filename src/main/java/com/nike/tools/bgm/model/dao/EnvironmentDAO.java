@@ -31,7 +31,7 @@ public class EnvironmentDAO extends GenericDAO<Environment>
   /**
    * Converts the input list of strings to one comma-delimited string with individual tokens quoted with sql apostrophes.
    */
-  private String joinSqlQuotedStrings(String[] strings)
+  String joinSqlQuotedStrings(String[] strings)
   {
     if (strings == null)
     {
