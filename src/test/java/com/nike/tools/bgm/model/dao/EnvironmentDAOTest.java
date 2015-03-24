@@ -67,6 +67,6 @@ public class EnvironmentDAOTest
   {
     List<Environment> envs = environmentDAO.findAll();
 
-    verify(mockEntityManager).createQuery(argThat(is(allOf(containsString("SELECT"), not(containsString("WHERE"))))));
+    verify(mockEntityManager).createQuery((String) argThat(is(allOf(containsString("SELECT"), not(containsString("WHERE"))))));
   }
 }

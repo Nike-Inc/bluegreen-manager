@@ -57,7 +57,7 @@ public class JobHistoryDAOTest
   {
     JobHistory jobHistory = jobHistoryDAO.findLastRelevantJobHistory(JOB_NAME, ENV_NAME1, ENV_NAME2, MAX_AGE);
 
-    verify(mockEntityManager).createQuery(argThat(is(allOf(containsString(JOB_NAME),
+    verify(mockEntityManager).createQuery((String) argThat(is(allOf(containsString(JOB_NAME),
         containsString(ENV_NAME1), containsString(ENV_NAME2)))));
   }
 }
