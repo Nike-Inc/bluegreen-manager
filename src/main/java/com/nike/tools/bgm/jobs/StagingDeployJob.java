@@ -8,9 +8,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
-import com.nike.tools.bgm.tasks.HelloTask;
+import com.nike.tools.bgm.tasks.FreezeTask;
 import com.nike.tools.bgm.tasks.Task;
-import com.nike.tools.bgm.tasks.WorldTask;
 
 /**
  * Deploys to the stage env a copy of the pkgs that are on the live env except for explicitly specified packages that
@@ -43,9 +42,9 @@ public class StagingDeployJob extends TaskSequenceJob
   {
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(applicationContext.getBean(HelloTask.class, position++, liveEnv));
-    tasks.add(applicationContext.getBean(WorldTask.class, position++, stageEnv));
-    //tasks.add(new FreezeTask(liveEnv)); //PT-2014
+    //tasks.add(applicationContext.getBean(HelloTask.class, position++, liveEnv));
+    //tasks.add(applicationContext.getBean(WorldTask.class, position++, stageEnv));
+    tasks.add(new FreezeTask(position++, liveEnv)); //PT-2014
     //tasks.add(new RDSSnapshotRestoreTask(liveEnv, stageEnv)); //PT-2015
     //tasks.add(new ThawTask(liveEnv)); //PT-2014
     //tasks.add(new RegisterStageTask(stageEnv));

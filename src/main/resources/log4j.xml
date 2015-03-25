@@ -49,6 +49,10 @@
     <priority value="DEBUG"/>
   </category>
 
+  <category name="com.nike.tools.bgm">
+    <priority value="INFO"/>
+  </category>
+
   <root>
     <level value="INFO"/>
     <appender-ref ref="consoleAppender"/>

@@ -2,6 +2,7 @@ package com.nike.tools.bgm.model.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.Query;
 
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,22 @@ import com.nike.tools.bgm.model.domain.Environment;
 @Repository
 public class EnvironmentDAO extends GenericDAO<Environment>
 {
+  /**
+   * Returns the single named environment.  Throws if not found.
+   */
+  public Environment findNamedEnv(String envName)
+  {
+    if (envName == null)
+    {
+      return null;
+    }
+    String queryString = "SELECT e FROM " + Environment.class.getSimpleName() + " e WHERE "
+        + "e.envName = :envName";
+    Query query = entityManager.createQuery(queryString);
+    query.setParameter("envName", envName);
+    return (Environment) query.getSingleResult();
+  }
+
   /**
    * Returns a list of the named environments (assuming they exist).
    */

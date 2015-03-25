@@ -8,6 +8,14 @@
 
   <context:component-scan base-package="com.nike.tools.bgm"/>
 
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations" value="classpath:bluegreen-manager.properties"/>
+  </bean>
+
   <import resource="persist.xml"/>
+
+  <bean id="httpClient" class="org.apache.http.client.HttpClient" factory-bean="httpClientSSLFactory" factory-method="makeHttpClient"/>
+
+  <bean id="gson" class="com.google.gson.Gson"/>
 
 </beans>

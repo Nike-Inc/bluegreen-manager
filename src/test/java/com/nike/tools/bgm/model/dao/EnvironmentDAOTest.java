@@ -20,6 +20,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,11 +50,19 @@ public class EnvironmentDAOTest
   }
 
   @Test
-  public void testFindNamedEnvs() throws Exception
+  public void testFindNamedEnv()
+  {
+    Environment env = environmentDAO.findNamedEnv(ENV_NAME1);
+
+    verify(mockEntityManager).createQuery(contains("SELECT"));
+  }
+
+  @Test
+  public void testFindNamedEnvs()
   {
     List<Environment> envs = environmentDAO.findNamedEnvs(ENV_NAME1, ENV_NAME2);
 
-    verify(mockEntityManager).createQuery(matches(".*" + ENV_NAME1 + ".*" + ENV_NAME2 + ".*"));
+    verify(mockEntityManager).createQuery(matches("SELECT.*" + ENV_NAME1 + ".*" + ENV_NAME2 + ".*"));
   }
 
   @Test
@@ -63,7 +72,7 @@ public class EnvironmentDAOTest
   }
 
   @Test
-  public void testFindAll() throws Exception
+  public void testFindAll()
   {
     List<Environment> envs = environmentDAO.findAll();
 

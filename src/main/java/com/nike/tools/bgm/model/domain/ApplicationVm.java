@@ -1,11 +1,14 @@
 package com.nike.tools.bgm.model.domain;
 
+import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -28,6 +31,7 @@ public class ApplicationVm
   public static final int LENGTH_HOSTNAME = 128;
   public static final int LENGTH_IP_ADDRESS = 20;
   public static final String FIELD_ENVIRONMENT = "environment";
+  public static final int CONSTRAINT_MIN_SIN_NUMBER = 0;
   public static final int CONSTRAINT_MAX_SIN_NUMBER = 500;
 
   @Id
@@ -39,7 +43,7 @@ public class ApplicationVm
   @JoinColumn(name = COLUMN_FK_ENV_ID, nullable = false)
   private Environment environment; //FIELD_ENVIRONMENT
 
-  @Min(0)
+  @Min(CONSTRAINT_MIN_SIN_NUMBER)
   @Max(CONSTRAINT_MAX_SIN_NUMBER)
   @Column(name = COLUMN_SIN_NUMBER, nullable = false)
   private int sinNumber;
@@ -49,6 +53,9 @@ public class ApplicationVm
 
   @Column(name = COLUMN_IP_ADDRESS, nullable = false, length = LENGTH_IP_ADDRESS)
   private String ipAddress;
+
+  @OneToMany(mappedBy = Application.FIELD_APPLICATION_VM, cascade = CascadeType.ALL)
+  private List<Application> applications;
 
   public long getId()
   {
@@ -100,6 +107,16 @@ public class ApplicationVm
     this.ipAddress = ipAddress;
   }
 
+  public List<Application> getApplications()
+  {
+    return applications;
+  }
+
+  public void setApplications(List<Application> applications)
+  {
+    this.applications = applications;
+  }
+
   /**
    * Equality based solely on database identity.
    */
@@ -136,6 +153,8 @@ public class ApplicationVm
     sb.append(hostname);
     sb.append(", ipAddress: ");
     sb.append(ipAddress);
+    sb.append(", applications: ");
+    sb.append(applications == null ? "null" : applications.toString());
     sb.append("]");
     return sb.toString();
   }
