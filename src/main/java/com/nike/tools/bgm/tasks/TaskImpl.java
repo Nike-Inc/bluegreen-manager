@@ -16,7 +16,10 @@ public abstract class TaskImpl implements Task
    */
   private String name;
 
-  protected TaskImpl(int position)
+  /**
+   * This would be a TaskImpl constructor except mockito can't mock the argument.
+   */
+  protected void init(int position)
   {
     this.position = position;
     this.name = getClass().getSimpleName();

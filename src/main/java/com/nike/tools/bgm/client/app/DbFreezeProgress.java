@@ -132,6 +132,8 @@ public class DbFreezeProgress implements Lockable
     sb.append(scannersAwaitingTermination);
     sb.append(", lockError: ");
     sb.append(lockError);
+    sb.append(", transitionError: ");
+    sb.append(transitionError);
     sb.append("]");
     return sb.toString();
   }

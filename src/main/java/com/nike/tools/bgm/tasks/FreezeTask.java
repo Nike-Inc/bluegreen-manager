@@ -28,9 +28,10 @@ import com.nike.tools.bgm.utils.ThreadSleeper;
 public class FreezeTask extends TaskImpl
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(FreezeTask.class);
-  private static final int MAX_NUM_WAITS = 120;
   private static final long WAIT_DELAY_MILLISECONDS = 3000L;
-  private static final int WAIT_REPORT_INTERVAL = 10;
+
+  private static int maxNumWaits = 120;
+  private static int waitReportInterval = 10;
 
   @Autowired
   private ApplicationClient applicationClient;
@@ -46,34 +47,50 @@ public class FreezeTask extends TaskImpl
   private Application application;
 
   /**
-   * Constructor: looks up the environment entity by name.
-   * Currently requires that the env has exactly one appvm and one app.
+   * Looks up the environment entity by name.
+   * Currently requires that the env has exactly one applicationVm and one application.
+   *
+   * @return Self, so job can construct, init, and add to task list in one line.
    */
-  public FreezeTask(int position, String envName)
+  public FreezeTask init(int position, String envName)
   {
-    super(position);
+    super.init(position);
     this.environment = environmentDAO.findNamedEnv(envName);
 
     getApplicationVmFromEnvironment();
     getApplicationFromVm();
+    return this;
   }
 
   /**
    * Returns a string that describes the known environment context, for logging purposes.
    */
-  private String context()
+  String context()
   {
     StringBuilder sb = new StringBuilder();
-    sb.append("environment '" + environment.getEnvName() + "': ");
+    sb.append("[environment '" + environment.getEnvName() + "'");
     if (applicationVm != null)
     {
-      sb.append(applicationVm + ": ");
-      if (application != null)
+      sb.append(", ");
+      if (application == null)
       {
-        sb.append(application + ": ");
+        sb.append(applicationVm.getHostname());
+      }
+      else
+      {
+        sb.append(application.makeHostnameUri());
       }
     }
+    sb.append("]: ");
     return sb.toString();
+  }
+
+  /**
+   * Returns a tiny string pointing out if we're in noop.
+   */
+  private String noopRemark(boolean noop)
+  {
+    return noop ? " (noop)" : "";
   }
 
   /**
@@ -138,7 +155,7 @@ public class FreezeTask extends TaskImpl
    * <p/>
    * Read-only so runs even if noop.
    */
-  private boolean appIsReadyToFreeze()
+  boolean appIsReadyToFreeze()
   {
     LOGGER.info(context() + "Checking if application is ready to freeze");
     DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application);
@@ -174,29 +191,39 @@ public class FreezeTask extends TaskImpl
    * @param noop If true, don't contact the application.
    * @return Initial progress if we got a successful response from the application, or null if noop.
    */
-  private DbFreezeProgress requestFreeze(boolean noop)
+  DbFreezeProgress requestFreeze(boolean noop)
   {
-    LOGGER.info(context() + "Requesting a freeze");
+    LOGGER.info(context() + "Requesting a freeze" + noopRemark(noop));
+    DbFreezeProgress dbFreezeProgress = null;
     if (!noop)
     {
-      DbFreezeProgress dbFreezeProgress = applicationClient.putEnterDbFreeze(application);
-      LOGGER.debug(context() + "Application response: " + dbFreezeProgress);
-      if (dbFreezeProgress == null)
-      {
-        LOGGER.error(context() + "Null application response");
-      }
-      else if (dbFreezeProgress.isLockError())
-      {
-        LOGGER.error(context() + "Application responded with a lock error: " + dbFreezeProgress);
-      }
-      else if (StringUtils.isNotBlank(dbFreezeProgress.getTransitionError()))
-      {
-        LOGGER.error(context() + "Application responded with a transition error: " + dbFreezeProgress);
-      }
-      else
-      {
-        return dbFreezeProgress;
-      }
+      dbFreezeProgress = applicationClient.putEnterDbFreeze(application);
+      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, 0);
+    }
+    return dbFreezeProgress;
+  }
+
+  /**
+   * Returns the input progress object, or null if there is any kind of error.  If error then log about it too.
+   */
+  private DbFreezeProgress nullIfErrorProgress(DbFreezeProgress dbFreezeProgress, int waitNum)
+  {
+    LOGGER.debug(context() + "Application response after wait#" + waitNum + ": " + dbFreezeProgress);
+    if (dbFreezeProgress == null)
+    {
+      LOGGER.error(context() + "Null application response");
+    }
+    else if (dbFreezeProgress.isLockError())
+    {
+      LOGGER.error(context() + "Application responded with a lock error: " + dbFreezeProgress);
+    }
+    else if (StringUtils.isNotBlank(dbFreezeProgress.getTransitionError()))
+    {
+      LOGGER.error(context() + "Application responded with a transition error: " + dbFreezeProgress);
+    }
+    else
+    {
+      return dbFreezeProgress;
     }
     return null;
   }
@@ -207,21 +234,28 @@ public class FreezeTask extends TaskImpl
    * @param noop If true, don't contact the application.
    * @return True if the application has been frozen prior to timeout, or if noop.  False if error or other failure to freeze.
    */
-  private boolean waitForFreeze(boolean noop, DbFreezeProgress initialProgress)
+  boolean waitForFreeze(boolean noop, DbFreezeProgress initialProgress)
   {
-    LOGGER.info(context() + "Waiting for freeze to take effect");
+    LOGGER.info(context() + "Waiting for freeze to take effect" + noopRemark(noop));
     if (!noop)
     {
       int waitNum = 0;
-      while (waitNum < MAX_NUM_WAITS)
+      while (waitNum < maxNumWaits + 1) //Not counting "waitNum#0" since first one doesn't call sleep()
       {
         DbFreezeMode mode = waitNum == 0 ? initialProgress.getMode() : waitAndGetMode(waitNum);
+        if (mode == null)
+        {
+          // Application error, already logged.
+          // ApplicationClient already made MAX_NUM_TRIES, so mode==null means don't try again, client has a big problem.
+          return false;
+        }
         switch (mode)
         {
           case FROZEN:
             LOGGER.info("Application is successfully frozen");
             return true;
           case FLUSH_ERROR:
+            // Probably will never get here, nullIfErrorProgress will warn and set mode==null
             LOGGER.error("Application responded with flush error");
             return false;
           case FLUSHING:
@@ -246,14 +280,19 @@ public class FreezeTask extends TaskImpl
   {
     if (waitNum > 0)
     {
-      if (waitNum % WAIT_REPORT_INTERVAL == 0)
+      if (waitNum % waitReportInterval == 0)
       {
-        LOGGER.info("Wait #" + waitNum + " (max " + MAX_NUM_WAITS + ") for application freeze");
+        // "Seconds elapsed" is approximate, since ApplicationClient can have its own sleep delay for each "wait" here.
+        LOGGER.info("Wait #" + waitNum + " (max " + maxNumWaits + ") for application freeze ... "
+            + ((waitNum * WAIT_DELAY_MILLISECONDS) / 1000L) + " seconds elapsed");
       }
       sleep();
       DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application);
-      LOGGER.debug(context() + "Application response #" + waitNum + ": " + dbFreezeProgress);
-      return dbFreezeProgress.getMode();
+      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
+      if (dbFreezeProgress != null)
+      {
+        return dbFreezeProgress.getMode();
+      }
     }
     return null;
   }
@@ -272,5 +311,17 @@ public class FreezeTask extends TaskImpl
     {
       LOGGER.warn("Sleep was interrupted");
     }
+  }
+
+  // Test purposes only
+  static void setWaitReportInterval(int waitReportInterval)
+  {
+    FreezeTask.waitReportInterval = waitReportInterval;
+  }
+
+  // Test purposes only
+  static void setMaxNumWaits(int maxNumWaits)
+  {
+    FreezeTask.maxNumWaits = maxNumWaits;
   }
 }
