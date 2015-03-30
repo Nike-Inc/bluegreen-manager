@@ -81,7 +81,7 @@ public class TaskRunProcessor
     else
     {
       return taskHistoryTx.newTaskHistoryProcessing(
-          taskRun.getTask(), taskRun.getStartTime(), taskRun.getNewJobHistory());
+          taskRun.getTask(), taskRun.getNewJobHistory());
     }
   }
 
@@ -104,7 +104,7 @@ public class TaskRunProcessor
     if (!taskRun.isNoop())
     {
       taskHistoryTx.newTaskHistorySkipped(
-          taskRun.getTask(), taskRun.getStartTime(), taskRun.getNewJobHistory());
+          taskRun.getTask(), taskRun.getNewJobHistory());
     }
     return TaskStatus.SKIPPED;
   }

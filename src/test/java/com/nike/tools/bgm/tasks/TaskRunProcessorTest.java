@@ -13,7 +13,6 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
-import static com.nike.tools.bgm.utils.TimeFakery.START_TIME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -117,7 +116,7 @@ public class TaskRunProcessorTest
   {
     boolean noop = false;
     JobHistory newJobHistory = null;
-    TaskRun taskRun = new TaskRun(task, noop, force, START_TIME, newJobHistory, oldJobHistory);
+    TaskRun taskRun = new TaskRun(task, noop, force, newJobHistory, oldJobHistory);
     boolean skip = taskRunProcessor.chooseToSkipOrForce(taskRun);
     assertEquals(expectSkip, skip);
   }
@@ -161,7 +160,7 @@ public class TaskRunProcessorTest
     TaskStatus taskStatus = testOpenProcessCloseTask(noop, mockTask, mockTaskHistory);
 
     assertEquals(expectedStatus, taskStatus);
-    verify(mockTaskHistoryTx).newTaskHistoryProcessing(mockTask, START_TIME, null);
+    verify(mockTaskHistoryTx).newTaskHistoryProcessing(mockTask, null);
     verify(mockTask).process(noop);
     verify(mockTaskHistoryTx).closeTaskHistory(mockTaskHistory, expectedStatus);
   }
@@ -179,7 +178,7 @@ public class TaskRunProcessorTest
     Task mockTask = mock(Task.class);
     when(mockTask.process(noop)).thenThrow(RuntimeException.class);
     TaskHistory mockTaskHistory = mock(TaskHistory.class);
-    when(mockTaskHistoryTx.newTaskHistoryProcessing(mockTask, START_TIME, null)).thenReturn(mockTaskHistory);
+    when(mockTaskHistoryTx.newTaskHistoryProcessing(mockTask, null)).thenReturn(mockTaskHistory);
 
     boolean caught = false;
     TaskStatus taskStatus = null;
@@ -195,7 +194,7 @@ public class TaskRunProcessorTest
 
     assertTrue(caught);
     assertNull(taskStatus);
-    verify(mockTaskHistoryTx).newTaskHistoryProcessing(mockTask, START_TIME, null);
+    verify(mockTaskHistoryTx).newTaskHistoryProcessing(mockTask, null);
     verify(mockTask).process(noop);
     verify(mockTaskHistoryTx).closeTaskHistory(mockTaskHistory, TaskStatus.ERROR);
   }
@@ -208,10 +207,10 @@ public class TaskRunProcessorTest
     boolean force = false;
     JobHistory newJobHistory = null;
     JobHistory oldJobHistory = null;
-    TaskRun taskRun = new TaskRun(mockTask, noop, force, START_TIME, newJobHistory, oldJobHistory);
+    TaskRun taskRun = new TaskRun(mockTask, noop, force, newJobHistory, oldJobHistory);
     if (mockTaskHistory != null)
     {
-      when(mockTaskHistoryTx.newTaskHistoryProcessing(mockTask, START_TIME, newJobHistory)).thenReturn(mockTaskHistory);
+      when(mockTaskHistoryTx.newTaskHistoryProcessing(mockTask, newJobHistory)).thenReturn(mockTaskHistory);
     }
 
     return taskRunProcessor.openProcessCloseTask(taskRun);
@@ -228,11 +227,11 @@ public class TaskRunProcessorTest
     boolean force = false;
     JobHistory newJobHistory = null;
     JobHistory oldJobHistory = null;
-    TaskRun taskRun = new TaskRun(task, noop, force, START_TIME, newJobHistory, oldJobHistory);
+    TaskRun taskRun = new TaskRun(task, noop, force, newJobHistory, oldJobHistory);
 
     TaskStatus taskStatus = taskRunProcessor.skipTaskHistory(taskRun);
 
     assertEquals(taskStatus, TaskStatus.SKIPPED);
-    verify(mockTaskHistoryTx).newTaskHistorySkipped(task, START_TIME, newJobHistory);
+    verify(mockTaskHistoryTx).newTaskHistorySkipped(task, newJobHistory);
   }
 }

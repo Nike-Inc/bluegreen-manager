@@ -118,7 +118,7 @@ public abstract class TaskSequenceJob implements Job
         throw new IllegalStateException("Invalid task position: " + task.getPosition() + ", expected " + (idx + 1));
       }
       LOGGER.info("TASK #" + task.getPosition() + " of " + tasks.size() + " BEGIN: " + task.getName());
-      TaskRun taskRun = new TaskRun(task, noop, force, nowFactory.now(), newJobHistory, oldJobHistory);
+      TaskRun taskRun = new TaskRun(task, noop, force, newJobHistory, oldJobHistory);
       TaskStatus taskStatus = taskRunProcessor.attemptTask(taskRun);
       LOGGER.info("TASK #" + task.getPosition() + " of " + tasks.size() + " END: " + task.getName() + " " + taskStatus);
     }

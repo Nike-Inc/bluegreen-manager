@@ -1,7 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
 import java.sql.Timestamp;
-import java.util.Date;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,15 +29,15 @@ public class TaskHistoryTx
    * Makes an in-progress TaskHistory (linked to a parent jobHistory) and saves it.
    * Returns the new TaskHistory.
    */
-  public TaskHistory newTaskHistoryProcessing(Task task, Date taskStartTime, JobHistory jobHistory)
+  public TaskHistory newTaskHistoryProcessing(Task task, JobHistory jobHistory)
   {
-    if (task == null || taskStartTime == null || jobHistory == null)
+    if (task == null || jobHistory == null)
     {
       throw new IllegalArgumentException();
     }
     TaskHistory newTaskHistory = new TaskHistory();
     newTaskHistory.setJobHistory(jobHistory);
-    newTaskHistory.setStartTime(new Timestamp(taskStartTime.getTime()));
+    newTaskHistory.setStartTime(new Timestamp(nowFactory.now().getTime()));
     newTaskHistory.setPosition(task.getPosition());
     newTaskHistory.setTaskName(task.getName());
     newTaskHistory.setStatus(TaskStatus.PROCESSING);
@@ -49,15 +48,15 @@ public class TaskHistoryTx
   /**
    * Makes a skip TaskHistory (linked to a parent jobHistory) and saves it.
    */
-  public TaskHistory newTaskHistorySkipped(Task task, Date taskStartTime, JobHistory jobHistory)
+  public TaskHistory newTaskHistorySkipped(Task task, JobHistory jobHistory)
   {
-    if (task == null || taskStartTime == null || jobHistory == null)
+    if (task == null || jobHistory == null)
     {
       throw new IllegalArgumentException();
     }
     TaskHistory newTaskHistory = new TaskHistory();
     newTaskHistory.setJobHistory(jobHistory);
-    newTaskHistory.setStartTime(new Timestamp(taskStartTime.getTime()));
+    newTaskHistory.setStartTime(new Timestamp(nowFactory.now().getTime()));
     newTaskHistory.setEndTime(new Timestamp(nowFactory.now().getTime()));
     newTaskHistory.setPosition(task.getPosition());
     newTaskHistory.setTaskName(task.getName());

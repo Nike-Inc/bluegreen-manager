@@ -18,6 +18,7 @@ import static com.nike.tools.bgm.utils.TimeFakery.START_TIME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,9 +54,10 @@ public class TaskHistoryTxTest
   {
     JobHistory jobHistory = jobFakery.makeFakeJobHistory(null /*no prior task histories*/);
     Task task = taskFakery.makeFakeTask(0);
-    TaskHistory newTaskHistory = taskHistoryTx.newTaskHistoryProcessing(task, START_TIME, jobHistory);
+    TaskHistory newTaskHistory = taskHistoryTx.newTaskHistoryProcessing(task, jobHistory);
 
     verify(mockTaskHistoryDAO).save(newTaskHistory);
+    verify(mockNowFactory).now();
     assertEquals(newTaskHistory.getStatus(), TaskStatus.PROCESSING);
     assertNull(newTaskHistory.getEndTime());
   }
@@ -68,10 +70,10 @@ public class TaskHistoryTxTest
   {
     JobHistory jobHistory = jobFakery.makeFakeJobHistory(null /*no prior task histories*/);
     Task task = taskFakery.makeFakeTask(0);
-    TaskHistory newTaskHistory = taskHistoryTx.newTaskHistorySkipped(task, START_TIME, jobHistory);
+    TaskHistory newTaskHistory = taskHistoryTx.newTaskHistorySkipped(task, jobHistory);
 
     verify(mockTaskHistoryDAO).save(newTaskHistory);
-    verify(mockNowFactory).now();
+    verify(mockNowFactory, times(2)).now();
     assertEquals(newTaskHistory.getStatus(), TaskStatus.SKIPPED);
     assertNotNull(newTaskHistory.getEndTime());
   }

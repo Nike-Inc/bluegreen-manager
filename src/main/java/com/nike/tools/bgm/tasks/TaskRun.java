@@ -1,7 +1,5 @@
 package com.nike.tools.bgm.tasks;
 
-import java.util.Date;
-
 import com.nike.tools.bgm.model.domain.JobHistory;
 
 /**
@@ -25,11 +23,6 @@ public class TaskRun
   private boolean force;
 
   /**
-   * When this task started.
-   */
-  private Date startTime;
-
-  /**
    * Persistent record of the current job run.
    */
   private JobHistory newJobHistory;
@@ -42,13 +35,11 @@ public class TaskRun
   public TaskRun(Task task,
                  boolean noop,
                  boolean force,
-                 Date startTime,
                  JobHistory newJobHistory, JobHistory oldJobHistory)
   {
     this.task = task;
     this.noop = noop;
     this.force = force;
-    this.startTime = startTime;
     this.newJobHistory = newJobHistory;
     this.oldJobHistory = oldJobHistory;
   }
@@ -66,11 +57,6 @@ public class TaskRun
   public boolean isForce()
   {
     return force;
-  }
-
-  public Date getStartTime()
-  {
-    return startTime;
   }
 
   public JobHistory getNewJobHistory()
