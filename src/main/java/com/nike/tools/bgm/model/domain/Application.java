@@ -25,9 +25,11 @@ public class Application
   public static final String COLUMN_ID = "APP_ID";
   public static final String COLUMN_FK_APPVM_ID = "FK_APPVM_ID";
   public static final String COLUMN_SCHEME = "APP_SCHEME"; //http, https
+  public static final String COLUMN_HOSTNAME = "APP_HOSTNAME";
   public static final String COLUMN_PORT = "APP_PORT";
   public static final String COLUMN_URL_PATH = "APP_URL_PATH";
   public static final int LENGTH_SCHEME = 10;
+  public static final int LENGTH_HOSTNAME = 128;
   public static final int LENGTH_URL_PATH = 255;
   public static final String FIELD_APPLICATION_VM = "applicationVm";
   public static final int CONSTRAINT_MIN_PORT = 0;
@@ -45,10 +47,13 @@ public class Application
   @Column(name = COLUMN_SCHEME, nullable = false, length = LENGTH_SCHEME)
   private String scheme;
 
+  @Column(name = COLUMN_HOSTNAME, nullable = false, length = LENGTH_HOSTNAME)
+  private String hostname;
+
   @Min(CONSTRAINT_MIN_PORT)
   @Max(CONSTRAINT_MAX_PORT)
-  @Column(name = COLUMN_PORT, nullable = false)
-  private int port;
+  @Column(name = COLUMN_PORT)
+  private Integer port;
 
   @Pattern(regexp = "^/")
   @Column(name = COLUMN_URL_PATH, nullable = false, length = LENGTH_URL_PATH)
@@ -84,12 +89,22 @@ public class Application
     this.scheme = scheme;
   }
 
-  public int getPort()
+  public String getHostname()
+  {
+    return hostname;
+  }
+
+  public void setHostname(String hostname)
+  {
+    this.hostname = hostname;
+  }
+
+  public Integer getPort()
   {
     return port;
   }
 
-  public void setPort(int port)
+  public void setPort(Integer port)
   {
     this.port = port;
   }
@@ -136,6 +151,8 @@ public class Application
     sb.append(id);
     sb.append(", scheme: ");
     sb.append(scheme);
+    sb.append(", hostname: ");
+    sb.append(hostname);
     sb.append(", port: ");
     sb.append(port);
     sb.append(", urlPath: ");
@@ -152,9 +169,12 @@ public class Application
     StringBuilder sb = new StringBuilder();
     sb.append(scheme);
     sb.append("://");
-    sb.append(applicationVm.getHostname());
-    sb.append(":");
-    sb.append(port);
+    sb.append(hostname);
+    if (port != null)
+    {
+      sb.append(":");
+      sb.append(port);
+    }
     sb.append(urlPath);
     return sb.toString();
   }

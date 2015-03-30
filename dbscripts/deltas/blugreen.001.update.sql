@@ -59,6 +59,18 @@ VALUES
   (8, 1, 'fakeHostname-krakenprd-green', 'fakeip-krakenprd-green', 8),
   (9, 1, 'fakeHostname-%%env.name%%', 'fakeip-%%env.name%%', 9);
 
+INSERT INTO APPLICATION (APP_ID, FK_APPVM_ID, APP_SCHEME, APP_HOSTNAME, APP_PORT, APP_URL_PATH)
+VALUES
+  (1, 1, 'https', 'idev-kraken.nikedev.com', NULL, '/rest/administration'),
+  (2, 2, 'https', 'iqa-kraken.nikedev.com', NULL, '/rest/administration'),
+  (3, 3, 'https', 'kraken.nikedev.com', NULL, '/rest/administration'),
+  (4, 4, 'https', 'unknown', NULL, '/rest/administration'),
+  (5, 5, 'https', 'unknown', NULL, '/rest/administration'),
+  (6, 6, 'https', 'unknown', NULL, '/rest/administration'),
+  (7, 7, 'https', 'unknown', NULL, '/rest/administration'),
+  (8, 8, 'https', 'unknown', NULL, '/rest/administration'),
+  (9, 9, 'https', 'unknown', NULL, '/rest/administration');
+
 COMMIT;
 
 SET autocommit = 1;
