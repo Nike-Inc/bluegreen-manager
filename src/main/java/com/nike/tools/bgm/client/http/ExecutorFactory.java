@@ -40,8 +40,12 @@ public class ExecutorFactory
   public Executor makeAuthenticatedExecutor(Application application)
   {
     Executor executor = executorFactoryFactory.newInstance(httpClient);
-    String hostname = application.getApplicationVm().getHostname();
-    int port = application.getPort();
+    String hostname = application.getHostname();
+    Integer port = application.getPort();
+    if (port == null)
+    {
+      port = -1; //per api of HttpHost
+    }
     String scheme = application.getScheme();
     HttpHost httpHost = new HttpHost(hostname, port, scheme);
     executor.auth(httpHost, applicationUsername, applicationPassword).authPreemptive(httpHost);
