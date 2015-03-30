@@ -35,13 +35,25 @@ public class ArgumentParser
     if (args != null && args.length > 0)
     {
       commandLine = StringUtils.join(args, " ");
-      jobName = args[0];
+      jobName = parseJobName(args[0]);
       parameters = parseParameters(args);
     }
     else
     {
       throw new CmdlineException("Syntax Error: Please specify some arguments");
     }
+  }
+
+  /**
+   * Checks that the arg looks like a job name, and returns it.
+   */
+  private String parseJobName(String arg)
+  {
+    if (StringUtils.isBlank(arg) || arg.startsWith(DOUBLE_HYPHEN))
+    {
+      throw new CmdlineException("Syntax Error: Please specify a job name");
+    }
+    return arg;
   }
 
   /**
