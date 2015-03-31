@@ -42,7 +42,7 @@ public class StagingDeployJob extends TaskSequenceJob
   {
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(new FreezeTask().init(position++, liveEnv)); //PT-2014
+    tasks.add(applicationContext.getBean(FreezeTask.class).init(position++, liveEnv)); //PT-2014
     //tasks.add(new RDSSnapshotRestoreTask(liveEnv, stageEnv)); //PT-2015
     //tasks.add(new ThawTask(liveEnv)); //PT-2014
     //tasks.add(new RegisterStageTask(stageEnv));

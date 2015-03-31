@@ -13,7 +13,7 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.NowFactory;
 
 /**
- * Serves transactional db queries related to Task and TaskHistory.
+ * Serves transactional db queries related to Task and TaskHistory.  New TaskHistory bubbles up to the parent job.
  */
 @Transactional
 @Component
@@ -26,7 +26,7 @@ public class TaskHistoryTx
   private TaskHistoryDAO taskHistoryDAO;
 
   /**
-   * Makes an in-progress TaskHistory (linked to a parent jobHistory) and saves it.
+   * Makes a new in-progress TaskHistory, linked to a parent jobHistory, and persists it.
    * Returns the new TaskHistory.
    */
   public TaskHistory newTaskHistoryProcessing(Task task, JobHistory jobHistory)
@@ -41,12 +41,13 @@ public class TaskHistoryTx
     newTaskHistory.setPosition(task.getPosition());
     newTaskHistory.setTaskName(task.getName());
     newTaskHistory.setStatus(TaskStatus.PROCESSING);
-    taskHistoryDAO.save(newTaskHistory);
+    jobHistory.addTaskHistory(newTaskHistory);
+    taskHistoryDAO.persist(newTaskHistory);
     return newTaskHistory;
   }
 
   /**
-   * Makes a skip TaskHistory (linked to a parent jobHistory) and saves it.
+   * Makes a new skip TaskHistory, linked to a detached parent jobHistory, and persists it.
    */
   public TaskHistory newTaskHistorySkipped(Task task, JobHistory jobHistory)
   {
@@ -61,18 +62,22 @@ public class TaskHistoryTx
     newTaskHistory.setPosition(task.getPosition());
     newTaskHistory.setTaskName(task.getName());
     newTaskHistory.setStatus(TaskStatus.SKIPPED);
-    taskHistoryDAO.save(newTaskHistory);
+    jobHistory.addTaskHistory(newTaskHistory);
+    taskHistoryDAO.persist(newTaskHistory);
     return newTaskHistory;
   }
 
   /**
-   * Finds the current TaskHistory and closes it with an endTime and new status.
+   * Closes a detached TaskHistory with an endTime and new status, then merges to the persistence context.
    */
   public void closeTaskHistory(TaskHistory taskHistory, TaskStatus taskStatus)
   {
-    taskHistoryDAO.refresh(taskHistory);
+    if (taskHistory.getId() == 0)
+    {
+      throw new IllegalArgumentException("Expected detached taskHistory but received new: " + taskHistory);
+    }
     taskHistory.setEndTime(new Timestamp(nowFactory.now().getTime()));
     taskHistory.setStatus(taskStatus);
-    taskHistoryDAO.save(taskHistory);
+    taskHistoryDAO.merge(taskHistory);
   }
 }

@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class JobHistoryTxTest
 {
+  public static final long JOB_ID = 1L;
+
   @InjectMocks
   private JobHistoryTx jobHistoryTx;
 
@@ -53,7 +55,7 @@ public class JobHistoryTxTest
     Job job = jobFakery.makeFakeJob();
     JobHistory newJobHistory = jobHistoryTx.newJobHistoryProcessing(job, START_TIME);
 
-    verify(mockJobHistoryDAO).save(newJobHistory);
+    verify(mockJobHistoryDAO).persist(newJobHistory);
     assertEquals(newJobHistory.getStatus(), JobStatus.PROCESSING);
     assertNull(newJobHistory.getEndTime());
   }
@@ -65,11 +67,11 @@ public class JobHistoryTxTest
   public void testCloseJobHistory()
   {
     JobHistory jobHistory = jobFakery.makeFakeJobHistory(null /*no task histories required*/);
+    jobHistory.setId(JOB_ID);
 
     jobHistoryTx.closeJobHistory(jobHistory, JobStatus.DONE);
 
-    verify(mockJobHistoryDAO).refresh(jobHistory);
-    verify(mockJobHistoryDAO).save(jobHistory);
+    verify(mockJobHistoryDAO).merge(jobHistory);
     verify(mockNowFactory).now();
     assertEquals(jobHistory.getStatus(), JobStatus.DONE);
     assertNotNull(jobHistory.getEndTime());

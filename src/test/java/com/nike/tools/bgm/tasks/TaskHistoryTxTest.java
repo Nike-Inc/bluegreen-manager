@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class TaskHistoryTxTest
 {
+  private static final long TASK_ID = 1L;
+
   @InjectMocks
   private TaskHistoryTx taskHistoryTx;
 
@@ -56,7 +58,7 @@ public class TaskHistoryTxTest
     Task task = taskFakery.makeFakeTask(0);
     TaskHistory newTaskHistory = taskHistoryTx.newTaskHistoryProcessing(task, jobHistory);
 
-    verify(mockTaskHistoryDAO).save(newTaskHistory);
+    verify(mockTaskHistoryDAO).persist(newTaskHistory);
     verify(mockNowFactory).now();
     assertEquals(newTaskHistory.getStatus(), TaskStatus.PROCESSING);
     assertNull(newTaskHistory.getEndTime());
@@ -72,7 +74,7 @@ public class TaskHistoryTxTest
     Task task = taskFakery.makeFakeTask(0);
     TaskHistory newTaskHistory = taskHistoryTx.newTaskHistorySkipped(task, jobHistory);
 
-    verify(mockTaskHistoryDAO).save(newTaskHistory);
+    verify(mockTaskHistoryDAO).persist(newTaskHistory);
     verify(mockNowFactory, times(2)).now();
     assertEquals(newTaskHistory.getStatus(), TaskStatus.SKIPPED);
     assertNotNull(newTaskHistory.getEndTime());
@@ -86,11 +88,11 @@ public class TaskHistoryTxTest
   {
     JobHistory jobHistory = jobFakery.makeFakeJobHistory(new TaskStatus[] { TaskStatus.PROCESSING });
     TaskHistory taskHistory = jobHistory.getTaskHistories().get(0);
+    taskHistory.setId(TASK_ID);
 
     taskHistoryTx.closeTaskHistory(taskHistory, TaskStatus.DONE);
 
-    verify(mockTaskHistoryDAO).refresh(taskHistory);
-    verify(mockTaskHistoryDAO).save(taskHistory);
+    verify(mockTaskHistoryDAO).merge(taskHistory);
     verify(mockNowFactory).now();
     assertEquals(taskHistory.getStatus(), TaskStatus.DONE);
     assertNotNull(taskHistory.getEndTime());

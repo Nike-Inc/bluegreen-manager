@@ -10,7 +10,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
-import com.nike.tools.bgm.model.dao.EnvironmentDAO;
+import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
@@ -44,7 +44,7 @@ public class FreezeTaskTest
   private ThreadSleeper mockThreadSleeper;
 
   @Mock
-  private EnvironmentDAO mockEnvironmentDAO;
+  private EnvironmentTx mockEnvironmentTx;
 
   /**
    * Tests init's ability to get env, applicationVm and application.
@@ -53,7 +53,7 @@ public class FreezeTaskTest
   public void setUp()
   {
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
-    when(mockEnvironmentDAO.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
+    when(mockEnvironmentTx.activeLoadEnvironmentAndApplications(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     freezeTask.init(1, envName);
   }
 

@@ -23,18 +23,19 @@ public abstract class GenericDAO<T>
   }
 
   /**
-   * Persist new or merge existing.
+   * Persists a new entity.
    */
-  public void save(T entity)
+  public void persist(T entity)
   {
-    if (entityManager.contains(entity))
-    {
-      entityManager.merge(entity);
-    }
-    else
-    {
-      entityManager.persist(entity);
-    }
+    entityManager.persist(entity);
+  }
+
+  /**
+   * Merges a detached entity.
+   */
+  public <T> T merge(T entity)
+  {
+    return entityManager.merge(entity);
   }
 
   /**
@@ -43,5 +44,13 @@ public abstract class GenericDAO<T>
   public void refresh(T entity)
   {
     entityManager.refresh(entity);
+  }
+
+  /**
+   * Returns true if the given entity is managed in the persistence context.
+   */
+  public boolean contains(T entity)
+  {
+    return entityManager.contains(entity);
   }
 }

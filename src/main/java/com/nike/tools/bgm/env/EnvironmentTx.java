@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.dao.EnvironmentDAO;
+import com.nike.tools.bgm.model.domain.Application;
+import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
 
 /**
@@ -59,6 +61,30 @@ public class EnvironmentTx
       }
     }
     return false;
+  }
+
+  /**
+   * Deep-loads the environment, its applications and vms.
+   * <p/>
+   * Lets env databases be lazy.
+   */
+  public Environment activeLoadEnvironmentAndApplications(String envName)
+  {
+    Environment environment = environmentDAO.findNamedEnv(envName);
+    if (environment.getApplicationVms() != null)
+    {
+      for (ApplicationVm applicationVm : environment.getApplicationVms())
+      {
+        if (applicationVm.getApplications() != null)
+        {
+          for (Application application : applicationVm.getApplications())
+          {
+            ; //No action other than load
+          }
+        }
+      }
+    }
+    return environment;
   }
 
 }

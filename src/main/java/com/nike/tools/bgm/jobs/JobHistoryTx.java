@@ -50,18 +50,31 @@ public class JobHistoryTx
     newJobHistory.setEnv2(job.getEnv2());
     newJobHistory.setCommandLine(job.getCommandLine());
     newJobHistory.setStatus(JobStatus.PROCESSING);
-    jobHistoryDAO.save(newJobHistory);
+    jobHistoryDAO.persist(newJobHistory);
     return newJobHistory;
   }
 
   /**
-   * Finds the current JobHistory and closes it with an endTime and new status.
+   * Closes a jobHistory with an endTime and new status, then merges to persistence context.
+   * <p/>
+   * jobHistory could be detached or managed.
    */
   public void closeJobHistory(JobHistory jobHistory, JobStatus jobStatus)
   {
-    jobHistoryDAO.refresh(jobHistory);
+    assertNotNew(jobHistory);
     jobHistory.setEndTime(new Timestamp(nowFactory.now().getTime()));
     jobHistory.setStatus(jobStatus);
-    jobHistoryDAO.save(jobHistory);
+    jobHistoryDAO.merge(jobHistory);
+  }
+
+  /**
+   * Throws if the jobHistory is a new entity.
+   */
+  private void assertNotNew(JobHistory jobHistory)
+  {
+    if (jobHistory.getId() == 0)
+    {
+      throw new IllegalArgumentException("Expected detached jobHistory but received new: " + jobHistory);
+    }
   }
 }

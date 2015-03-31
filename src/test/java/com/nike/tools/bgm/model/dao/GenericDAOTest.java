@@ -39,19 +39,20 @@ public class GenericDAOTest
     when(mockEntityManager.createQuery(anyString())).thenReturn(mockQuery);
   }
 
-  /**
-   * Tests that save can choose between persist and merge.
-   */
   @Test
-  public void testSave()
+  public void testPersist()
   {
     FakeEntity fakeEntity = new FakeEntity();
     fakeEntity.setName(FAKE_NAME);
-    fakeEntityDAO.save(fakeEntity);
+    fakeEntityDAO.persist(fakeEntity);
     verify(mockEntityManager).persist(fakeEntity);
+  }
 
-    when(mockEntityManager.contains(fakeEntity)).thenReturn(true); //since mock doesn't know we "persisted"
-    fakeEntityDAO.save(fakeEntity);
+  @Test
+  public void testMerge()
+  {
+    FakeEntity fakeEntity = new FakeEntity();
+    fakeEntityDAO.merge(fakeEntity);
     verify(mockEntityManager).merge(fakeEntity);
   }
 
@@ -61,6 +62,14 @@ public class GenericDAOTest
     FakeEntity fakeEntity = new FakeEntity();
     fakeEntityDAO.refresh(fakeEntity);
     verify(mockEntityManager).refresh(fakeEntity);
+  }
+
+  @Test
+  public void testContains()
+  {
+    FakeEntity fakeEntity = new FakeEntity();
+    fakeEntityDAO.contains(fakeEntity);
+    verify(mockEntityManager).contains(fakeEntity);
   }
 
   @Entity

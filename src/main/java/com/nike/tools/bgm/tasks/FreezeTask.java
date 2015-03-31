@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
-import com.nike.tools.bgm.model.dao.EnvironmentDAO;
+import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
@@ -40,7 +40,7 @@ public class FreezeTask extends TaskImpl
   private ThreadSleeper threadSleeper;
 
   @Autowired
-  private EnvironmentDAO environmentDAO;
+  private EnvironmentTx environmentTx;
 
   private Environment environment;
   private ApplicationVm applicationVm;
@@ -55,7 +55,7 @@ public class FreezeTask extends TaskImpl
   public FreezeTask init(int position, String envName)
   {
     super.init(position);
-    this.environment = environmentDAO.findNamedEnv(envName);
+    this.environment = environmentTx.activeLoadEnvironmentAndApplications(envName);
 
     getApplicationVmFromEnvironment();
     getApplicationFromVm();

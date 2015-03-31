@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.model.domain;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -111,6 +112,20 @@ public class JobHistory
     sb.append(commandLine);
     sb.append("]");
     return sb.toString();
+  }
+
+  /**
+   * Adds the taskHistory to the job.  Initializes the job's taskHistory list if needed.
+   * <p/>
+   * Does not check whether taskHistory is already in the list.
+   */
+  public void addTaskHistory(TaskHistory taskHistory)
+  {
+    if (taskHistories == null)
+    {
+      taskHistories = new ArrayList<TaskHistory>();
+    }
+    taskHistories.add(taskHistory);
   }
 
   public long getId()
