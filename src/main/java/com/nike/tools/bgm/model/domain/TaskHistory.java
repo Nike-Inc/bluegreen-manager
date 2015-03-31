@@ -3,6 +3,8 @@ package com.nike.tools.bgm.model.domain;
 import java.sql.Timestamp;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -58,6 +60,7 @@ public class TaskHistory
   @Column(name = COLUMN_NAME, nullable = false, length = LENGTH_NAME)
   private String taskName;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = COLUMN_STATUS, nullable = false, length = LENGTH_STATUS)
   private TaskStatus status;
 

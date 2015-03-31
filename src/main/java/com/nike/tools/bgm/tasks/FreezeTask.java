@@ -55,7 +55,7 @@ public class FreezeTask extends TaskImpl
   public FreezeTask init(int position, String envName)
   {
     super.init(position);
-    this.environment = environmentTx.activeLoadEnvironmentAndApplications(envName);
+    this.environment = environmentTx.findNamedEnv(envName);
 
     getApplicationVmFromEnvironment();
     getApplicationFromVm();

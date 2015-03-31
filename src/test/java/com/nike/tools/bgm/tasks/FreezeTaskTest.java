@@ -53,7 +53,7 @@ public class FreezeTaskTest
   public void setUp()
   {
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
-    when(mockEnvironmentTx.activeLoadEnvironmentAndApplications(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
+    when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     freezeTask.init(1, envName);
   }
 

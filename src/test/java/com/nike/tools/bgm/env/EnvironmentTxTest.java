@@ -96,7 +96,7 @@ public class EnvironmentTxTest
   @Test
   public void testActiveLoadEnvironmentAndApplications()
   {
-    Environment environment = environmentTx.activeLoadEnvironmentAndApplications(GOOD_ENVNAME1);
+    Environment environment = environmentTx.findNamedEnv(GOOD_ENVNAME1);
     assertNotNull(environment.getApplicationVms().get(0).getApplications().get(0));
   }
 }

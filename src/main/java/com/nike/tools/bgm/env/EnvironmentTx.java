@@ -64,27 +64,38 @@ public class EnvironmentTx
   }
 
   /**
-   * Deep-loads the environment, its applications and vms.
-   * <p/>
-   * Lets env databases be lazy.
+   * Finds the named environment.  Actively loads its application vms and applications, but not databases.
    */
-  public Environment activeLoadEnvironmentAndApplications(String envName)
+  public Environment findNamedEnv(String envName)
   {
     Environment environment = environmentDAO.findNamedEnv(envName);
-    if (environment.getApplicationVms() != null)
+    activeLoadApplicationVmsAndApplications(environment);
+    return environment;
+  }
+
+  /**
+   * Actively loads the environment's applications and vms, while the tx is open.
+   * <p/>
+   * Lets env databases remain lazy.
+   */
+  private void activeLoadApplicationVmsAndApplications(Environment environment)
+  {
+    if (environment != null)
     {
-      for (ApplicationVm applicationVm : environment.getApplicationVms())
+      if (environment.getApplicationVms() != null)
       {
-        if (applicationVm.getApplications() != null)
+        for (ApplicationVm applicationVm : environment.getApplicationVms())
         {
-          for (Application application : applicationVm.getApplications())
+          if (applicationVm.getApplications() != null)
           {
-            ; //No action other than load
+            for (Application application : applicationVm.getApplications())
+            {
+              ; //No action other than load
+            }
           }
         }
       }
     }
-    return environment;
   }
 
 }

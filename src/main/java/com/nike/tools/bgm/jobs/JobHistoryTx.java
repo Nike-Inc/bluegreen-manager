@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.dao.JobHistoryDAO;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.JobStatus;
+import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.utils.NowFactory;
 
 /**
@@ -26,12 +27,31 @@ public class JobHistoryTx
   private JobHistoryDAO jobHistoryDAO;
 
   /**
-   * Looks up the prior old job history (if recent enough).
+   * Looks up the prior old job history (if recent enough).  Actively loads its task histories.
    */
   public JobHistory findLastRelevantJobHistory(String jobName, String env1, String env2, String commandLine,
                                                boolean noop, long maxAge)
   {
-    return jobHistoryDAO.findLastRelevantJobHistory(jobName, env1, env2, maxAge);
+    JobHistory jobHistory = jobHistoryDAO.findLastRelevantJobHistory(jobName, env1, env2, maxAge);
+    activeLoadTaskHistories(jobHistory);
+    return jobHistory;
+  }
+
+  /**
+   * Actively loads the job's task histories, while the tx is open.
+   */
+  private void activeLoadTaskHistories(JobHistory jobHistory)
+  {
+    if (jobHistory != null)
+    {
+      if (jobHistory.getTaskHistories() != null)
+      {
+        for (TaskHistory taskHistory : jobHistory.getTaskHistories())
+        {
+          ; //Nothing but the load
+        }
+      }
+    }
   }
 
   /**
