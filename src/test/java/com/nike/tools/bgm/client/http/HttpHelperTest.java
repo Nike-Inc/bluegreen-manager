@@ -6,14 +6,15 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.fluent.Content;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,24 +56,27 @@ public class HttpHelperTest
   /**
    * Tests the authentication post.
    */
-  private Header testPostForCookie(int responseStatus, String headerName, boolean isValidUser) throws IOException
+  private Header testPostAuthForCookie(int responseStatus, String headerName, boolean isValidUser) throws IOException
   {
     HttpResponse fakeHttpResponse = new BasicHttpResponse(HttpVersion.HTTP_1_1, responseStatus, "some reason");
     fakeHttpResponse.addHeader(headerName, COOKIE_VALUE);
     fakeHttpResponse.setEntity(new StringEntity("" + isValidUser));
     when(mockResponse.returnResponse()).thenReturn(fakeHttpResponse);
-    String content = "user=hello&password=world";
+    NameValuePair[] authParams = new NameValuePair[] {
+        new BasicNameValuePair("auth1", "hello"),
+        new BasicNameValuePair("auth2", "world")
+    };
 
-    return httpHelper.postForCookie(mockExecutor, URI, content, ContentType.APPLICATION_FORM_URLENCODED);
+    return httpHelper.postAuthForCookie(mockExecutor, URI, authParams);
   }
 
   /**
    * Tests the case of a successful authentication.
    */
   @Test
-  public void testPostForCookie_Pass() throws IOException
+  public void testPostAuthForCookie_Pass() throws IOException
   {
-    Header cookieHeader = testPostForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
+    Header cookieHeader = testPostAuthForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
 
     assertEquals(COOKIE_VALUE, cookieHeader.getValue());
   }
@@ -81,38 +85,38 @@ public class HttpHelperTest
    * Post would succeeed except for non-ok return status code.
    */
   @Test(expected = RuntimeException.class)
-  public void testPostForCookie_BadStatus() throws IOException
+  public void testPostAuthForCookie_BadStatus() throws IOException
   {
-    testPostForCookie(HttpStatus.SC_UNAUTHORIZED, HEADERNAME_SET_COOKIE, true);
+    testPostAuthForCookie(HttpStatus.SC_UNAUTHORIZED, HEADERNAME_SET_COOKIE, true);
   }
 
   /**
    * Post would succeeed except for missing cookie response header.
    */
   @Test(expected = RuntimeException.class)
-  public void testPostForCookie_MissingCookie() throws IOException
+  public void testPostAuthForCookie_MissingCookie() throws IOException
   {
-    testPostForCookie(HttpStatus.SC_OK, "Some-Other-Header", true);
+    testPostAuthForCookie(HttpStatus.SC_OK, "Some-Other-Header", true);
   }
 
   /**
    * Post would succeeed except for unexpected body response entity.
    */
   @Test(expected = RuntimeException.class)
-  public void testPostForCookie_InvalidUser() throws IOException
+  public void testPostAuthForCookie_InvalidUser() throws IOException
   {
-    testPostForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, false);
+    testPostAuthForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, false);
   }
 
   /**
    * Post fails with an IOException during http execution.
    */
   @Test(expected = RuntimeException.class)
-  public void testPostForCookie_ExecuteThrows() throws IOException
+  public void testPostAuthForCookie_ExecuteThrows() throws IOException
   {
     reset(mockExecutor);
     when(mockExecutor.execute(any(Request.class))).thenThrow(IOException.class);
-    testPostForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
+    testPostAuthForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
   }
 
   /**

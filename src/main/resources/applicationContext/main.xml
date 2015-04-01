@@ -16,6 +16,6 @@
 
   <bean id="httpClient" class="org.apache.http.client.HttpClient" factory-bean="httpClientSSLFactory" factory-method="makeHttpClient"/>
 
-  <bean id="gson" class="com.google.gson.Gson"/>
+  <bean id="gson" class="com.google.gson.Gson" factory-bean="gsonFactory" factory-method="makeGson"/>
 
 </beans>

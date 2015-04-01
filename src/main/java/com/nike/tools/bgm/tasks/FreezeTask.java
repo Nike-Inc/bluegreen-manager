@@ -62,7 +62,6 @@ public class FreezeTask extends TaskImpl
 
     getApplicationVmFromEnvironment();
     getApplicationFromVm();
-    initApplicationSession();
 
     return this;
   }
@@ -137,7 +136,7 @@ public class FreezeTask extends TaskImpl
   /**
    * Initializes an authenticated session with the application.
    */
-  private void initApplicationSession()
+  void initApplicationSession()
   {
     applicationSession = applicationClient.authenticate(application);
   }
@@ -149,6 +148,7 @@ public class FreezeTask extends TaskImpl
   public TaskStatus process(boolean noop)
   {
     TaskStatus taskStatus = TaskStatus.ERROR;
+    initApplicationSession();
     if (appIsReadyToFreeze())
     {
       DbFreezeProgress initialProgress = requestFreeze(noop);

@@ -5,9 +5,9 @@ import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 
@@ -22,13 +22,14 @@ public class HttpHelper
   public static final String HEADERNAME_SET_COOKIE = "Set-Cookie";
 
   /**
-   * Posts the given authentication-oriented content body to the given uri and returns the response cookie.
+   * Posts the authentication parameters to the given uri and returns the response cookie.
    */
-  public Header postForCookie(Executor executor, String uri, String contentString, ContentType contentType)
+  public Header postAuthForCookie(Executor executor, String uri, NameValuePair[] authParams)
   {
     try
     {
-      HttpResponse httpResponse = executor.execute(Request.Post(uri).bodyString(contentString, contentType)).returnResponse();
+      Request request = Request.Post(uri).bodyForm(authParams);
+      HttpResponse httpResponse = executor.execute(request).returnResponse();
       int statusCode = httpResponse.getStatusLine().getStatusCode();
       Header cookieHeader = null;
       String body = null;
@@ -49,7 +50,7 @@ public class HttpHelper
     }
     catch (IOException e)
     {
-      throw new RuntimeException("POST uri: " + uri + ", contentType: '" + contentType + "', contentString: <" + contentString + ">", e);
+      throw new RuntimeException("POST uri: " + uri + ", authParams", e);
     }
   }
 

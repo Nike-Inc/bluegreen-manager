@@ -163,6 +163,7 @@ public class Application
 
   /**
    * Produces a URI string 'scheme://hostname:port/urlPath'.
+   * In other words the hostname not the ip.
    */
   public String makeHostnameUri()
   {
@@ -176,6 +177,27 @@ public class Application
       sb.append(port);
     }
     sb.append(urlPath);
+    return sb.toString();
+  }
+
+  /**
+   * Produces a URI string 'scheme://hostname:port/alternateUrlPath'.
+   * As an alternative to the normal urlPath.
+   * <p/>
+   * TODO - Hopefully remove this, it only exists because kraken's bluegreen endpoints are a tad inconsistent.
+   */
+  public String makeAlternateUri(String alternateUrlPath)
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append(scheme);
+    sb.append("://");
+    sb.append(hostname);
+    if (port != null)
+    {
+      sb.append(":");
+      sb.append(port);
+    }
+    sb.append(alternateUrlPath);
     return sb.toString();
   }
 }

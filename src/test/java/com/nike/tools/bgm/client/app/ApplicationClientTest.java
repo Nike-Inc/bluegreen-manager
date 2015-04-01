@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.nike.tools.bgm.client.http.ExecutorFactory;
 import com.nike.tools.bgm.client.http.HttpHelper;
 import com.nike.tools.bgm.client.http.HttpMethodType;
@@ -34,7 +35,7 @@ public class ApplicationClientTest
 {
   private static final String JSON_FAKE_LOCKABLE_LOCKED = "{'lockError': true}";
   private static final String JSON_FAKE_LOCKABLE_NOT_LOCKED = "{'lockError': false}";
-  private static final String JSON_DB_FREEZE_PROGRESS = "{'mode':'NORMAL', 'username':'charlie', 'startTime':'12pm', 'endTime':'1pm', 'scannersAwaitingTermination':null, 'lockError':false, 'transitionError':null}";
+  private static final String JSON_DB_FREEZE_PROGRESS = "{'mode':{'printable':'Normal','transition':'blah','code':'NORMAL'}, 'username':'charlie', 'startTime':'12pm', 'endTime':'1pm', 'scannersAwaitingTermination':null, 'lockError':false, 'transitionError':null}";
   private static final String JSON_DISCOVERY_RESULT = "{'physicalDatabase':{'envName':'env1', 'logicalName':'hello', 'dbUrl':'theUrl', 'dbUsername':'user', 'dbIsLive':true}, 'lockError':false, 'discoveryError':null}";
   private static final String TEST_URI = "http://helloworld.com:8080/restful/interface";
   private static final String METHOD_PATH = "someResourceService";
@@ -50,7 +51,7 @@ public class ApplicationClientTest
   @Mock
   private HttpHelper mockHttpHelper;
 
-  private Gson gson = new Gson(); //Final class, mockito cannot mock
+  private Gson gson; //Final class, mockito cannot mock
 
   @Mock
   private ThreadSleeper mockThreadSleeper;
@@ -66,6 +67,9 @@ public class ApplicationClientTest
   @Before
   public void setUp()
   {
+    GsonFactory gsonFactory = new GsonFactory();
+    gsonFactory.setGsonBuilder(new GsonBuilder());
+    gson = gsonFactory.makeGson();
     applicationClient.setGson(gson);
     fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
     when(mockExecutorFactory.makeExecutor()).thenReturn(mockExecutor);
@@ -210,6 +214,26 @@ public class ApplicationClientTest
     assertEquals("env1", response.getPhysicalDatabase().getEnvName());
     verify(mockHttpHelper).executePut(eq(mockExecutor), eq(mockCookieHeader), anyString());
     verifyZeroInteractions(mockThreadSleeper);
+  }
+
+  /**
+   * Simpleminded uri test.
+   */
+  @Test
+  public void testMakeHostnameUri()
+  {
+    assertTrue(FAKE_APPLICATION.makeHostnameUri().startsWith("http"));
+  }
+
+  /**
+   * Tests the ability to make an alternate uri based on the application's host.
+   */
+  @Test
+  public void testMakeAlternateUri()
+  {
+    String uri = FAKE_APPLICATION.makeAlternateUri("alternate");
+    assertTrue(uri.startsWith("http"));
+    assertTrue(uri.endsWith("alternate"));
   }
 
   /**

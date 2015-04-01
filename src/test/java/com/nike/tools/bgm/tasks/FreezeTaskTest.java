@@ -69,6 +69,7 @@ public class FreezeTaskTest
     fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
     freezeTask.init(1, envName);
+    freezeTask.initApplicationSession();
   }
 
   /**

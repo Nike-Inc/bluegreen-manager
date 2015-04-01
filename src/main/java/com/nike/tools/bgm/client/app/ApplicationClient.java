@@ -1,8 +1,10 @@
 package com.nike.tools.bgm.client.app;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.fluent.Executor;
-import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,8 @@ public class ApplicationClient
   static final int MAX_NUM_TRIES = 3;
   private static final long RETRY_DELAY_MILLISECONDS = 5000L;
   private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationClient.class);
+  private static final String PARAMNAME_AUTHUSER = "user";
+  private static final String PARAMNAME_AUTHPASSWORD = "password";
 
   @Autowired
   private ExecutorFactory executorFactory;
@@ -55,11 +59,18 @@ public class ApplicationClient
    */
   public ApplicationSession authenticate(Application application)
   {
-    //TODO - inconsistent with other bluegreen restful endpoints, clean this up
-    String uri = application.getScheme() + "://" + application.getHostname() + DbFreezeRest.POST_LOGIN;
-    String contentString = "username=" + applicationUsername + "&password=" + applicationPassword;
+    String alternateUrlPath = DbFreezeRest.POST_LOGIN;
+    if (StringUtils.equals("localhost", application.getHostname()))
+    {
+      alternateUrlPath = "/kraken" + alternateUrlPath; //FIXME - horrible hack for local dev/test until app restful api is made consistent
+    }
+    String uri = application.makeAlternateUri(alternateUrlPath);
     Executor httpExecutor = executorFactory.makeExecutor();
-    Header cookieHeader = httpHelper.postForCookie(httpExecutor, uri, contentString, ContentType.APPLICATION_FORM_URLENCODED);
+    NameValuePair[] authParams = new NameValuePair[] {
+        new BasicNameValuePair(PARAMNAME_AUTHUSER, applicationUsername),
+        new BasicNameValuePair(PARAMNAME_AUTHPASSWORD, applicationPassword)
+    };
+    Header cookieHeader = httpHelper.postAuthForCookie(httpExecutor, uri, authParams);
     return new ApplicationSession(httpExecutor, cookieHeader);
   }
 
@@ -186,7 +197,7 @@ public class ApplicationClient
   }
 
   // Test purposes only
-  public void setGson(Gson gson)
+  void setGson(Gson gson)
   {
     this.gson = gson;
   }
