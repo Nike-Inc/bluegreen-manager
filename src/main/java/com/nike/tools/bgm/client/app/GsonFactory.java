@@ -1,6 +1,6 @@
 package com.nike.tools.bgm.client.app;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,10 +8,15 @@ import com.google.gson.GsonBuilder;
 /**
  * Configures a gson parser.
  */
+@Component
 public class GsonFactory
 {
-  @Autowired
   private GsonBuilder gsonBuilder;
+
+  public GsonFactory()
+  {
+    gsonBuilder = new GsonBuilder();
+  }
 
   /**
    * Configures gson according to the needs of known classes in this project.
