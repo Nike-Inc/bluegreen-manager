@@ -8,58 +8,44 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
+import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * Provides the most commonly needed GET/POST methods on top of httpcomponents.
+ * Httpcomponents helpers.
+ * <p/>
+ * Converts IOException to RuntimeException.
  */
 @Component
 public class HttpHelper
 {
-  public String executePost(final String uri)
-  {
-    try
-    {
-      return Request.Post(uri).execute().returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("POST uri: " + uri, e);
-    }
-  }
+  public static final String HEADERNAME_SET_COOKIE = "Set-Cookie";
 
-  public String executePost(final String uri, final String contentString, final ContentType contentType)
+  /**
+   * Posts the given authentication-oriented content body to the given uri and returns the response cookie.
+   */
+  public Header postForCookie(Executor executor, String uri, String contentString, ContentType contentType)
   {
     try
     {
-      return Request.Post(uri).bodyString(contentString, contentType).execute().returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("POST uri: " + uri + ", contentType: '" + contentType + "', contentString: <" + contentString + ">", e);
-    }
-  }
-
-  public String executePost(final Executor executor, final String uri)
-  {
-    try
-    {
-      return executor.execute(Request.Post(uri)).returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("POST uri: " + uri, e);
-    }
-  }
-
-  public String executePost(final Executor executor,
-                            final String uri,
-                            final String contentString,
-                            final ContentType contentType)
-  {
-    try
-    {
-      return executor.execute(Request.Post(uri).bodyString(contentString, contentType)).returnContent().toString();
+      HttpResponse httpResponse = executor.execute(Request.Post(uri).bodyString(contentString, contentType)).returnResponse();
+      int statusCode = httpResponse.getStatusLine().getStatusCode();
+      Header cookieHeader = null;
+      String body = null;
+      if (200 <= statusCode && statusCode < 400)
+      {
+        cookieHeader = httpResponse.getFirstHeader(HEADERNAME_SET_COOKIE);
+        if (cookieHeader != null && StringUtils.isNotBlank(cookieHeader.getValue()))
+        {
+          body = EntityUtils.toString(httpResponse.getEntity());
+          if (StringUtils.equals("true", body))
+          {
+            return cookieHeader;
+          }
+        }
+      }
+      throw new RuntimeException("Failed to obtain cookie from uri " + uri + ", statusCode: " + statusCode
+          + ", cookieHeader: " + cookieHeader + ", body: " + body);
     }
     catch (IOException e)
     {
@@ -68,42 +54,8 @@ public class HttpHelper
   }
 
   /**
-   * Posts to the given uri and returns the response cookie.
+   * PUTs a uri (no content body) in an existing session, returns the response body as a string.
    */
-  public Header postForCookie(Executor executor, String uri, String contentString, ContentType contentType)
-  {
-    try
-    {
-      HttpResponse httpResponse = executor.execute(Request.Post(uri).bodyString(contentString, contentType)).returnResponse();
-      int statusCode = httpResponse.getStatusLine().getStatusCode();
-      Header cookieHeader = httpResponse.getFirstHeader("Set-Cookie");
-      if (200 <= statusCode && statusCode < 400 && cookieHeader != null && StringUtils.isNotBlank(cookieHeader.getValue()))
-      {
-        return cookieHeader;
-      }
-      else
-      {
-        throw new RuntimeException("Failed to obtain cookie from uri " + uri + ", statusCode: " + statusCode + ", cookieHeader: " + cookieHeader);
-      }
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("POST uri: " + uri + ", contentType: '" + contentType + "', contentString: <" + contentString + ">", e);
-    }
-  }
-
-  public String executePut(final Executor executor, final String uri)
-  {
-    try
-    {
-      return executor.execute(Request.Put(uri)).returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("PUT uri: " + uri, e);
-    }
-  }
-
   public String executePut(final Executor executor, Header cookieHeader, final String uri)
   {
     try
@@ -116,30 +68,9 @@ public class HttpHelper
     }
   }
 
-  public String executeGet(final String uri)
-  {
-    try
-    {
-      return Request.Get(uri).execute().returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("GET uri: " + uri, e);
-    }
-  }
-
-  public String executeGet(final Executor executor, final String uri)
-  {
-    try
-    {
-      return executor.execute(Request.Get(uri)).returnContent().toString();
-    }
-    catch (IOException e)
-    {
-      throw new RuntimeException("GET uri: " + uri, e);
-    }
-  }
-
+  /**
+   * GETs a uri in an existing session, returns the response body as a string.
+   */
   public String executeGet(Executor executor, Header cookieHeader, String uri)
   {
     try
