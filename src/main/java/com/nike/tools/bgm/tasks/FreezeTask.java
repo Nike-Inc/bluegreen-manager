@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.app.ApplicationClient;
+import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.env.EnvironmentTx;
@@ -46,6 +47,8 @@ public class FreezeTask extends TaskImpl
   private ApplicationVm applicationVm;
   private Application application;
 
+  private ApplicationSession applicationSession;
+
   /**
    * Looks up the environment entity by name.
    * Currently requires that the env has exactly one applicationVm and one application.
@@ -59,6 +62,8 @@ public class FreezeTask extends TaskImpl
 
     getApplicationVmFromEnvironment();
     getApplicationFromVm();
+    initApplicationSession();
+
     return this;
   }
 
@@ -130,6 +135,14 @@ public class FreezeTask extends TaskImpl
   }
 
   /**
+   * Initializes an authenticated session with the application.
+   */
+  private void initApplicationSession()
+  {
+    applicationSession = applicationClient.authenticate(application);
+  }
+
+  /**
    * Attempts to freeze the target application, waits for freeze to be done.
    */
   @Override
@@ -158,7 +171,7 @@ public class FreezeTask extends TaskImpl
   boolean appIsReadyToFreeze()
   {
     LOGGER.info(context() + "Checking if application is ready to freeze");
-    DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application);
+    DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession);
     LOGGER.debug(context() + "Application response: " + dbFreezeProgress);
     boolean isReady = false;
     if (dbFreezeProgress == null)
@@ -197,7 +210,7 @@ public class FreezeTask extends TaskImpl
     DbFreezeProgress dbFreezeProgress = null;
     if (!noop)
     {
-      dbFreezeProgress = applicationClient.putEnterDbFreeze(application);
+      dbFreezeProgress = applicationClient.putEnterDbFreeze(application, applicationSession);
       dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, 0);
     }
     return dbFreezeProgress;
@@ -287,7 +300,7 @@ public class FreezeTask extends TaskImpl
             + ((waitNum * WAIT_DELAY_MILLISECONDS) / 1000L) + " seconds elapsed");
       }
       sleep();
-      DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application);
+      DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession);
       dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
       if (dbFreezeProgress != null)
       {

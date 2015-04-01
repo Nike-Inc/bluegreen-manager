@@ -1,5 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
+import org.apache.http.Header;
+import org.apache.http.client.fluent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.app.ApplicationClient;
+import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.env.EnvironmentTx;
@@ -22,10 +25,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -46,6 +50,14 @@ public class FreezeTaskTest
   @Mock
   private EnvironmentTx mockEnvironmentTx;
 
+  @Mock
+  private Executor mockExecutor;
+
+  @Mock
+  private Header mockCookieHeader;
+
+  private ApplicationSession fakeSession;
+
   /**
    * Tests init's ability to get env, applicationVm and application.
    */
@@ -54,6 +66,8 @@ public class FreezeTaskTest
   {
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
+    fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
+    when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
     freezeTask.init(1, envName);
   }
 
@@ -108,12 +122,12 @@ public class FreezeTaskTest
   @Test
   public void testAppIsReadyToFreeze_NullProgress()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(null);
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(null);
 
     boolean isReady = freezeTask.appIsReadyToFreeze();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -122,12 +136,12 @@ public class FreezeTaskTest
   @Test
   public void testAppIsReadyToFreeze_LockError()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(fakeLockErrorProgress());
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(fakeLockErrorProgress());
 
     boolean isReady = freezeTask.appIsReadyToFreeze();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -136,12 +150,12 @@ public class FreezeTaskTest
   @Test
   public void testAppIsReadyToFreeze_WrongMode()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(fakeProgress(DbFreezeMode.FROZEN));
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(fakeProgress(DbFreezeMode.FROZEN));
 
     boolean isReady = freezeTask.appIsReadyToFreeze();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -150,12 +164,12 @@ public class FreezeTaskTest
   @Test
   public void testAppIsReadyToFreeze_Normal()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(fakeProgress(DbFreezeMode.NORMAL));
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(fakeProgress(DbFreezeMode.NORMAL));
 
     boolean isReady = freezeTask.appIsReadyToFreeze();
 
     assertTrue(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -167,7 +181,7 @@ public class FreezeTaskTest
     DbFreezeProgress progress = freezeTask.requestFreeze(true);
 
     assertNull(progress);
-    verifyZeroInteractions(mockApplicationClient);
+    verify(mockApplicationClient, never()).putEnterDbFreeze(any(Application.class), any(ApplicationSession.class));
   }
 
   /**
@@ -176,12 +190,12 @@ public class FreezeTaskTest
   @Test
   public void testRequestFreeze_NullProgress()
   {
-    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION)).thenReturn(null);
+    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession)).thenReturn(null);
 
     DbFreezeProgress progress = freezeTask.requestFreeze(false);
 
     assertNull(progress);
-    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION);
+    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -190,12 +204,12 @@ public class FreezeTaskTest
   @Test
   public void testRequestFreeze_LockError()
   {
-    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION)).thenReturn(null);
+    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession)).thenReturn(null);
 
     DbFreezeProgress progress = freezeTask.requestFreeze(false);
 
     assertNull(progress);
-    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION);
+    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -204,12 +218,12 @@ public class FreezeTaskTest
   @Test
   public void testRequestFreeze_TransitionError()
   {
-    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION)).thenReturn(fakeTransitionErrorProgress());
+    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession)).thenReturn(fakeTransitionErrorProgress());
 
     DbFreezeProgress progress = freezeTask.requestFreeze(false);
 
     assertNull(progress);
-    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION);
+    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -218,12 +232,12 @@ public class FreezeTaskTest
   @Test
   public void testRequestFreeze_Normal()
   {
-    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION)).thenReturn(fakeProgress(DbFreezeMode.FLUSHING));
+    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession)).thenReturn(fakeProgress(DbFreezeMode.FLUSHING));
 
     DbFreezeProgress progress = freezeTask.requestFreeze(false);
 
     assertNotNull(progress);
-    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION);
+    verify(mockApplicationClient).putEnterDbFreeze(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -235,7 +249,7 @@ public class FreezeTaskTest
     boolean ok = freezeTask.waitForFreeze(true, null);
 
     assertTrue(ok);
-    verifyZeroInteractions(mockApplicationClient);
+    verify(mockApplicationClient, never()).putEnterDbFreeze(any(Application.class), any(ApplicationSession.class));
   }
 
   /**
@@ -246,7 +260,7 @@ public class FreezeTaskTest
                                                       boolean expectFrozen) throws InterruptedException
   {
     freezeTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION))
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession))
         .thenReturn(fakeProgress(DbFreezeMode.FLUSHING)) //progress #1, after 1st wait
         .thenReturn(fakeProgress(DbFreezeMode.FLUSHING)) //progress #2, after 2nd wait
         .thenReturn(fourthProgress);                     //progress #3, after 3rd wait
@@ -254,7 +268,7 @@ public class FreezeTaskTest
     boolean isFrozen = freezeTask.waitForFreeze(false, fakeProgress(DbFreezeMode.FLUSHING)/*progress #0*/);
 
     assertEquals(expectFrozen, isFrozen);
-    verify(mockApplicationClient, times(3)).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient, times(3)).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
     verify(mockThreadSleeper, times(3)).sleep(anyLong());
   }
 
@@ -320,12 +334,12 @@ public class FreezeTaskTest
   @Test
   public void testProcess_Noop()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(fakeProgress(DbFreezeMode.NORMAL));
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(fakeProgress(DbFreezeMode.NORMAL));
 
     TaskStatus taskStatus = freezeTask.process(true);
 
     assertEquals(TaskStatus.NOOP, taskStatus);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -334,12 +348,12 @@ public class FreezeTaskTest
   @Test
   public void testProcess_NoopError()
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION)).thenReturn(null);
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession)).thenReturn(null);
 
     TaskStatus taskStatus = freezeTask.process(true);
 
     assertEquals(TaskStatus.ERROR, taskStatus);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
   }
 
   /**
@@ -350,18 +364,18 @@ public class FreezeTaskTest
                                                 TaskStatus expectedStatus) throws InterruptedException
   {
     freezeTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION))
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession))
         .thenReturn(fakeProgress(DbFreezeMode.NORMAL))   //initial state ...before enterFreeze
         .thenReturn(fakeProgress(DbFreezeMode.FLUSHING)) //progress #1, after 1st wait
         .thenReturn(fakeProgress(DbFreezeMode.FLUSHING)) //progress #2, after 2nd wait
         .thenReturn(fourthProgress);                     //progress #3, after 3rd wait
-    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION)).thenReturn(
+    when(mockApplicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession)).thenReturn(
         fakeProgress(DbFreezeMode.FLUSHING)/*progress #0*/);
 
     TaskStatus taskStatus = freezeTask.process(false);
 
     assertEquals(expectedStatus, taskStatus);
-    verify(mockApplicationClient, times(4)).getDbFreezeProgress(FAKE_APPLICATION);
+    verify(mockApplicationClient, times(4)).getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
     verify(mockThreadSleeper, times(3)).sleep(anyLong());
   }
 

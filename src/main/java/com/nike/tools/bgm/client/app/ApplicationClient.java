@@ -1,12 +1,12 @@
 package com.nike.tools.bgm.client.app;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import org.apache.http.Header;
 import org.apache.http.client.fluent.Executor;
+import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -43,20 +43,35 @@ public class ApplicationClient
   @Autowired
   private ThreadSleeper threadSleeper;
 
+  @Value("${bluegreen.application.username}")
+  private String applicationUsername;
+
+  @Value("${bluegreen.application.password}")
+  private String applicationPassword;
+
+
   /**
-   * Internal cache of http executors, specific to an application.
+   * Initializes an http communication session with the application.
    */
-  private Map<Application, Executor> executors = new HashMap<Application, Executor>();
+  public ApplicationSession authenticate(Application application)
+  {
+    //TODO - inconsistent with other bluegreen restful endpoints, clean this up
+    String uri = application.getScheme() + "://" + application.getHostname() + DbFreezeRest.POST_LOGIN;
+    String contentString = "username=" + applicationUsername + "&password=" + applicationPassword;
+    Executor httpExecutor = executorFactory.makeExecutor();
+    Header cookieHeader = httpHelper.postForCookie(httpExecutor, uri, contentString, ContentType.APPLICATION_FORM_URLENCODED);
+    return new ApplicationSession(httpExecutor, cookieHeader);
+  }
 
   /**
    * Requests dbfreeze progress from the application.
    * <p/>
    * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
    */
-  public DbFreezeProgress getDbFreezeProgress(Application application)
+  public DbFreezeProgress getDbFreezeProgress(Application application, ApplicationSession session)
   {
-    return (DbFreezeProgress) requestWithRetry(application, HttpMethodType.GET, DbFreezeRest.GET_DB_FREEZE_PROGRESS,
-        DbFreezeProgress.class);
+    return (DbFreezeProgress) requestWithRetry(application, session, HttpMethodType.GET,
+        DbFreezeRest.GET_DB_FREEZE_PROGRESS, DbFreezeProgress.class);
   }
 
   /**
@@ -64,10 +79,10 @@ public class ApplicationClient
    * <p/>
    * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
    */
-  public DbFreezeProgress putEnterDbFreeze(Application application)
+  public DbFreezeProgress putEnterDbFreeze(Application application, ApplicationSession session)
   {
-    return (DbFreezeProgress) requestWithRetry(application, HttpMethodType.PUT, DbFreezeRest.PUT_ENTER_DB_FREEZE,
-        DbFreezeProgress.class);
+    return (DbFreezeProgress) requestWithRetry(application, session, HttpMethodType.PUT,
+        DbFreezeRest.PUT_ENTER_DB_FREEZE, DbFreezeProgress.class);
   }
 
   /**
@@ -75,26 +90,25 @@ public class ApplicationClient
    * <p/>
    * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
    */
-  public DiscoveryResult putDiscoverDb(Application application)
+  public DiscoveryResult putDiscoverDb(Application application, ApplicationSession session)
   {
-    return (DiscoveryResult) requestWithRetry(application, HttpMethodType.PUT, DbFreezeRest.PUT_DISCOVER_DB,
-        DiscoveryResult.class);
+    return (DiscoveryResult) requestWithRetry(application, session, HttpMethodType.PUT,
+        DbFreezeRest.PUT_DISCOVER_DB, DiscoveryResult.class);
   }
 
   /**
    * Makes an application request that responds with a Lockable.  If the application returns a lock error, then
    * the client waits a bit and tries again.
    */
-  Lockable requestWithRetry(Application application, HttpMethodType httpMethodType, String methodPath,
-                            Class<? extends Lockable> responseClass)
+  Lockable requestWithRetry(Application application, ApplicationSession session, HttpMethodType httpMethodType,
+                            String methodPath, Class<? extends Lockable> responseClass)
   {
-    Executor httpExecutor = makeOrReuseAuthenticatedExecutor(application);
     String uri = application.makeHostnameUri() + "/" + methodPath;
     int tryNum = 0;
     Lockable response = null;
     while (tryNum < MAX_NUM_TRIES)
     {
-      response = tryRequest(httpMethodType, httpExecutor, uri, responseClass, tryNum);
+      response = tryRequest(httpMethodType, session, uri, responseClass, tryNum);
       /*
        * TODO - in case of null, should check http response code.  Might not want to retry.
        */
@@ -120,12 +134,12 @@ public class ApplicationClient
   /**
    * Makes an application request that responds with json, and parses the json to a Lockable.
    */
-  Lockable tryRequest(HttpMethodType httpMethodType, Executor httpExecutor, String uri,
+  Lockable tryRequest(HttpMethodType httpMethodType, ApplicationSession session, String uri,
                       Class<? extends Lockable> responseClass, int tryNum)
   {
     Lockable response = null;
     LOGGER.debug("Try #" + tryNum + " " + httpMethodType + " " + uri);
-    String json = httpExecute(httpMethodType, httpExecutor, uri);
+    String json = httpExecute(httpMethodType, session, uri);
     LOGGER.debug("Response: " + json);
     response = gson.fromJson(json, responseClass);
     if (response == null)
@@ -142,33 +156,16 @@ public class ApplicationClient
   /**
    * Invokes the httpExecutor on the uri, for the given http method.  Returns the response body as a string.
    */
-  private String httpExecute(HttpMethodType httpMethodType, Executor httpExecutor, String uri)
+  private String httpExecute(HttpMethodType httpMethodType, ApplicationSession session, String uri)
   {
     switch (httpMethodType)
     {
       case GET:
-        return httpHelper.executeGet(httpExecutor, uri);
+        return httpHelper.executeGet(session.getHttpExecutor(), session.getCookieHeader(), uri);
       case PUT:
-        return httpHelper.executePut(httpExecutor, uri);
+        return httpHelper.executePut(session.getHttpExecutor(), session.getCookieHeader(), uri);
       default:
         throw new UnsupportedOperationException("Not expecting to send a '" + httpMethodType + "' request to a bluegreen application");
-    }
-  }
-
-  /**
-   * Looks up the authenticated executor for this application, or creates a new one if not found.
-   */
-  Executor makeOrReuseAuthenticatedExecutor(Application application)
-  {
-    if (executors.containsKey(application))
-    {
-      return executors.get(application);
-    }
-    else
-    {
-      Executor httpExecutor = executorFactory.makeAuthenticatedExecutor(application);
-      executors.put(application, httpExecutor);
-      return httpExecutor;
     }
   }
 

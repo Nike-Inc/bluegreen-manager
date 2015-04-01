@@ -1,18 +1,14 @@
 package com.nike.tools.bgm.client.http;
 
-import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.fluent.Executor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.nike.tools.bgm.model.domain.Application;
-
 /**
- * Httpcomponents-related factory that can create an authenticated executor for fluent requests to an application.
+ * Httpcomponents-related factory that can create an executor on top of an httpClient object.
  * <p/>
- * Assumption currently is that all target applications will support the same bluegreen system user.
+ * Pulling this into its own class makes the client classes more testable.
  */
 @Component
 public class ExecutorFactory
@@ -20,47 +16,15 @@ public class ExecutorFactory
   @Autowired
   private HttpClient httpClient;
 
-  @Autowired
-  private ExecutorFactoryFactory executorFactoryFactory;
-
-  @Value("${bluegreen.application.username}")
-  private String applicationUsername;
-
-  @Value("${bluegreen.application.password}")
-  private String applicationPassword;
-
   /**
-   * Makes an http executor which is authenticated to the given application.
-   * <p/>
-   * Does not actually require application urlPath, only scheme://hostname:port.
+   * Makes an http executor on top of the common httpClient object.
    * <p/>
    * The underlying httpClient is thread-safe but in fluent-hc 4.3.1 the executor is not.
    * We're not yet using the executor fix of 4.3.2, see https://issues.apache.org/jira/browse/HTTPCLIENT-1437
    */
-  public Executor makeAuthenticatedExecutor(Application application)
+  public Executor makeExecutor()
   {
-    Executor executor = executorFactoryFactory.newInstance(httpClient);
-    String hostname = application.getHostname();
-    Integer port = application.getPort();
-    if (port == null)
-    {
-      port = -1; //per api of HttpHost
-    }
-    String scheme = application.getScheme();
-    HttpHost httpHost = new HttpHost(hostname, port, scheme);
-    executor.auth(httpHost, applicationUsername, applicationPassword).authPreemptive(httpHost);
-    return executor;
+    return Executor.newInstance(httpClient);
   }
 
-  // For test purposes only
-  public void setApplicationPassword(String applicationPassword)
-  {
-    this.applicationPassword = applicationPassword;
-  }
-
-  // For test purposes only
-  public void setApplicationUsername(String applicationUsername)
-  {
-    this.applicationUsername = applicationUsername;
-  }
 }
