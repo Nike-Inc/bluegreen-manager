@@ -6,6 +6,11 @@ import java.util.Date;
 
 public class DateHelper
 {
+  private DateHelper()
+  {
+    //Do not instantiate me
+  }
+
   /**
    * Converts a string with a timezone to a date.
    * <p/>

@@ -5,6 +5,11 @@ package com.nike.tools.bgm.client.app;
  */
 public class DbFreezeRest
 {
+  private DbFreezeRest()
+  {
+    //Do not instantiate me
+  }
+
   public static final String POST_LOGIN = "/rest/user/login";
 
   public static final String GET_DB_FREEZE_PROGRESS = "dbFreezeProgress";

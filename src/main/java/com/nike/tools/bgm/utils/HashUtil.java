@@ -2,6 +2,11 @@ package com.nike.tools.bgm.utils;
 
 public class HashUtil
 {
+  private HashUtil()
+  {
+    //Do not instantiate me
+  }
+
   /**
    * Generates a jdk hashcode from a long value.
    */
