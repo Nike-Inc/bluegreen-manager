@@ -18,7 +18,7 @@ public class DbFreezeModeJsonDeserializer implements JsonDeserializer<DbFreezeMo
   @Override
   public DbFreezeMode deserialize(JsonElement json,
                                   Type typeOfT,
-                                  JsonDeserializationContext context) throws JsonParseException
+                                  JsonDeserializationContext context)
   {
     DbFreezeMode mode = null;
     if (json.isJsonObject())
