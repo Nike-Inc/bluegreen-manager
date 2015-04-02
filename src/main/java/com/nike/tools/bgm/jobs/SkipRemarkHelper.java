@@ -95,7 +95,7 @@ public class SkipRemarkHelper
    */
   public String useRemark(SkipRemark skipRemark, TaskHistory priorTaskHistory)
   {
-    return "Prior task execution on " + priorTaskHistory.getStartTime() + ": " + priorTaskHistory.getStatus()
+    return "Prior recent task execution on " + priorTaskHistory.getStartTime() + ": " + priorTaskHistory.getStatus()
         + ", " + skipRemark.getRemark();
   }
 
