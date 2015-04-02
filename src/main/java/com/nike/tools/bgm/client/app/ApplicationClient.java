@@ -190,7 +190,7 @@ public class ApplicationClient
     {
       threadSleeper.sleep(RETRY_DELAY_MILLISECONDS);
     }
-    catch (InterruptedException e)
+    catch (InterruptedException e) //NOSONAR
     {
       LOGGER.warn("Sleep was interrupted");
     }

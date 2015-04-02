@@ -320,7 +320,7 @@ public class FreezeTask extends TaskImpl
     {
       threadSleeper.sleep(WAIT_DELAY_MILLISECONDS);
     }
-    catch (InterruptedException e)
+    catch (InterruptedException e) //NOSONAR
     {
       LOGGER.warn("Sleep was interrupted");
     }
