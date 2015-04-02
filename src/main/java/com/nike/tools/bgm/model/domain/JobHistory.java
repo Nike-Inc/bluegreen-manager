@@ -75,7 +75,7 @@ public class JobHistory
   @Override
   public boolean equals(Object obj)
   {
-    if (obj instanceof Environment)
+    if (obj instanceof JobHistory)
     {
       JobHistory other = (JobHistory) obj;
       return id == other.id;

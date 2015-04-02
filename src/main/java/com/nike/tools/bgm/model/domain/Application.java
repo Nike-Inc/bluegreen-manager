@@ -125,7 +125,7 @@ public class Application
   @Override
   public boolean equals(Object obj)
   {
-    if (obj instanceof LogicalDatabase)
+    if (obj instanceof Application)
     {
       Application other = (Application) obj;
       return id == other.id;

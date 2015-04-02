@@ -70,7 +70,7 @@ public class TaskHistory
   @Override
   public boolean equals(Object obj)
   {
-    if (obj instanceof Environment)
+    if (obj instanceof TaskHistory)
     {
       TaskHistory other = (TaskHistory) obj;
       return id == other.id;

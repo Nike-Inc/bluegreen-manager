@@ -123,7 +123,7 @@ public class ApplicationVm
   @Override
   public boolean equals(Object obj)
   {
-    if (obj instanceof LogicalDatabase)
+    if (obj instanceof ApplicationVm)
     {
       ApplicationVm other = (ApplicationVm) obj;
       return id == other.id;
