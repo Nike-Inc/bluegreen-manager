@@ -145,7 +145,7 @@ public class Application
   @Override
   public String toString()
   {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("Application[");
     sb.append("id: ");
     sb.append(id);

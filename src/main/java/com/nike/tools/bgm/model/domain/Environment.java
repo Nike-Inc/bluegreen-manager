@@ -103,7 +103,7 @@ public class Environment
   @Override
   public String toString()
   {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("Environment[");
     sb.append("envId: ");
     sb.append(envId);
