@@ -75,7 +75,7 @@ public class BlueGreenManager
     }
     finally
     {
-      System.exit(returnCode.getCode());
+      System.exit(returnCode.getCode()); //NOSONAR
     }
   }
 
