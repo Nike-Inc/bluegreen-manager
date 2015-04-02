@@ -148,7 +148,7 @@ public class JobHistory
 
   public void setStartTime(Timestamp startTime)
   {
-    this.startTime = startTime;
+    this.startTime = startTime == null ? null : new Timestamp(startTime.getTime());
   }
 
   public Timestamp getEndTime()
@@ -158,7 +158,7 @@ public class JobHistory
 
   public void setEndTime(Timestamp endTime)
   {
-    this.endTime = endTime;
+    this.endTime = endTime == null ? null : new Timestamp(endTime.getTime());
   }
 
   public String getJobName()

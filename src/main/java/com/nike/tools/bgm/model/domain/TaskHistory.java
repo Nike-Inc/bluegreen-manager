@@ -135,7 +135,7 @@ public class TaskHistory
 
   public void setStartTime(Timestamp startTime)
   {
-    this.startTime = startTime;
+    this.startTime = startTime == null ? null : new Timestamp(startTime.getTime());
   }
 
   public Timestamp getEndTime()
@@ -145,7 +145,7 @@ public class TaskHistory
 
   public void setEndTime(Timestamp endTime)
   {
-    this.endTime = endTime;
+    this.endTime = endTime == null ? null : new Timestamp(endTime.getTime());
   }
 
   public int getPosition()
