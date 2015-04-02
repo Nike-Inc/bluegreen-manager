@@ -130,7 +130,7 @@ public class TaskHistory
 
   public Timestamp getStartTime()
   {
-    return startTime;
+    return startTime == null ? null : new Timestamp(startTime.getTime());
   }
 
   public void setStartTime(Timestamp startTime)
@@ -140,7 +140,7 @@ public class TaskHistory
 
   public Timestamp getEndTime()
   {
-    return endTime;
+    return endTime == null ? null : new Timestamp(endTime.getTime());
   }
 
   public void setEndTime(Timestamp endTime)
