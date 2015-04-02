@@ -90,7 +90,7 @@ public class EnvironmentTx
           {
             for (Application application : applicationVm.getApplications())
             {
-              ; //No action other than load
+              //No action other than load
             }
           }
         }

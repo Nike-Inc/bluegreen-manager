@@ -48,7 +48,7 @@ public class JobHistoryTx
       {
         for (TaskHistory taskHistory : jobHistory.getTaskHistories())
         {
-          ; //Nothing but the load
+          //Nothing but the load
         }
       }
     }
