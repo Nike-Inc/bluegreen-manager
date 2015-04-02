@@ -187,10 +187,7 @@ public class JobFactory
     allArgs[3] = oldJobHistory;
     allArgs[4] = env1;
     allArgs[5] = env2;
-    for (int idx = 0; idx < otherArgs.length; ++idx)
-    {
-      allArgs[6 + idx] = otherArgs[idx];
-    }
+    System.arraycopy(otherArgs, 0, allArgs, 6, otherArgs.length);
     return allArgs;
   }
 
