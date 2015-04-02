@@ -123,7 +123,7 @@ public class ApplicationClient
       /*
        * TODO - in case of null, should check http response code.  Might not want to retry.
        */
-      if ((response == null || response.isLockError()))
+      if (response == null || response.isLockError())
       {
         if (++tryNum < MAX_NUM_TRIES)
         {

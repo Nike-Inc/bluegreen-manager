@@ -176,7 +176,7 @@ public class PhysicalDatabase
    */
   public boolean isEquivalentTo(PhysicalDatabase other)
   {
-    return (other != null
+    return (other != null //NOSONAR
         && StringUtils.equals(driverClassName, other.driverClassName)
         && StringUtils.equals(url, other.url)
         && StringUtils.equals(username, other.username)
