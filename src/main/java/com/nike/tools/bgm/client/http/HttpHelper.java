@@ -22,7 +22,7 @@ public class HttpHelper
   public static final String HEADERNAME_SET_COOKIE = "Set-Cookie";
 
   /**
-   * Posts the authentication parameters to the given uri and returns the response cookie.
+   * Posts the authentication parameters to the given uri and validates the response cookie.
    */
   public Header postAuthForCookie(Executor executor, String uri, NameValuePair[] authParams)
   {

@@ -43,9 +43,9 @@ public class StagingDeployJob extends TaskSequenceJob
   {
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(applicationContext.getBean(FreezeTask.class).init(position++, liveEnv)); //PT-2014
+    tasks.add(applicationContext.getBean(FreezeTask.class).initTransition(position++, liveEnv)); //PT-2014
     //tasks.add(new RDSSnapshotRestoreTask(liveEnv, stageEnv)); //PT-2015
-    tasks.add(applicationContext.getBean(ThawTask.class).init(position++, liveEnv)); //PT-2014
+    tasks.add(applicationContext.getBean(ThawTask.class).initTransition(position++, liveEnv)); //PT-2014
     //tasks.add(new RegisterStageTask(stageEnv));
     //tasks.add(new VmtoolCreateTask(stageEnv)); //PT-2017
     //tasks.add(new EnvXmlMergeTask(liveEnv, stageEnv)); //PT-2018

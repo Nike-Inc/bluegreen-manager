@@ -32,7 +32,7 @@ public class TransitionTaskTest extends TransitionTaskBaseTest
   @InjectMocks
   private TransitionTask transitionTask = new TransitionTask()
   {
-    public TransitionTask init(int position, String envName)
+    public TransitionTask initTransition(int position, String envName)
     {
       init(position, envName, TRANSITION_PARAMETERS);
       return this;
@@ -43,17 +43,6 @@ public class TransitionTaskTest extends TransitionTaskBaseTest
   public void setUp()
   {
     setUp(transitionTask);
-  }
-
-  /**
-   * Tests that we can make a nice env/vm/app context string for logging.
-   */
-  @Test
-  public void testContext()
-  {
-    String str = transitionTask.context();
-    assertTrue(str.contains("environment"));
-    assertTrue(str.contains("http"));
   }
 
   /**

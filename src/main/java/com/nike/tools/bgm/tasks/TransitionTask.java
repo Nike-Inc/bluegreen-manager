@@ -1,29 +1,21 @@
 package com.nike.tools.bgm.tasks;
 
-import java.util.List;
-
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
-import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.Application;
-import com.nike.tools.bgm.model.domain.ApplicationVm;
-import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 
 /**
  * Transitions the apps in the requested environment to the next dbfreeze-related steady state.
  */
-public abstract class TransitionTask extends TaskImpl
+public abstract class TransitionTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(TransitionTask.class);
   private static final long WAIT_DELAY_MILLISECONDS = 3000L;
@@ -32,17 +24,7 @@ public abstract class TransitionTask extends TaskImpl
   private static int waitReportInterval = 10;
 
   @Autowired
-  private ApplicationClient applicationClient;
-
-  @Autowired
   private ThreadSleeper threadSleeper;
-
-  @Autowired
-  private EnvironmentTx environmentTx;
-
-  private Environment environment;
-  private ApplicationVm applicationVm;
-  private Application application;
 
   private ApplicationSession applicationSession;
 
@@ -53,7 +35,7 @@ public abstract class TransitionTask extends TaskImpl
    *
    * @return Self, so job can construct, init, and add to task list in one line.
    */
-  public abstract TransitionTask init(int position, String envName);
+  public abstract TransitionTask initTransition(int position, String envName);
 
   /**
    * Looks up the environment entity by name.
@@ -61,35 +43,8 @@ public abstract class TransitionTask extends TaskImpl
    */
   protected void init(int position, String envName, TransitionParameters transitionParameters)
   {
-    super.init(position);
+    super.init(position, envName);
     this.transitionParameters = transitionParameters;
-    this.environment = environmentTx.findNamedEnv(envName);
-
-    getApplicationVmFromEnvironment();
-    getApplicationFromVm();
-  }
-
-  /**
-   * Returns a string that describes the known environment context, for logging purposes.
-   */
-  String context()
-  {
-    StringBuilder sb = new StringBuilder();
-    sb.append("[environment '" + environment.getEnvName() + "'");
-    if (applicationVm != null)
-    {
-      sb.append(", ");
-      if (application == null)
-      {
-        sb.append(applicationVm.getHostname());
-      }
-      else
-      {
-        sb.append(application.makeHostnameUri());
-      }
-    }
-    sb.append("]: ");
-    return sb.toString();
   }
 
   /**
@@ -98,42 +53,6 @@ public abstract class TransitionTask extends TaskImpl
   private String noopRemark(boolean noop)
   {
     return noop ? " (noop)" : "";
-  }
-
-  /**
-   * Gets the env's persisted application vm record.  (Currently support only 1.)
-   */
-  private void getApplicationVmFromEnvironment()
-  {
-    List<ApplicationVm> applicationVms = environment.getApplicationVms();
-    if (CollectionUtils.isEmpty(applicationVms))
-    {
-      throw new IllegalStateException(context() + "No application vms, cannot " + transitionParameters.getVerb());
-    }
-    else if (applicationVms.size() > 1)
-    {
-      throw new UnsupportedOperationException(context() + "Currently only support case of 1 appvm, but found "
-          + applicationVms.size());
-    }
-    this.applicationVm = applicationVms.get(0);
-  }
-
-  /**
-   * Gets the env's persisted application record.  (Currently support only 1.)
-   */
-  private void getApplicationFromVm()
-  {
-    List<Application> applications = applicationVm.getApplications();
-    if (CollectionUtils.isEmpty(applications))
-    {
-      throw new IllegalStateException(context() + "No applications, cannot " + transitionParameters.getVerb());
-    }
-    else if (applications.size() > 1)
-    {
-      throw new UnsupportedOperationException(context() + "Currently only support case of 1 application, but found "
-          + applications.size());
-    }
-    this.application = applications.get(0);
   }
 
   /**

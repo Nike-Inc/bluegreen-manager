@@ -30,7 +30,7 @@ public class FreezeTask extends TransitionTask
    * @return Self, so job can construct, init, and add to task list in one line.
    */
   @Override
-  public TransitionTask init(int position, String envName)
+  public TransitionTask initTransition(int position, String envName)
   {
     init(position, envName, TRANSITION_PARAMETERS);
     return this;
