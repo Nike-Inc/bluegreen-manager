@@ -6,6 +6,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nike.tools.bgm.client.app.ApplicationClient;
+import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
@@ -21,6 +22,8 @@ public abstract class ApplicationTask extends TaskImpl
 
   @Autowired
   protected ApplicationClient applicationClient;
+
+  protected ApplicationSession applicationSession;
 
   protected Environment environment;
   protected ApplicationVm applicationVm;
@@ -96,6 +99,16 @@ public abstract class ApplicationTask extends TaskImpl
           + applications.size());
     }
     this.application = applications.get(0);
+  }
+
+  /**
+   * Initializes an authenticated session with the application.
+   * <p/>
+   * Could be called later than {@link #init(int, String)}.
+   */
+  void initApplicationSession()
+  {
+    applicationSession = applicationClient.authenticate(application);
   }
 
 }

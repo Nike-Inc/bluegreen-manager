@@ -1,9 +1,10 @@
 package com.nike.tools.bgm.client.app;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,12 +67,14 @@ public class ApplicationClient
     }
     String uri = application.makeAlternateUri(alternateUrlPath);
     Executor httpExecutor = executorFactory.makeExecutor();
+    CookieStore cookieStore = new BasicCookieStore();
+    httpExecutor.cookieStore(cookieStore);
     NameValuePair[] authParams = new NameValuePair[] {
         new BasicNameValuePair(PARAMNAME_AUTHUSER, applicationUsername),
         new BasicNameValuePair(PARAMNAME_AUTHPASSWORD, applicationPassword)
     };
-    Header cookieHeader = httpHelper.postAuthForCookie(httpExecutor, uri, authParams);
-    return new ApplicationSession(httpExecutor, cookieHeader);
+    httpHelper.postAuthForCookie(httpExecutor, uri, authParams);
+    return new ApplicationSession(httpExecutor, cookieStore);
   }
 
   /**
@@ -196,9 +199,9 @@ public class ApplicationClient
     switch (httpMethodType)
     {
       case GET:
-        return httpHelper.executeGet(session.getHttpExecutor(), session.getCookieHeader(), uri);
+        return httpHelper.executeGet(session.getHttpExecutor(), uri);
       case PUT:
-        return httpHelper.executePut(session.getHttpExecutor(), session.getCookieHeader(), uri);
+        return httpHelper.executePut(session.getHttpExecutor(), uri);
       default:
         throw new UnsupportedOperationException("Not expecting to send a '" + httpMethodType + "' request to a bluegreen application");
     }

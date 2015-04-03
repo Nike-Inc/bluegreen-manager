@@ -1,6 +1,6 @@
 package com.nike.tools.bgm.client.app;
 
-import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public class ApplicationClientTest
   private Executor mockExecutor;
 
   @Mock
-  private Header mockCookieHeader;
+  private CookieStore mockCookieStore;
 
   private ApplicationSession fakeSession;
 
@@ -73,7 +73,7 @@ public class ApplicationClientTest
     gsonFactory.setGsonBuilder(new GsonBuilder());
     gson = gsonFactory.makeGson();
     applicationClient.setGson(gson);
-    fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
+    fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
     when(mockExecutorFactory.makeExecutor()).thenReturn(mockExecutor);
   }
 
@@ -83,12 +83,12 @@ public class ApplicationClientTest
   @Test
   public void testTryRequest_NullResponse()
   {
-    when(mockHttpHelper.executeGet(mockExecutor, mockCookieHeader, TEST_URI)).thenReturn(null);
+    when(mockHttpHelper.executeGet(mockExecutor, TEST_URI)).thenReturn(null);
 
     Lockable response = applicationClient.tryRequest(HttpMethodType.GET, fakeSession, TEST_URI, FakeLockable.class, 0, NO_OUTER_TRY);
 
     assertNull(response);
-    verify(mockHttpHelper).executeGet(mockExecutor, mockCookieHeader, TEST_URI);
+    verify(mockHttpHelper).executeGet(mockExecutor, TEST_URI);
   }
 
   /**
@@ -97,12 +97,12 @@ public class ApplicationClientTest
   @Test
   public void testTryRequest_LockError()
   {
-    when(mockHttpHelper.executePut(mockExecutor, mockCookieHeader, TEST_URI)).thenReturn(JSON_FAKE_LOCKABLE_LOCKED);
+    when(mockHttpHelper.executePut(mockExecutor, TEST_URI)).thenReturn(JSON_FAKE_LOCKABLE_LOCKED);
 
     Lockable response = applicationClient.tryRequest(HttpMethodType.PUT, fakeSession, TEST_URI, FakeLockable.class, 0, NO_OUTER_TRY);
 
     assertTrue(response.isLockError());
-    verify(mockHttpHelper).executePut(mockExecutor, mockCookieHeader, TEST_URI);
+    verify(mockHttpHelper).executePut(mockExecutor, TEST_URI);
   }
 
   /**
@@ -111,12 +111,12 @@ public class ApplicationClientTest
   @Test
   public void testTryRequest_Success()
   {
-    when(mockHttpHelper.executeGet(mockExecutor, mockCookieHeader, TEST_URI)).thenReturn(JSON_FAKE_LOCKABLE_NOT_LOCKED);
+    when(mockHttpHelper.executeGet(mockExecutor, TEST_URI)).thenReturn(JSON_FAKE_LOCKABLE_NOT_LOCKED);
 
     Lockable response = applicationClient.tryRequest(HttpMethodType.GET, fakeSession, TEST_URI, FakeLockable.class, 0, NO_OUTER_TRY);
 
     assertFalse(response.isLockError());
-    verify(mockHttpHelper).executeGet(mockExecutor, mockCookieHeader, TEST_URI);
+    verify(mockHttpHelper).executeGet(mockExecutor, TEST_URI);
   }
 
   /**
@@ -125,13 +125,13 @@ public class ApplicationClientTest
   @Test
   public void testRequestWithRetry_OkFirstTry()
   {
-    when(mockHttpHelper.executeGet(mockExecutor, mockCookieHeader, FAKE_APP_URI)).thenReturn(JSON_FAKE_LOCKABLE_NOT_LOCKED);
+    when(mockHttpHelper.executeGet(mockExecutor, FAKE_APP_URI)).thenReturn(JSON_FAKE_LOCKABLE_NOT_LOCKED);
 
     Lockable response = applicationClient.requestWithRetry(FAKE_APPLICATION, fakeSession, HttpMethodType.GET,
         METHOD_PATH, FakeLockable.class, OUTER_FIRST_TRY);
 
     assertFalse(response.isLockError());
-    verify(mockHttpHelper).executeGet(mockExecutor, mockCookieHeader, FAKE_APP_URI);
+    verify(mockHttpHelper).executeGet(mockExecutor, FAKE_APP_URI);
     verifyZeroInteractions(mockThreadSleeper);
   }
 
@@ -143,7 +143,7 @@ public class ApplicationClientTest
   {
     assertTrue("Test requirement", 3 >= ApplicationClient.MAX_NUM_TRIES);
 
-    when(mockHttpHelper.executeGet(mockExecutor, mockCookieHeader, FAKE_APP_URI))
+    when(mockHttpHelper.executeGet(mockExecutor, FAKE_APP_URI))
         .thenReturn(null)
         .thenReturn(JSON_FAKE_LOCKABLE_LOCKED)
         .thenReturn(JSON_FAKE_LOCKABLE_NOT_LOCKED);
@@ -152,7 +152,7 @@ public class ApplicationClientTest
         METHOD_PATH, FakeLockable.class, OUTER_FIRST_TRY);
 
     assertFalse(response.isLockError());
-    verify(mockHttpHelper, times(3)).executeGet(mockExecutor, mockCookieHeader, FAKE_APP_URI);
+    verify(mockHttpHelper, times(3)).executeGet(mockExecutor, FAKE_APP_URI);
     verify(mockThreadSleeper, times(2)).sleep(anyLong());
   }
 
@@ -162,13 +162,13 @@ public class ApplicationClientTest
   @Test
   public void testRequestWithRetry_AlwaysLocked() throws InterruptedException
   {
-    when(mockHttpHelper.executePut(mockExecutor, mockCookieHeader, FAKE_APP_URI)).thenReturn(JSON_FAKE_LOCKABLE_LOCKED);
+    when(mockHttpHelper.executePut(mockExecutor, FAKE_APP_URI)).thenReturn(JSON_FAKE_LOCKABLE_LOCKED);
 
     Lockable response = applicationClient.requestWithRetry(FAKE_APPLICATION, fakeSession, HttpMethodType.PUT,
         METHOD_PATH, FakeLockable.class, OUTER_FIRST_TRY);
 
     assertTrue(response.isLockError());
-    verify(mockHttpHelper, times(ApplicationClient.MAX_NUM_TRIES)).executePut(mockExecutor, mockCookieHeader, FAKE_APP_URI);
+    verify(mockHttpHelper, times(ApplicationClient.MAX_NUM_TRIES)).executePut(mockExecutor, FAKE_APP_URI);
     verify(mockThreadSleeper, times(ApplicationClient.MAX_NUM_TRIES - 1)).sleep(anyLong());
   }
 
@@ -181,11 +181,11 @@ public class ApplicationClientTest
     assertEquals(DbFreezeMode.NORMAL, response.getMode());
     if (isGet)
     {
-      verify(mockHttpHelper).executeGet(eq(mockExecutor), eq(mockCookieHeader), anyString());
+      verify(mockHttpHelper).executeGet(eq(mockExecutor), anyString());
     }
     else
     {
-      verify(mockHttpHelper).executePut(eq(mockExecutor), eq(mockCookieHeader), anyString());
+      verify(mockHttpHelper).executePut(eq(mockExecutor), anyString());
     }
     verifyZeroInteractions(mockThreadSleeper);
   }
@@ -196,7 +196,7 @@ public class ApplicationClientTest
   @Test
   public void testGetDbFreezeProgress()
   {
-    when(mockHttpHelper.executeGet(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
+    when(mockHttpHelper.executeGet(eq(mockExecutor), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
     assertOnDbFreezeProgress(applicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, OUTER_FIRST_TRY), true);
 
@@ -208,7 +208,7 @@ public class ApplicationClientTest
   @Test
   public void testPutEnterDbFreeze()
   {
-    when(mockHttpHelper.executePut(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
+    when(mockHttpHelper.executePut(eq(mockExecutor), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
     assertOnDbFreezeProgress(applicationClient.putRequestTransition(
         FAKE_APPLICATION, fakeSession, DbFreezeRest.PUT_ENTER_DB_FREEZE, OUTER_FIRST_TRY), false);
@@ -220,7 +220,7 @@ public class ApplicationClientTest
   @Test
   public void testPutExitDbFreeze()
   {
-    when(mockHttpHelper.executePut(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
+    when(mockHttpHelper.executePut(eq(mockExecutor), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
     assertOnDbFreezeProgress(applicationClient.putRequestTransition(
         FAKE_APPLICATION, fakeSession, DbFreezeRest.PUT_EXIT_DB_FREEZE, OUTER_FIRST_TRY), false);
@@ -233,13 +233,13 @@ public class ApplicationClientTest
   public void testPutDiscoverDb()
   {
     when(mockExecutorFactory.makeExecutor()).thenReturn(mockExecutor);
-    when(mockHttpHelper.executePut(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DISCOVERY_RESULT);
+    when(mockHttpHelper.executePut(eq(mockExecutor), anyString())).thenReturn(JSON_DISCOVERY_RESULT);
 
     DiscoveryResult response = applicationClient.putDiscoverDb(FAKE_APPLICATION, fakeSession, OUTER_FIRST_TRY);
 
     assertFalse(response.isLockError());
     assertEquals("env1", response.getPhysicalDatabase().getEnvName());
-    verify(mockHttpHelper).executePut(eq(mockExecutor), eq(mockCookieHeader), anyString());
+    verify(mockHttpHelper).executePut(eq(mockExecutor), anyString());
     verifyZeroInteractions(mockThreadSleeper);
   }
 

@@ -2,7 +2,6 @@ package com.nike.tools.bgm.client.http;
 
 import java.io.IOException;
 
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -12,7 +11,6 @@ import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
@@ -56,7 +54,7 @@ public class HttpHelperTest
   /**
    * Tests the authentication post.
    */
-  private Header testPostAuthForCookie(int responseStatus, String headerName, boolean isValidUser) throws IOException
+  private void testPostAuthForCookie(int responseStatus, String headerName, boolean isValidUser) throws IOException
   {
     HttpResponse fakeHttpResponse = new BasicHttpResponse(HttpVersion.HTTP_1_1, responseStatus, "some reason");
     fakeHttpResponse.addHeader(headerName, COOKIE_VALUE);
@@ -67,7 +65,7 @@ public class HttpHelperTest
         new BasicNameValuePair("auth2", "world")
     };
 
-    return httpHelper.postAuthForCookie(mockExecutor, URI, authParams);
+    httpHelper.postAuthForCookie(mockExecutor, URI, authParams);
   }
 
   /**
@@ -76,9 +74,8 @@ public class HttpHelperTest
   @Test
   public void testPostAuthForCookie_Pass() throws IOException
   {
-    Header cookieHeader = testPostAuthForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
-
-    assertEquals(COOKIE_VALUE, cookieHeader.getValue());
+    testPostAuthForCookie(HttpStatus.SC_OK, HEADERNAME_SET_COOKIE, true);
+    //did not throw
   }
 
   /**
@@ -125,8 +122,7 @@ public class HttpHelperTest
   @Test
   public void testExecutePut_Pass()
   {
-    Header cookieHeader = new BasicHeader(HEADERNAME_SET_COOKIE, COOKIE_VALUE);
-    assertEquals(JSON_RESPONSE_CONTENT, httpHelper.executePut(mockExecutor, cookieHeader, URI));
+    assertEquals(JSON_RESPONSE_CONTENT, httpHelper.executePut(mockExecutor, URI));
   }
 
   /**
@@ -135,7 +131,6 @@ public class HttpHelperTest
   @Test
   public void testExecuteGet_Pass()
   {
-    Header cookieHeader = new BasicHeader(HEADERNAME_SET_COOKIE, COOKIE_VALUE);
-    assertEquals(JSON_RESPONSE_CONTENT, httpHelper.executeGet(mockExecutor, cookieHeader, URI));
+    assertEquals(JSON_RESPONSE_CONTENT, httpHelper.executeGet(mockExecutor, URI));
   }
 }

@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.model.domain.TaskStatus;
@@ -25,8 +24,6 @@ public abstract class TransitionTask extends ApplicationTask
 
   @Autowired
   private ThreadSleeper threadSleeper;
-
-  private ApplicationSession applicationSession;
 
   private TransitionParameters transitionParameters;
 
@@ -53,14 +50,6 @@ public abstract class TransitionTask extends ApplicationTask
   private String noopRemark(boolean noop)
   {
     return noop ? " (noop)" : "";
-  }
-
-  /**
-   * Initializes an authenticated session with the application.
-   */
-  void initApplicationSession()
-  {
-    applicationSession = applicationClient.authenticate(application);
   }
 
   /**

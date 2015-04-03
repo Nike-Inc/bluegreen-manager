@@ -23,8 +23,9 @@ public class HttpHelper
 
   /**
    * Posts the authentication parameters to the given uri and validates the response cookie.
+   * Returns silently if successful, else throws.
    */
-  public Header postAuthForCookie(Executor executor, String uri, NameValuePair[] authParams)
+  public void postAuthForCookie(Executor executor, String uri, NameValuePair[] authParams)
   {
     try
     {
@@ -41,12 +42,13 @@ public class HttpHelper
           body = EntityUtils.toString(httpResponse.getEntity());
           if (StringUtils.equals("true", body))
           {
-            return cookieHeader;
+            return; //success
           }
         }
       }
-      throw new RuntimeException("Failed to obtain cookie from uri " + uri + ", statusCode: " + statusCode
-          + ", cookieHeader: " + cookieHeader + ", body: " + body);
+      throw new RuntimeException("Failed to obtain response cookie from uri " + uri + ", statusCode: " + statusCode
+          + ", cookieHeader: " + cookieToString(cookieHeader) + ", body: " + body);
+      //Note: if cookieStore already has valid cookie then response won't return a new cookie
     }
     catch (IOException e)
     {
@@ -57,30 +59,30 @@ public class HttpHelper
   /**
    * PUTs a uri (no content body) in an existing session, returns the response body as a string.
    */
-  public String executePut(final Executor executor, Header cookieHeader, final String uri)
+  public String executePut(final Executor executor, final String uri)
   {
     try
     {
-      return executor.execute(Request.Put(uri).addHeader(cookieHeader)).returnContent().toString();
+      return executor.execute(Request.Put(uri)).returnContent().toString();
     }
     catch (IOException e)
     {
-      throw new RuntimeException("PUT uri: " + uri + ", cookie " + cookieToString(cookieHeader), e);
+      throw new RuntimeException("PUT uri: " + uri, e);
     }
   }
 
   /**
    * GETs a uri in an existing session, returns the response body as a string.
    */
-  public String executeGet(Executor executor, Header cookieHeader, String uri)
+  public String executeGet(Executor executor, String uri)
   {
     try
     {
-      return executor.execute(Request.Get(uri).addHeader(cookieHeader)).returnContent().toString();
+      return executor.execute(Request.Get(uri)).returnContent().toString();
     }
     catch (IOException e)
     {
-      throw new RuntimeException("GET uri: " + uri + ", cookie " + cookieToString(cookieHeader), e);
+      throw new RuntimeException("GET uri: " + uri, e);
     }
   }
 

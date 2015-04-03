@@ -1,6 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
-import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,12 +47,12 @@ public class ApplicationTaskTest
   protected Executor mockExecutor;
 
   @Mock
-  protected Header mockCookieHeader;
+  protected CookieStore mockCookieStore;
 
   @Before
   public void setUp()
   {
-    ApplicationSession fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
+    ApplicationSession fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     applicationTask.init(1, envName);

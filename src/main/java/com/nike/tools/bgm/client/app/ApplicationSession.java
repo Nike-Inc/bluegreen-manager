@@ -1,20 +1,20 @@
 package com.nike.tools.bgm.client.app;
 
-import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 
 /**
- * Tracks an authenticated session cookie and fluent http executor for communication with a secure bluegreen application.
+ * Tracks a fluent http executor and its cookieStore for communication with a secure bluegreen application.
  */
 public class ApplicationSession
 {
   private Executor httpExecutor;
-  private Header cookieHeader;
+  private CookieStore cookieStore;
 
-  public ApplicationSession(Executor httpExecutor, Header cookieHeader)
+  public ApplicationSession(Executor httpExecutor, CookieStore cookieStore)
   {
     this.httpExecutor = httpExecutor;
-    this.cookieHeader = cookieHeader;
+    this.cookieStore = cookieStore;
   }
 
   public Executor getHttpExecutor()
@@ -22,8 +22,8 @@ public class ApplicationSession
     return httpExecutor;
   }
 
-  public Header getCookieHeader()
+  public CookieStore getCookieStore()
   {
-    return cookieHeader;
+    return cookieStore;
   }
 }

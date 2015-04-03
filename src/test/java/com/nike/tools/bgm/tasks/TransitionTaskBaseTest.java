@@ -1,6 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
-import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.mockito.Mock;
 
@@ -52,7 +52,7 @@ public abstract class TransitionTaskBaseTest
   protected Executor mockExecutor;
 
   @Mock
-  protected Header mockCookieHeader;
+  protected CookieStore mockCookieStore;
 
   protected ApplicationSession fakeSession;
 
@@ -61,7 +61,7 @@ public abstract class TransitionTaskBaseTest
    */
   protected void setUp(TransitionTask transitionTask)
   {
-    fakeSession = new ApplicationSession(mockExecutor, mockCookieHeader);
+    fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
