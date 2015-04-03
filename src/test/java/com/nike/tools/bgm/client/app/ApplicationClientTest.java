@@ -168,6 +168,24 @@ public class ApplicationClientTest
   }
 
   /**
+   * Assert some things after calling a restful method that returns a DbFreezeProgress.
+   */
+  private void assertOnDbFreezeProgress(DbFreezeProgress response, boolean isGet)
+  {
+    assertFalse(response.isLockError());
+    assertEquals(DbFreezeMode.NORMAL, response.getMode());
+    if (isGet)
+    {
+      verify(mockHttpHelper).executeGet(eq(mockExecutor), eq(mockCookieHeader), anyString());
+    }
+    else
+    {
+      verify(mockHttpHelper).executePut(eq(mockExecutor), eq(mockCookieHeader), anyString());
+    }
+    verifyZeroInteractions(mockThreadSleeper);
+  }
+
+  /**
    * Tests a successful call to the get-progress resource.
    */
   @Test
@@ -175,12 +193,8 @@ public class ApplicationClientTest
   {
     when(mockHttpHelper.executeGet(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
-    DbFreezeProgress response = applicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession);
+    assertOnDbFreezeProgress(applicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession), true);
 
-    assertFalse(response.isLockError());
-    assertEquals(DbFreezeMode.NORMAL, response.getMode());
-    verify(mockHttpHelper).executeGet(eq(mockExecutor), eq(mockCookieHeader), anyString());
-    verifyZeroInteractions(mockThreadSleeper);
   }
 
   /**
@@ -191,12 +205,18 @@ public class ApplicationClientTest
   {
     when(mockHttpHelper.executePut(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
-    DbFreezeProgress response = applicationClient.putEnterDbFreeze(FAKE_APPLICATION, fakeSession);
+    assertOnDbFreezeProgress(applicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, DbFreezeRest.PUT_ENTER_DB_FREEZE), false);
+  }
 
-    assertFalse(response.isLockError());
-    assertEquals(DbFreezeMode.NORMAL, response.getMode());
-    verify(mockHttpHelper).executePut(eq(mockExecutor), eq(mockCookieHeader), anyString());
-    verifyZeroInteractions(mockThreadSleeper);
+  /**
+   * Tests a successful call to the exit-freeze resource.
+   */
+  @Test
+  public void testPutExitDbFreeze()
+  {
+    when(mockHttpHelper.executePut(eq(mockExecutor), eq(mockCookieHeader), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
+
+    assertOnDbFreezeProgress(applicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, DbFreezeRest.PUT_EXIT_DB_FREEZE), false);
   }
 
   /**

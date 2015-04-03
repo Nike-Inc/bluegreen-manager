@@ -86,14 +86,16 @@ public class ApplicationClient
   }
 
   /**
-   * Requests that the application start a dbfreeze, and returns initial progress.
+   * Requests that the application enter/exit a dbfreeze, and returns initial progress.
    * <p/>
    * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
    */
-  public DbFreezeProgress putEnterDbFreeze(Application application, ApplicationSession session)
+  public DbFreezeProgress putRequestTransition(Application application,
+                                               ApplicationSession session,
+                                               String transitionMethodPath)
   {
     return (DbFreezeProgress) requestWithRetry(application, session, HttpMethodType.PUT,
-        DbFreezeRest.PUT_ENTER_DB_FREEZE, DbFreezeProgress.class);
+        transitionMethodPath, DbFreezeProgress.class);
   }
 
   /**

@@ -16,5 +16,7 @@ public class DbFreezeRest
 
   public static final String PUT_ENTER_DB_FREEZE = "enterDbFreeze";
 
+  public static final String PUT_EXIT_DB_FREEZE = "exitDbFreeze";
+
   public static final String PUT_DISCOVER_DB = "discoverDb";
 }

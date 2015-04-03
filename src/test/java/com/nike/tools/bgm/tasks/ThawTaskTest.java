@@ -12,51 +12,51 @@ import com.nike.tools.bgm.client.app.DbFreezeRest;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
 @RunWith(MockitoJUnitRunner.class)
-public class FreezeTaskTest extends TransitionTaskBaseTest
+public class ThawTaskTest extends TransitionTaskBaseTest
 {
   @InjectMocks
-  private FreezeTask freezeTask;
+  private ThawTask thawTask;
 
   @Before
   public void setUp()
   {
-    setUp(freezeTask);
+    setUp(thawTask);
   }
 
   /**
-   * Tests that a null client response means the app is not ready to freeze.
+   * Tests that a null client response means the app is not ready to thaw.
    */
   @Test
   public void testAppIsReadyToTransition_NullProgress()
   {
-    testAppIsReadyToTransition_NullProgress(freezeTask);
+    testAppIsReadyToTransition_NullProgress(thawTask);
   }
 
   /**
-   * Tests that a lock error response means the app is not ready to freeze.
+   * Tests that a lock error response means the app is not ready to thaw.
    */
   @Test
   public void testAppIsReadyToTransition_LockError()
   {
-    testAppIsReadyToTransition_LockError(freezeTask);
+    testAppIsReadyToTransition_LockError(thawTask);
   }
 
   /**
-   * Tests that a response in the "wrong mode" means the app is not ready to freeze.
+   * Tests that a response in the "wrong mode" means the app is not ready to thaw.
    */
   @Test
   public void testAppIsReadyToTransition_WrongMode()
   {
-    testAppIsReadyToTransition_WrongMode(freezeTask, DbFreezeMode.FROZEN);
+    testAppIsReadyToTransition_WrongMode(thawTask, DbFreezeMode.NORMAL);
   }
 
   /**
-   * Tests that a response in the normal mode means the app is ready to freeze.
+   * Tests that a response in the frozen mode means the app is ready to thaw.
    */
   @Test
   public void testAppIsReadyToTransition_AllowedStartMode()
   {
-    testAppIsReadyToTransition_AllowedStartMode(freezeTask, DbFreezeMode.NORMAL);
+    testAppIsReadyToTransition_AllowedStartMode(thawTask, DbFreezeMode.FROZEN);
   }
 
   /**
@@ -65,7 +65,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testRequestTransition_Noop()
   {
-    testRequestTransition_Noop(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testRequestTransition_Noop(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
@@ -74,7 +74,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testRequestTransition_NullProgress()
   {
-    testRequestTransition_NullProgress(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testRequestTransition_NullProgress(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
@@ -83,7 +83,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testRequestTransition_LockError()
   {
-    testRequestTransition_LockError(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testRequestTransition_LockError(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
@@ -92,7 +92,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testRequestTransition_TransitionError()
   {
-    testRequestTransition_TransitionError(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testRequestTransition_TransitionError(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
@@ -101,7 +101,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testRequestTransition_Normal()
   {
-    testRequestTransition_Normal(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testRequestTransition_Normal(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
@@ -110,16 +110,16 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testWaitForTransition_Noop()
   {
-    testWaitForTransition_Noop(freezeTask, DbFreezeRest.PUT_ENTER_DB_FREEZE);
+    testWaitForTransition_Noop(thawTask, DbFreezeRest.PUT_EXIT_DB_FREEZE);
   }
 
   /**
-   * Tests waitForTransition with freeze-specific args.
+   * Tests waitForTransition with thaw-specific args.
    */
   private void testWaitForTransition_ThreeFlushingThenEnd(DbFreezeProgress fourthProgress,
                                                           boolean expectSuccess) throws InterruptedException
   {
-    testWaitForTransition_ThreeFlushingThenEnd(freezeTask, DbFreezeMode.FLUSHING, fourthProgress, expectSuccess);
+    testWaitForTransition_ThreeFlushingThenEnd(thawTask, DbFreezeMode.THAW, fourthProgress, expectSuccess);
   }
 
   /**
@@ -128,7 +128,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testWaitForTransition_SuccessOnThirdWait() throws InterruptedException
   {
-    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FROZEN), true);
+    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.NORMAL), true);
   }
 
   /**
@@ -164,7 +164,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testWaitForTransition_WrongModeOnThirdWait() throws InterruptedException
   {
-    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.THAW), false);
+    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FROZEN), false);
   }
 
   /**
@@ -173,8 +173,8 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testWaitForTransition_TimeoutOnThirdWait() throws InterruptedException
   {
-    freezeTask.setMaxNumWaits(3);
-    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FLUSHING), false);
+    thawTask.setMaxNumWaits(3);
+    testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.THAW), false);
   }
 
   /**
@@ -183,7 +183,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_Noop()
   {
-    testProcess_Noop(freezeTask, DbFreezeMode.NORMAL);
+    testProcess_Noop(thawTask, DbFreezeMode.FROZEN);
   }
 
   /**
@@ -192,26 +192,26 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_NoopError()
   {
-    testProcess_NoopError(freezeTask);
+    testProcess_NoopError(thawTask);
   }
 
   /**
-   * Tests transition process() with freeze-specific args.
+   * Tests transition process() with thaw-specific args.
    */
   private void testProcess_ThreeFlushingThenEnd(DbFreezeProgress fourthProgress,
                                                 TaskStatus expectedStatus) throws InterruptedException
   {
-    testProcess_ThreeFlushingThenEnd(freezeTask, DbFreezeMode.NORMAL, DbFreezeMode.FLUSHING,
-        DbFreezeRest.PUT_ENTER_DB_FREEZE, fourthProgress, expectedStatus);
+    testProcess_ThreeFlushingThenEnd(thawTask, DbFreezeMode.FROZEN, DbFreezeMode.THAW,
+        DbFreezeRest.PUT_EXIT_DB_FREEZE, fourthProgress, expectedStatus);
   }
 
   /**
-   * Tests the success case where we get freeze confirmation after the third wait (4th progress object).
+   * Tests the success case where we get thaw confirmation after the third wait (4th progress object).
    */
   @Test
   public void testProcess_FrozenOnThirdWait() throws InterruptedException
   {
-    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FROZEN), TaskStatus.DONE);
+    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.NORMAL), TaskStatus.DONE);
   }
 
   /**
@@ -238,7 +238,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_TransitionErrorOnThirdWait() throws InterruptedException
   {
-    testProcess_ThreeFlushingThenEnd(fakeTransitionErrorProgress(DbFreezeMode.FLUSH_ERROR), TaskStatus.ERROR);
+    testProcess_ThreeFlushingThenEnd(fakeTransitionErrorProgress(DbFreezeMode.THAW_ERROR), TaskStatus.ERROR);
   }
 
   /**
@@ -247,7 +247,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_WrongModeOnThirdWait() throws InterruptedException
   {
-    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.THAW), TaskStatus.ERROR);
+    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FLUSHING), TaskStatus.ERROR);
   }
 
   /**
@@ -256,8 +256,8 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_TimeoutOnThirdWait() throws InterruptedException
   {
-    freezeTask.setMaxNumWaits(3);
-    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FLUSHING), TaskStatus.ERROR);
+    thawTask.setMaxNumWaits(3);
+    testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.THAW), TaskStatus.ERROR);
   }
 
 }

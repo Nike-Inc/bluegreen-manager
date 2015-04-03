@@ -7,18 +7,18 @@ import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeRest;
 
 /**
- * Freezes the apps in the requested environment.
+ * Thaws the apps in the requested environment.
  */
 @Lazy
 @Component
-public class FreezeTask extends TransitionTask
+public class ThawTask extends TransitionTask
 {
-  private static final String VERB = "freeze";
-  private static final DbFreezeMode[] ALLOWED_START_MODES = new DbFreezeMode[] { DbFreezeMode.NORMAL, DbFreezeMode.FLUSH_ERROR };
-  private static final DbFreezeMode TRANSITIONAL_MODE = DbFreezeMode.FLUSHING;
-  private static final DbFreezeMode DESTINATION_MODE = DbFreezeMode.FROZEN;
-  private static final DbFreezeMode TRANSITION_ERROR_MODE = DbFreezeMode.FLUSH_ERROR;
-  private static final String TRANSITION_METHOD_PATH = DbFreezeRest.PUT_ENTER_DB_FREEZE;
+  private static final String VERB = "thaw";
+  private static final DbFreezeMode[] ALLOWED_START_MODES = new DbFreezeMode[] { DbFreezeMode.FROZEN, DbFreezeMode.THAW_ERROR };
+  private static final DbFreezeMode TRANSITIONAL_MODE = DbFreezeMode.THAW;
+  private static final DbFreezeMode DESTINATION_MODE = DbFreezeMode.NORMAL;
+  private static final DbFreezeMode TRANSITION_ERROR_MODE = DbFreezeMode.THAW_ERROR;
+  private static final String TRANSITION_METHOD_PATH = DbFreezeRest.PUT_EXIT_DB_FREEZE;
 
   private static final TransitionParameters TRANSITION_PARAMETERS = new TransitionParameters(
       VERB, ALLOWED_START_MODES, TRANSITIONAL_MODE, DESTINATION_MODE, TRANSITION_ERROR_MODE, TRANSITION_METHOD_PATH

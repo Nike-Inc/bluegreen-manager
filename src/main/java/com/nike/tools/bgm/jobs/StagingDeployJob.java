@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.FreezeTask;
 import com.nike.tools.bgm.tasks.Task;
+import com.nike.tools.bgm.tasks.ThawTask;
 
 /**
  * Deploys to the stage env a copy of the pkgs that are on the live env except for explicitly specified packages that
@@ -44,7 +45,7 @@ public class StagingDeployJob extends TaskSequenceJob
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(FreezeTask.class).init(position++, liveEnv)); //PT-2014
     //tasks.add(new RDSSnapshotRestoreTask(liveEnv, stageEnv)); //PT-2015
-    //tasks.add(new ThawTask(liveEnv)); //PT-2014
+    tasks.add(applicationContext.getBean(ThawTask.class).init(position++, liveEnv)); //PT-2014
     //tasks.add(new RegisterStageTask(stageEnv));
     //tasks.add(new VmtoolCreateTask(stageEnv)); //PT-2017
     //tasks.add(new EnvXmlMergeTask(liveEnv, stageEnv)); //PT-2018
