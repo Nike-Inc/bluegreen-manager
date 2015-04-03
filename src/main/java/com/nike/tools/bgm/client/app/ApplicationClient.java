@@ -77,36 +77,40 @@ public class ApplicationClient
   /**
    * Requests dbfreeze progress from the application.
    * <p/>
-   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
+   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.  Try-messaging can include an
+   * optional outerTryNum if caller is in its own for-loop.
    */
-  public DbFreezeProgress getDbFreezeProgress(Application application, ApplicationSession session)
+  public DbFreezeProgress getDbFreezeProgress(Application application, ApplicationSession session, Integer outerTryNum)
   {
     return (DbFreezeProgress) requestWithRetry(application, session, HttpMethodType.GET,
-        DbFreezeRest.GET_DB_FREEZE_PROGRESS, DbFreezeProgress.class);
+        DbFreezeRest.GET_DB_FREEZE_PROGRESS, DbFreezeProgress.class, outerTryNum);
   }
 
   /**
    * Requests that the application enter/exit a dbfreeze, and returns initial progress.
    * <p/>
-   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
+   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.  Try-messaging can include an
+   * optional outerTryNum if caller is in its own for-loop.
    */
   public DbFreezeProgress putRequestTransition(Application application,
                                                ApplicationSession session,
-                                               String transitionMethodPath)
+                                               String transitionMethodPath,
+                                               Integer outerTryNum)
   {
     return (DbFreezeProgress) requestWithRetry(application, session, HttpMethodType.PUT,
-        transitionMethodPath, DbFreezeProgress.class);
+        transitionMethodPath, DbFreezeProgress.class, outerTryNum);
   }
 
   /**
    * Requests that the application discover its database.
    * <p/>
-   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.
+   * Tries up to MAX_NUM_TRIES times to get a non-null response with no lock error.  Try-messaging can include an
+   * optional outerTryNum if caller is in its own for-loop.
    */
-  public DiscoveryResult putDiscoverDb(Application application, ApplicationSession session)
+  public DiscoveryResult putDiscoverDb(Application application, ApplicationSession session, Integer outerTryNum)
   {
     return (DiscoveryResult) requestWithRetry(application, session, HttpMethodType.PUT,
-        DbFreezeRest.PUT_DISCOVER_DB, DiscoveryResult.class);
+        DbFreezeRest.PUT_DISCOVER_DB, DiscoveryResult.class, outerTryNum);
   }
 
   /**
@@ -114,14 +118,14 @@ public class ApplicationClient
    * the client waits a bit and tries again.
    */
   Lockable requestWithRetry(Application application, ApplicationSession session, HttpMethodType httpMethodType,
-                            String methodPath, Class<? extends Lockable> responseClass)
+                            String methodPath, Class<? extends Lockable> responseClass, Integer outerTryNum)
   {
     String uri = application.makeHostnameUri() + "/" + methodPath;
     int tryNum = 0;
     Lockable response = null;
     while (tryNum < MAX_NUM_TRIES)
     {
-      response = tryRequest(httpMethodType, session, uri, responseClass, tryNum);
+      response = tryRequest(httpMethodType, session, uri, responseClass, tryNum, outerTryNum);
       /*
        * TODO - in case of null, should check http response code.  Might not want to retry.
        */
@@ -148,22 +152,40 @@ public class ApplicationClient
    * Makes an application request that responds with json, and parses the json to a Lockable.
    */
   Lockable tryRequest(HttpMethodType httpMethodType, ApplicationSession session, String uri,
-                      Class<? extends Lockable> responseClass, int tryNum)
+                      Class<? extends Lockable> responseClass, int tryNum, Integer outerTryNum)
   {
     Lockable response = null;
-    LOGGER.debug("Try #" + tryNum + " " + httpMethodType + " " + uri);
+    String tryNumString = tryNumString(tryNum, outerTryNum);
+    LOGGER.debug(tryNumString + " " + httpMethodType + " " + uri);
     String json = httpExecute(httpMethodType, session, uri);
     LOGGER.debug("Response: " + json);
     response = gson.fromJson(json, responseClass);
     if (response == null)
     {
-      LOGGER.warn("Try #" + tryNum + " null response parsed from " + httpMethodType + " " + uri + " (raw response content: " + json + ")");
+      LOGGER.warn(tryNumString + " null response parsed from " + httpMethodType + " " + uri + " (raw response content: " + json + ")");
     }
     else if (response.isLockError())
     {
-      LOGGER.info("Try #" + tryNum + " received lock error from " + httpMethodType + " " + uri);
+      LOGGER.info(tryNumString + " received lock error from " + httpMethodType + " " + uri);
     }
     return response;
+  }
+
+  /**
+   * Returns a little string representing the current try, optionally prefixed by an outer try index in case
+   * the ApplicationClient is being invoked by a caller in its own for-loop.
+   */
+  private String tryNumString(int tryNum, Integer outerTryNum)
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Try #");
+    if (outerTryNum != null)
+    {
+      sb.append(outerTryNum);
+      sb.append(".");
+    }
+    sb.append(tryNum);
+    return sb.toString();
   }
 
   /**

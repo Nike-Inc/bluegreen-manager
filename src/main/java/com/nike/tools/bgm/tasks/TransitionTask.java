@@ -174,7 +174,7 @@ public abstract class TransitionTask extends TaskImpl
   boolean appIsReadyToTransition()
   {
     LOGGER.info(context() + "Checking if application is ready to " + transitionParameters.getVerb());
-    DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession);
+    DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession, null);
     LOGGER.debug(context() + "Application response: " + dbFreezeProgress);
     boolean isReady = false;
     if (dbFreezeProgress == null)
@@ -221,9 +221,10 @@ public abstract class TransitionTask extends TaskImpl
     DbFreezeProgress dbFreezeProgress = null;
     if (!noop)
     {
+      final int waitNum = 0;
       dbFreezeProgress = applicationClient.putRequestTransition(application, applicationSession,
-          transitionParameters.getTransitionMethodPath());
-      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, 0);
+          transitionParameters.getTransitionMethodPath(), waitNum);
+      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
     }
     return dbFreezeProgress;
   }
@@ -319,7 +320,7 @@ public abstract class TransitionTask extends TaskImpl
             + " ... " + ((waitNum * WAIT_DELAY_MILLISECONDS) / 1000L) + " seconds elapsed");
       }
       sleep();
-      DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession);
+      DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession, waitNum);
       dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
       if (dbFreezeProgress != null)
       {
