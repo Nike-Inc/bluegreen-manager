@@ -45,14 +45,6 @@ public abstract class TransitionTask extends ApplicationTask
   }
 
   /**
-   * Returns a tiny string pointing out if we're in noop.
-   */
-  private String noopRemark(boolean noop)
-  {
-    return noop ? " (noop)" : "";
-  }
-
-  /**
    * Attempts to transition the target application, waits for it to finish.
    */
   @Override

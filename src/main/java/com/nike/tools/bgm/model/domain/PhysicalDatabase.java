@@ -2,13 +2,13 @@ package com.nike.tools.bgm.model.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.nike.tools.bgm.utils.HashUtil;
 
@@ -27,12 +27,16 @@ public class PhysicalDatabase
 {
   public static final String TABLE_NAME = "PHYSICAL_DATABASE";
   public static final String COLUMN_ID = "PHYSICAL_ID";
+  public static final String COLUMN_TYPE = "PHYSICAL_TYPE";
+  public static final String COLUMN_INST_NAME = "PHYSICAL_INST_NAME";
   public static final String COLUMN_LIVE = "IS_LIVE";
   public static final String COLUMN_FK_LOGICAL_ID = "FK_LOGICAL_ID";
   public static final String COLUMN_DRIVER_CLASS_NAME = "DRIVER_CLASS_NAME";
   public static final String COLUMN_URL = "URL";
   public static final String COLUMN_USERNAME = "USERNAME";
   public static final String COLUMN_PASSWORD = "PASSWORD";
+  public static final int LENGTH_TYPE = 20;
+  public static final int LENGTH_INST_NAME = 64;
   public static final int LENGTH_DRIVER_CLASS_NAME = 32;
   public static final int LENGTH_URL = 255;
   public static final int LENGTH_USERNAME = 32;
@@ -48,12 +52,15 @@ public class PhysicalDatabase
   @JoinColumn(name = COLUMN_FK_LOGICAL_ID)
   private LogicalDatabase logicalDatabase; //FIELD_LOGICAL_DATABASE
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = COLUMN_TYPE, nullable = false, length = LENGTH_TYPE)
+  private DatabaseType databaseType;
+
+  @Column(name = COLUMN_INST_NAME, nullable = false, length = LENGTH_INST_NAME)
+  private String instanceName;
+
   @Column(name = COLUMN_LIVE, nullable = false)
   private boolean live;
-
-  /*
-  The following is based on connection parameters relevant to a MySQL database.
-   */
 
   @Column(name = COLUMN_DRIVER_CLASS_NAME, nullable = false, length = LENGTH_DRIVER_CLASS_NAME)
   private String driverClassName;
@@ -85,6 +92,26 @@ public class PhysicalDatabase
   public void setLogicalDatabase(LogicalDatabase logicalDatabase)
   {
     this.logicalDatabase = logicalDatabase;
+  }
+
+  public DatabaseType getDatabaseType()
+  {
+    return databaseType;
+  }
+
+  public void setDatabaseType(DatabaseType databaseType)
+  {
+    this.databaseType = databaseType;
+  }
+
+  public String getInstanceName()
+  {
+    return instanceName;
+  }
+
+  public void setInstanceName(String instanceName)
+  {
+    this.instanceName = instanceName;
   }
 
   public boolean isLive()
@@ -138,17 +165,6 @@ public class PhysicalDatabase
   }
 
   /**
-   * Convenience setter that sets the connection parameters but not id or fk.
-   */
-  public void setConnectionValues(String driverClassName, String url, String username, String password)
-  {
-    this.driverClassName = driverClassName;
-    this.url = url;
-    this.username = username;
-    this.password = password;
-  }
-
-  /**
    * Equality based solely on database identity.
    */
   @Override
@@ -171,18 +187,6 @@ public class PhysicalDatabase
     return HashUtil.hashId(physicalId);
   }
 
-  /**
-   * Equality based on connection parameters.
-   */
-  public boolean isEquivalentTo(PhysicalDatabase other)
-  {
-    return (other != null //NOSONAR
-        && StringUtils.equals(driverClassName, other.driverClassName)
-        && StringUtils.equals(url, other.url)
-        && StringUtils.equals(username, other.username)
-        && StringUtils.equals(password, other.password));
-  }
-
   @Override
   public String toString()
   {
@@ -190,6 +194,10 @@ public class PhysicalDatabase
     sb.append("PhysicalDatabase[");
     sb.append("physicalId: ");
     sb.append(physicalId);
+    sb.append(", databaseType: ");
+    sb.append(databaseType);
+    sb.append(", instanceName: ");
+    sb.append(instanceName);
     sb.append(", live: ");
     sb.append(live);
     sb.append(", driverClassName: ");

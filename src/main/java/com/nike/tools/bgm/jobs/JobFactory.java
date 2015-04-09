@@ -2,7 +2,10 @@ package com.nike.tools.bgm.jobs;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +32,7 @@ public class JobFactory
 
   public static final String PARAMNAME_LIVE_ENV = "liveEnv";
   public static final String PARAMNAME_STAGE_ENV = "stageEnv";
+  public static final String PARAMNAME_DB_MAP = "dbMap";
   public static final String PARAMNAME_PKGNAMES = "pkgnames";
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
@@ -37,7 +41,7 @@ public class JobFactory
   public static final String PARAMNAME_FORCE = "force";
 
   private static final long MAX_AGE_RELEVANT_PRIOR_JOB = 1000L * 60L * 60L * 24L; //1 day
-  private static final int UNLIMITED_NUM_VALUES = -1;
+  static final int UNLIMITED_NUM_VALUES = -1;
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -59,7 +63,7 @@ public class JobFactory
   /**
    * Returns a string explanation of valid jobs and their expected parameters.
    */
-  protected String makeExplanationOfValidJobs()
+  String makeExplanationOfValidJobs()
   {
     StringBuilder sb = new StringBuilder();
     sb.append("BlueGreenManager argument format: <jobName> <parameters>\n");
@@ -71,6 +75,8 @@ public class JobFactory
     sb.append("\t\t\tSpecify the live env so we can freeze it, replicate its db, and base stage from it.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STAGE_ENV + " <envName>\n");
     sb.append("\t\t\tThe stage env is where we will spin up a new vm, a test db copy, and deploy packages.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DB_MAP + " [ <liveLogicalName> <stagePhysicalInstName> ]+\n");
+    sb.append("\t\t\tWe will copy the live logical database(s) to a stage physical database having the requested instance name.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_PKGNAMES + " <list of stage pkgs>\n");
     sb.append("\t\t\tList of packages to deploy to stage, which are DIFFERENT from what is on the live env.\n");
     sb.append("\t\t\tUse full package names, up to the 'tar.gz' suffix.\n");
@@ -124,8 +130,9 @@ public class JobFactory
    */
   private Job makeStagingDeployJob(List<List<String>> parameters, String commandLine)
   {
+    Map<String, String> dbMap = listToMap(getParameterValues(PARAMNAME_DB_MAP, parameters), PARAMNAME_DB_MAP);
     List<String> pkgnames = getParameterValues(PARAMNAME_PKGNAMES, parameters);
-    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, pkgnames);
+    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, dbMap, pkgnames);
   }
 
   /**
@@ -161,7 +168,7 @@ public class JobFactory
     boolean force = hasParameter(PARAMNAME_FORCE, parameters);
     String env1 = env1ParamName == null ? null : getParameter(env1ParamName, parameters, 1).get(1);
     String env2 = env2ParamName == null ? null : getParameter(env2ParamName, parameters, 1).get(1);
-    verifyEnvNames(env1, env2);
+    verifyOneOrTwoEnvNames(env1, env2);
     JobHistory oldJobHistory = jobHistoryTx.findLastRelevantJobHistory(
         jobClass.getSimpleName(), env1, env2, commandLine, noop, MAX_AGE_RELEVANT_PRIOR_JOB);
     Object[] allArgs = combineKnownArgsWithOtherArgs(commandLine, noop, force, oldJobHistory,
@@ -197,7 +204,7 @@ public class JobFactory
    * Each parameter is a sublist of parameter parts.  (ParamName, val1, val2, ...)
    * Asserts that it has the expected number of values (if specified as a non-negative number).
    */
-  private List<String> getParameter(String paramName, List<List<String>> parameters, int expectedNumValues)
+  List<String> getParameter(String paramName, List<List<String>> parameters, int expectedNumValues)
   {
     if (paramName != null && parameters != null)
     {
@@ -222,20 +229,25 @@ public class JobFactory
 
   /**
    * Returns the values of the named parameter in the outer list, or throws if not found.
+   * Requires that there be at least one value.
    * <p/>
    * Each parameter is a sublist of parameter parts.  (ParamName, val1, val2, ...)
    * In this case returns (val1, val2, ...)
    */
-  private List<String> getParameterValues(String paramName, List<List<String>> parameters)
+  List<String> getParameterValues(String paramName, List<List<String>> parameters)
   {
     List<String> parameter = getParameter(paramName, parameters, UNLIMITED_NUM_VALUES);
-    return new ArrayList<String>(parameter.subList(1, parameter.size() - 1)); //i.e. skip item#0 (paramName)
+    if (parameter.size() <= 1)
+    {
+      throw new CmdlineException("Parameter '" + paramName + "' expects some values, found none");
+    }
+    return new ArrayList<String>(parameter.subList(1, parameter.size())); //i.e. skip item#0 (paramName)
   }
 
   /**
    * Returns true if the named parameter was specified.
    */
-  private boolean hasParameter(String paramName, List<List<String>> parameters)
+  boolean hasParameter(String paramName, List<List<String>> parameters)
   {
     if (paramName != null && parameters != null)
     {
@@ -251,12 +263,27 @@ public class JobFactory
   }
 
   /**
+   * Verifies env1, and env2 if it is not null.
+   */
+  private void verifyOneOrTwoEnvNames(String env1, String env2)
+  {
+    if (env2 == null)
+    {
+      verifyEnvNames(env1);
+    }
+    else
+    {
+      verifyEnvNames(env1, env2);
+    }
+  }
+
+  /**
    * Checks that all the specified envNames exist in the environment table.  Throws exception if any don't.
    * Returns silently if they all exist.
    */
-  private void verifyEnvNames(String... envNames)
+  void verifyEnvNames(String... envNames)
   {
-    if (envNames == null || envNames.length == 0 || envNames.length > 2)
+    if (envNames == null || envNames.length == 0)
     {
       throw new IllegalArgumentException();
     }
@@ -278,5 +305,28 @@ public class JobFactory
     {
       throw new CmdlineException("Invalid environment names: " + StringUtils.join(invalidEnvNames, ", "));
     }
+  }
+
+  /**
+   * Given a list of tokens (t1, t2, t3, t4, ...), returns a map {t1=>t2, t3=>t4, ...}.
+   * <p/>
+   * The tokens are values of the parameter with the given paramName.
+   */
+  Map<String, String> listToMap(List<String> tokens, String paramName)
+  {
+    if (CollectionUtils.isEmpty(tokens))
+    {
+      throw new CmdlineException("Parameter '" + paramName + "' expects nonzero list of values");
+    }
+    else if (tokens.size() % 2 == 1)
+    {
+      throw new CmdlineException("Parameter '" + paramName + "' expects even number of values, but found " + tokens.size());
+    }
+    Map<String, String> map = new TreeMap<String, String>();
+    for (int idx = 0; idx < tokens.size(); idx += 2)
+    {
+      map.put(tokens.get(idx), tokens.get(idx + 1));
+    }
+    return map;
   }
 }

@@ -12,7 +12,9 @@ public class ApplicationTestHelper
   private static final String URL_PATH = "/some/resource/path";
 
   /**
-   * Makes a fake application referring to a fake application vm, which in turn refers to a fake env..
+   * Makes a fake application referring to a fake application vm, which in turn refers to a fake env.
+   * <p/>
+   * Does not initialize logical databases.
    */
   public static Application makeFakeApplication()
   {

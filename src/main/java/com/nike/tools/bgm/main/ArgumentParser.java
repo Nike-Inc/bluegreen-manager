@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * Parses command-line arguments and identifies (1) job name, (2) parameters.
  * <p/>
- * Assumption is the command-line will be of the form "java -jar thisjar someJobName --param1=val1 --param2=val2".
+ * Assumption is the command-line will be of the form "java -jar thisjar someJobName --param1 val1 --param2 val2A val2B".
  */
 @Component
 public class ArgumentParser

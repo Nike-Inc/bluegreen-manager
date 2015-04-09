@@ -30,21 +30,22 @@ VALUES
   (9, 'krakendb', 9);
 
 -- FILL THIS IN WITH REAL PASSWORDS BEFORE RUNNING
-INSERT INTO PHYSICAL_DATABASE (PHYSICAL_ID, IS_LIVE, DRIVER_CLASS_NAME, URL, USERNAME, `PASSWORD`, FK_LOGICAL_ID)
+INSERT INTO PHYSICAL_DATABASE (PHYSICAL_ID, PHYSICAL_TYPE, PHYSICAL_INST_NAME, IS_LIVE, DRIVER_CLASS_NAME, URL, USERNAME, `PASSWORD`, FK_LOGICAL_ID)
 VALUES
-  (1, 1, 'com.mysql.jdbc.Driver',
+  (1, 'RDS', 'krakendev', 1, 'com.mysql.jdbc.Driver',
    'jdbc:mysql://krakendevdb.nikedev.com:3306/krakendev?zeroDateTimeBehavior=convertToNull', 'admin', 'password', 1),
-  (2, 1, 'com.mysql.jdbc.Driver',
+  (2, 'RDS', 'krakenqa', 1, 'com.mysql.jdbc.Driver',
    'jdbc:mysql://krakenqadb.nikedev.com:3306/krakenqa?zeroDateTimeBehavior=convertToNull', 'kraken_admin', 'password',
    2),
-  (3, 1, 'com.mysql.jdbc.Driver', 'jdbc:mysql://krakendb.nikedev.com:3306/kraken?zeroDateTimeBehavior=convertToNull',
+  (3, 'RDS', 'kraken', 1, 'com.mysql.jdbc.Driver',
+   'jdbc:mysql://krakendb.nikedev.com:3306/kraken?zeroDateTimeBehavior=convertToNull',
    'kraken_user', 'password', 3),
-  (4, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 4),
-  (5, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 5),
-  (6, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 6),
-  (7, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 7),
-  (8, 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 8),
-  (9, 0, 'com.mysql.jdbc.Driver',
+  (4, 'RDS', 'krakendev', 1, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 4),
+  (5, 'RDS', 'krakendev-blue', 1, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 5),
+  (6, 'RDS', 'krakendev-green', 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 6),
+  (7, 'RDS', 'krakenprd-blue', 1, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 7),
+  (8, 'RDS', 'krakenprd-green', 0, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 8),
+  (9, 'RDS', 'krakendev', 1, 'com.mysql.jdbc.Driver',
    'jdbc:mysql://krakendevdb.nikedev.com:3306/krakendev?zeroDateTimeBehavior=convertToNull', 'admin', 'password', 9);
 
 INSERT INTO APPLICATION_VM (APPVM_ID, APPVM_SIN_NUMBER, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID)

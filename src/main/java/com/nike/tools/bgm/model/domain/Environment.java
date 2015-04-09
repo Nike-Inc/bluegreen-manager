@@ -1,5 +1,6 @@
 package com.nike.tools.bgm.model.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -75,6 +76,15 @@ public class Environment
   public void setApplicationVms(List<ApplicationVm> applicationVms)
   {
     this.applicationVms = applicationVms;
+  }
+
+  public void addLogicalDatabase(LogicalDatabase logicalDatabase)
+  {
+    if (logicalDatabases == null)
+    {
+      logicalDatabases = new ArrayList<LogicalDatabase>();
+    }
+    logicalDatabases.add(logicalDatabase);
   }
 
   /**

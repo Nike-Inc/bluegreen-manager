@@ -25,6 +25,14 @@ public abstract class TaskImpl implements Task
     this.name = getClass().getSimpleName();
   }
 
+  /**
+   * Returns a tiny string pointing out if we're in noop, for logging clarity.
+   */
+  protected String noopRemark(boolean noop)
+  {
+    return noop ? " (noop)" : "";
+  }
+
   @Override
   public int getPosition()
   {
