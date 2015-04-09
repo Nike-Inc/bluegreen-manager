@@ -36,7 +36,6 @@ public class JobFactory
   public static final String PARAMNAME_PKGNAMES = "pkgnames";
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
-  public static final String PARAMNAME_OLD_ENV = "oldEnv";
   public static final String PARAMNAME_NOOP = "noop";
   public static final String PARAMNAME_FORCE = "force";
 
@@ -69,33 +68,36 @@ public class JobFactory
     sb.append("BlueGreenManager argument format: <jobName> <parameters>\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_STAGING_DEPLOY + "'\n");
-    sb.append("Description: Spins up and deploys to a new stage env.  Temporarily freezes the live env.\n");
+    sb.append("Description: Spins up a new stage env, including a new application vm, its target application, and a test copy\n");
+    sb.append("             of the live database.  Temporarily freezes the live application during database copy.\n");
     sb.append("Required Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_LIVE_ENV + " <envName>\n");
     sb.append("\t\t\tSpecify the live env so we can freeze it, replicate its db, and base stage from it.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STAGE_ENV + " <envName>\n");
     sb.append("\t\t\tThe stage env is where we will spin up a new vm, a test db copy, and deploy packages.\n");
+    sb.append("\t\t\tIt must not exist beforehand, because this job creates it.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DB_MAP + " [ <liveLogicalName> <stagePhysicalInstName> ]+\n");
     sb.append("\t\t\tWe will copy the live logical database(s) to a stage physical database having the requested instance name.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_PKGNAMES + " <list of stage pkgs>\n");
     sb.append("\t\t\tList of packages to deploy to stage, which are DIFFERENT from what is on the live env.\n");
-    sb.append("\t\t\tUse full package names, up to the 'tar.gz' suffix.\n");
+    sb.append("\t\t\tUse full package names as they will be recognized by your package repository.\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_GO_LIVE + "'\n");
-    sb.append("Description: Reassigns liveness from the old env to the new env.  Old env stays frozen.\n");
+    sb.append("Description: Reassigns liveness from the old env to the new env.  When done, the old env is frozen.\n");
     sb.append("Required Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_LIVE_ENV + " <envName>\n");
-    sb.append("\t\t\tSpecify the live env so we can freeze it, replicate its db, and base stage from it.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NEW_LIVE_ENV + " <envName>\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_TEARDOWN + "'\n");
-    sb.append("Description: Spins down and destroys the target env.\n");
+    sb.append("Description: Spins down and destroys the old live env, and the test database left in the new live env.\n");
     sb.append("Required Parameters:\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_ENV + " <envName>\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_LIVE_ENV + " <envName>\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NEW_LIVE_ENV + " <envName>\n");
     sb.append("\n");
     sb.append("Common Optional Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NOOP + "\n");
-    sb.append("\t\t\tNo-op means print out what this job WOULD do, without taking any actual action.\n");
+    sb.append("\t\t\tNo-op means print out what this job WOULD do, without taking any action that would leave side effects.\n");
+    sb.append("\t\t\tWe will make read-only queries to env services to gather useful information.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_FORCE + "\n");
     sb.append("\t\t\tForce job to attempt all tasks, instead of skipping tasks that were successful in the last recent try.\n");
     sb.append("\n");
@@ -127,12 +129,16 @@ public class JobFactory
 
   /**
    * Constructs a new StagingDeployJob with the specified parameters.
+   * <p/>
+   * We don't verify whether stageEnv exists because the logic is beyond what JobFactory should calculate.  If we are
+   * running the job from the first task, then it must not exist; if we are skipping past the last recent task that
+   * created it then it must exist.  We leave these assertions to the tasks.
    */
   private Job makeStagingDeployJob(List<List<String>> parameters, String commandLine)
   {
     Map<String, String> dbMap = listToMap(getParameterValues(PARAMNAME_DB_MAP, parameters), PARAMNAME_DB_MAP);
     List<String> pkgnames = getParameterValues(PARAMNAME_PKGNAMES, parameters);
-    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, dbMap, pkgnames);
+    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, false, dbMap, pkgnames);
   }
 
   /**
@@ -140,7 +146,7 @@ public class JobFactory
    */
   private Job makeGoLiveJob(List<List<String>> parameters, String commandLine)
   {
-    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV);
+    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true);
   }
 
   /**
@@ -148,7 +154,7 @@ public class JobFactory
    */
   private Job makeTeardownJob(List<List<String>> parameters, String commandLine)
   {
-    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_OLD_ENV, null);
+    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true);
   }
 
   /**
@@ -162,13 +168,14 @@ public class JobFactory
                              String commandLine,
                              String env1ParamName,
                              String env2ParamName,
+                             boolean verifyBothEnvs,
                              Object... otherArgs)
   {
     boolean noop = hasParameter(PARAMNAME_NOOP, parameters);
     boolean force = hasParameter(PARAMNAME_FORCE, parameters);
-    String env1 = env1ParamName == null ? null : getParameter(env1ParamName, parameters, 1).get(1);
-    String env2 = env2ParamName == null ? null : getParameter(env2ParamName, parameters, 1).get(1);
-    verifyOneOrTwoEnvNames(env1, env2);
+    String env1 = getParameter(env1ParamName, parameters, 1).get(1);
+    String env2 = getParameter(env2ParamName, parameters, 1).get(1);
+    verifyOneOrTwoEnvNames(env1, env2, verifyBothEnvs);
     JobHistory oldJobHistory = jobHistoryTx.findLastRelevantJobHistory(
         jobClass.getSimpleName(), env1, env2, commandLine, noop, MAX_AGE_RELEVANT_PRIOR_JOB);
     Object[] allArgs = combineKnownArgsWithOtherArgs(commandLine, noop, force, oldJobHistory,
@@ -263,11 +270,11 @@ public class JobFactory
   }
 
   /**
-   * Verifies env1, and env2 if it is not null.
+   * Verifies env1, and env2 if requested to verifyBothEnvs.
    */
-  private void verifyOneOrTwoEnvNames(String env1, String env2)
+  private void verifyOneOrTwoEnvNames(String env1, String env2, boolean verifyBothEnvs)
   {
-    if (env2 == null)
+    if (!verifyBothEnvs)
     {
       verifyEnvNames(env1);
     }

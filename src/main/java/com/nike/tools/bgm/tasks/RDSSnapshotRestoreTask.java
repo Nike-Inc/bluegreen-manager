@@ -34,7 +34,7 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
  * We are making an assumption that the live instance has a paramgroup whose name embeds the instname.
  * And an additional assumption that the paramgroup has a read_only parameter.
  * <p/>
- * Pre-existing stage databases will be considered an error.
+ * Pre-existing stage environment is an error, because this is the task that initially creates the stage env.
  */
 public class RDSSnapshotRestoreTask extends TaskImpl
 {
@@ -55,9 +55,10 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private RDSAnalyzer rdsAnalyzer;
 
   private Environment liveEnv;
-  private Environment stageEnv;
   private LogicalDatabase liveLogicalDatabase;
   private PhysicalDatabase livePhysicalDatabase;
+  private String stageEnvName;
+  private Environment stageEnv;
   private LogicalDatabase stageLogicalDatabase;
   private PhysicalDatabase stagePhysicalDatabase;
   private Map<String, String> dbMap; //Maps liveLogicalName to new stagePhysicalInstanceName
@@ -76,11 +77,11 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     }
     super.init(position);
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
-    this.stageEnv = environmentTx.findNamedEnv(stageEnvName);
     this.liveLogicalDatabase = findLiveLogicalDatabaseFromEnvironment();
     this.livePhysicalDatabase = liveLogicalDatabase.getPhysicalDatabase();
     checkLivePhysicalDatabase();
-    checkNoStageDatabaseInEnvironment();
+    this.stageEnvName = stageEnvName;
+    checkNoStageEnvironment();
     this.dbMap = dbMap;
     checkDbMap();
     return this;
@@ -88,9 +89,10 @@ public class RDSSnapshotRestoreTask extends TaskImpl
 
   /**
    * Returns a string that describes the known environment context, for logging purposes.
+   * Based on Environment objects.
    */
-  private String context(String envType, Environment environment,
-                         LogicalDatabase logicalDatabase, PhysicalDatabase physicalDatabase)
+  private String contextFromEnv(String envType, Environment environment,
+                                LogicalDatabase logicalDatabase, PhysicalDatabase physicalDatabase)
   {
     StringBuilder sb = new StringBuilder();
     sb.append("[" + envType + "Env '" + environment.getEnvName() + "'");
@@ -108,14 +110,48 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     return sb.toString();
   }
 
+  /**
+   * Returns a string that describes the requested stage env context, for logging purposes.
+   * Based on cmdline arguments and existing live env info.
+   */
+  private String stageContextFromArgs()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append("[stageEnv '" + stageEnvName + "'");
+    if (liveLogicalDatabase != null) //stage logicaldb will get same name as live logicaldb
+    {
+      sb.append(", ");
+      final String liveLogicalName = liveLogicalDatabase.getLogicalName();
+      sb.append(liveLogicalName);
+      if (dbMap != null)
+      {
+        final String stagePhysicalInstanceName = dbMap.get(liveLogicalName);
+        if (StringUtils.isNotBlank(stagePhysicalInstanceName))
+        {
+          sb.append(" - RDS ");
+          sb.append(stagePhysicalInstanceName);
+        }
+      }
+    }
+    sb.append("]: ");
+    return sb.toString();
+  }
+
   String liveContext()
   {
-    return context("live", liveEnv, liveLogicalDatabase, livePhysicalDatabase);
+    return contextFromEnv("live", liveEnv, liveLogicalDatabase, livePhysicalDatabase);
   }
 
   String stageContext()
   {
-    return context("stage", stageEnv, stageLogicalDatabase, stagePhysicalDatabase);
+    if (stageEnv != null)
+    {
+      return contextFromEnv("stage", stageEnv, stageLogicalDatabase, stagePhysicalDatabase);
+    }
+    else
+    {
+      return stageContextFromArgs();
+    }
   }
 
   /**
@@ -165,16 +201,17 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Checks that stage has no persisted logicaldb record.
+   * Checks that stage env does not exist yet.
    */
-  private void checkNoStageDatabaseInEnvironment()
+  private void checkNoStageEnvironment()
   {
-    List<LogicalDatabase> logicalDatabases = stageEnv.getLogicalDatabases();
-    if (CollectionUtils.isNotEmpty(logicalDatabases))
+    Environment stageEnv = environmentTx.findNamedEnv(stageEnvName);
+    if (stageEnv != null)
     {
-      throw new IllegalStateException(stageContext() + "Stage env already has " + logicalDatabases.size()
-          + " logical databases [" + listOfNames(logicalDatabases)
-          + "], you must manually destroy them and run this job again");
+      throw new IllegalStateException(stageContext() + "Stage env exists already, with "
+          + CollectionUtils.size(stageEnv.getLogicalDatabases()) + " logical databases ["
+          + listOfNames(stageEnv.getLogicalDatabases())
+          + "], you must manually destroy the stage env and run this job again");
     }
   }
 
@@ -339,7 +376,14 @@ public class RDSSnapshotRestoreTask extends TaskImpl
         liveInstance.getDBInstanceIdentifier(), stagePhysicalInstanceName);
     LOGGER.info(liveContext() + "Copying live parameter group '" + liveParamGroupName
         + "' to stage parameter group '" + stageParamGroupName + "'" + noopRemark(noop));
-    return rdsCopier.copyParameterGroup(liveParamGroupName, stageParamGroupName);
+    if (!noop)
+    {
+      return rdsCopier.copyParameterGroup(liveParamGroupName, stageParamGroupName);
+    }
+    else
+    {
+      return null;
+    }
   }
 
   /**
@@ -423,10 +467,21 @@ public class RDSSnapshotRestoreTask extends TaskImpl
    */
   void initModel(String stagePhysicalInstanceName)
   {
+    stageEnv = makeStageEnvironmentEntity();
     stageLogicalDatabase = makeStageLogicalDatabaseEntity(liveLogicalDatabase.getLogicalName());
     stagePhysicalDatabase = makeStagePhysicalDatabaseEntity(stagePhysicalInstanceName);
     stageLogicalDatabase.setPhysicalDatabase(stagePhysicalDatabase);
     stagePhysicalDatabase.setLogicalDatabase(stageLogicalDatabase);
+  }
+
+  /**
+   * Makes a transient entity for the new stage environment.
+   */
+  private Environment makeStageEnvironmentEntity()
+  {
+    Environment stageEnv = new Environment();
+    stageEnv.setEnvName(stageEnvName);
+    return stageEnv;
   }
 
   /**
@@ -461,7 +516,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Sets the stage physical url, then opens a transaction to insert bluegreen records for the new stage database.
+   * Sets the stage physical url, then opens a transaction to insert bluegreen records for the new stage environment.
    */
   private void persistModel(DBInstance stageInstance, boolean noop)
   {
@@ -469,7 +524,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     {
       String stagePhysicalUrl = makeStagePhysicalUrl(livePhysicalDatabase.getUrl(), stageInstance.getEndpoint().getAddress());
       stagePhysicalDatabase.setUrl(stagePhysicalUrl);
-      environmentTx.newLogicalDatabase(stageLogicalDatabase); //Cascades to new stage physical.
+      environmentTx.newEnvironment(stageEnv); //Cascades to new stage physicaldb.
     }
   }
 

@@ -18,6 +18,9 @@ public abstract class TaskImpl implements Task
 
   /**
    * This would be a TaskImpl constructor except mockito can't mock the argument.
+   * <p/>
+   * Derived classes should override init() and add any additional post-construct activities that should happen
+   * immediately, before tasks start executing.
    */
   protected void init(int position)
   {

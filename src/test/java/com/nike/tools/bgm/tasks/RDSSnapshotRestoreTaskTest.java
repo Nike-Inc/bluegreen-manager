@@ -32,7 +32,6 @@ import static com.nike.tools.bgm.model.domain.DatabaseTestHelper.LIVE_PHYSICAL_N
 import static com.nike.tools.bgm.tasks.RDSSnapshotRestoreTask.INSTANCE_STATUS_AVAILABLE;
 import static com.nike.tools.bgm.tasks.RDSSnapshotRestoreTask.SNAPSHOT_STATUS_AVAILABLE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
@@ -40,6 +39,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -86,7 +86,7 @@ public class RDSSnapshotRestoreTaskTest
   private void normalSetup()
   {
     when(mockEnvironmentTx.findNamedEnv(LIVE_ENV_NAME)).thenReturn(FAKE_PHYSICAL_DATABASE.getLogicalDatabase().getEnvironment());
-    when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(FAKE_STAGE_ENV);
+    when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(null);
     when(mockRdsCopierFactory.create()).thenReturn(mockRdsCopier);
     rdsSnapshotRestoreTask.init(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
   }
@@ -107,7 +107,7 @@ public class RDSSnapshotRestoreTaskTest
   }
 
   /**
-   * Stage context after init should show env but not logical/physical.
+   * Stage context after init should show env/logical/physical using stageContextFromArgs.
    */
   @Test
   public void testStageContext()
@@ -115,7 +115,8 @@ public class RDSSnapshotRestoreTaskTest
     normalSetup();
     String context = rdsSnapshotRestoreTask.stageContext();
     assertTrue(context.contains(STAGE_ENV_NAME));
-    assertFalse(context.contains(STAGE_PHYSICAL_NAME));
+    assertTrue(context.contains(LIVE_LOGICAL_NAME)); //Stage logical is taken from live logical name.
+    assertTrue(context.contains(STAGE_PHYSICAL_NAME));
   }
 
   /**
@@ -454,8 +455,6 @@ public class RDSSnapshotRestoreTaskTest
     when(mockRdsCopier.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
     TaskStatus taskStatus = null;
     Throwable exception = null;
-    taskStatus = rdsSnapshotRestoreTask.process(noop);
-
     try
     {
       taskStatus = rdsSnapshotRestoreTask.process(noop);
@@ -467,17 +466,44 @@ public class RDSSnapshotRestoreTaskTest
     return new ProcessResults(data, taskStatus, exception);
   }
 
+  private void assertNoException(Throwable exception) throws Throwable
+  {
+    if (exception != null)
+    {
+      throw exception;
+    }
+  }
+
+  /**
+   * Pass case: every call to RDS is successful.
+   */
   @Test
-  public void testProcess_Pass()
+  public void testProcess_Pass() throws Throwable
   {
     ProcessResults results = testProcess(INSTANCE_STATUS_AVAILABLE, INSTANCE_STATUS_AVAILABLE, false);
     RestoreStageFakeData data = results.getData();
 
+    assertNoException(results.getException());
+    assertEquals(TaskStatus.DONE, results.getTaskStatus());
     InOrder inOrder = inOrder(mockRdsCopier);
     inOrder.verify(mockRdsCopier).describeInstance(LIVE_PHYSICAL_NAME);
     inOrder.verify(mockRdsCopier).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
     inOrder.verify(mockRdsCopier).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
     inOrder.verify(mockRdsCopier).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString());
     inOrder.verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
+  }
+
+  /**
+   * Noop case, should call describeInstance but nothing else on the RDS api.
+   */
+  @Test
+  public void testProcess_Noop() throws Throwable
+  {
+    ProcessResults results = testProcess(INSTANCE_STATUS_AVAILABLE, INSTANCE_STATUS_AVAILABLE, true);
+
+    assertNoException(results.getException());
+    assertEquals(TaskStatus.NOOP, results.getTaskStatus());
+    verify(mockRdsCopier).describeInstance(LIVE_PHYSICAL_NAME);
+    verifyNoMoreInteractions(mockRdsCopier);
   }
 }

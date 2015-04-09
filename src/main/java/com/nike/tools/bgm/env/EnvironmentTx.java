@@ -8,11 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.dao.EnvironmentDAO;
-import com.nike.tools.bgm.model.dao.LogicalDatabaseDAO;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
-import com.nike.tools.bgm.model.domain.LogicalDatabase;
 
 /**
  * Serves transactional db queries related to the Environment hierarchy, includes Logical/PhysicalDatabase
@@ -24,9 +22,6 @@ public class EnvironmentTx
 {
   @Autowired
   private EnvironmentDAO environmentDAO;
-
-  @Autowired
-  private LogicalDatabaseDAO logicalDatabaseDAO;
 
   /**
    * Looks up all the specified names in the environment table, returning true for the names that exist and
@@ -104,11 +99,11 @@ public class EnvironmentTx
   }
 
   /**
-   * Persists a new logical database, and any associated physical database.
+   * Persists a new environment, and any associated application vms or logical database.
    */
-  public void newLogicalDatabase(LogicalDatabase logicalDatabase)
+  public void newEnvironment(Environment environment)
   {
-    logicalDatabaseDAO.persist(logicalDatabase);
+    environmentDAO.persist(environment);
   }
 
 }

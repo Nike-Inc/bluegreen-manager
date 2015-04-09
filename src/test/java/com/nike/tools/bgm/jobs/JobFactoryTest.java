@@ -88,7 +88,7 @@ public class JobFactoryTest
   @Test
   public void testMakeJob_StagingDeploy()
   {
-    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString(), anyString())).thenReturn(new boolean[] { true, true });
+    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
     String commandLine = "stagingDeploy --liveEnv env1 --stageEnv env2 --noop --pkgnames a b c --dbMap d e";
     parseAndMakeJob(commandLine);
     verify(mockApplicationContext).getBean(eq(StagingDeployJob.class), new Object[] {
@@ -116,11 +116,11 @@ public class JobFactoryTest
   @Test
   public void testMakeJob_Teardown()
   {
-    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
-    String commandLine = "teardown --oldEnv env5";
+    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString(), anyString())).thenReturn(new boolean[] { true, true });
+    String commandLine = "teardown --oldLiveEnv env5 --newLiveEnv env6";
     parseAndMakeJob(commandLine);
     verify(mockApplicationContext).getBean(eq(TeardownJob.class), new Object[] {
-        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), isNull()
+        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), eq("env6")
     });
   }
 

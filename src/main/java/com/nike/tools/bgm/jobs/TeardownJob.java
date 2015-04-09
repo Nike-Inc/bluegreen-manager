@@ -11,19 +11,21 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
- * Tears down the old environment.
+ * Tears down the old environment, and the test database remaining in the new live env.
  */
 @Lazy
 @Component
 public class TeardownJob extends TaskSequenceJob
 {
-  private String oldEnv;
+  private String oldLiveEnv;
+  private String newLiveEnv;
 
   public TeardownJob(String commandLine, boolean noop, boolean force,
-                     JobHistory oldJobHistory, String oldEnv)
+                     JobHistory oldJobHistory, String oldLiveEnv, String newLiveEnv)
   {
     super(commandLine, noop, force, oldJobHistory);
-    this.oldEnv = oldEnv;
+    this.oldLiveEnv = oldLiveEnv;
+    this.newLiveEnv = newLiveEnv;
   }
 
   /**
@@ -43,12 +45,12 @@ public class TeardownJob extends TaskSequenceJob
   @Override
   public String getEnv1()
   {
-    return oldEnv;
+    return oldLiveEnv;
   }
 
   @Override
   public String getEnv2()
   {
-    return null;
+    return newLiveEnv;
   }
 }
