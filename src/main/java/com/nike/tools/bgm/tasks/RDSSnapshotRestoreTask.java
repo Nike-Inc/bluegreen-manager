@@ -12,6 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
@@ -36,6 +38,8 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
  * <p/>
  * Pre-existing stage environment is an error, because this is the task that initially creates the stage env.
  */
+@Lazy
+@Component
 public class RDSSnapshotRestoreTask extends TaskImpl
 {
   public static final String SNAPSHOT_STATUS_AVAILABLE = "available";
@@ -205,7 +209,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
    */
   private void checkNoStageEnvironment()
   {
-    Environment stageEnv = environmentTx.findNamedEnv(stageEnvName);
+    Environment stageEnv = environmentTx.findNamedEnvAllowNull(stageEnvName);
     if (stageEnv != null)
     {
       throw new IllegalStateException(stageContext() + "Stage env exists already, with "

@@ -20,11 +20,38 @@ public class EnvironmentDAO extends GenericDAO<Environment>
     {
       return null;
     }
+    Query query = findNamedEnvQuery(envName);
+    return (Environment) query.getSingleResult();
+  }
+
+  /**
+   * Returns the single named environment.  Null if not found.
+   */
+  public Environment findNamedEnvAllowNull(String envName)
+  {
+    if (envName == null)
+    {
+      return null;
+    }
+    Query query = findNamedEnvQuery(envName);
+    List list = query.getResultList();
+    if (list != null && list.size() > 0)
+    {
+      return (Environment) list.get(0);
+    }
+    return null; //Not found
+  }
+
+  /**
+   * Makes (but does not run) a query for a named env.
+   */
+  private Query findNamedEnvQuery(String envName)
+  {
     String queryString = "SELECT e FROM " + Environment.class.getSimpleName() + " e WHERE "
         + "e.envName = :envName";
     Query query = entityManager.createQuery(queryString);
     query.setParameter("envName", envName);
-    return (Environment) query.getSingleResult();
+    return query;
   }
 
   /**

@@ -11,6 +11,7 @@ import com.nike.tools.bgm.model.dao.EnvironmentDAO;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
+import com.nike.tools.bgm.model.domain.LogicalDatabase;
 
 /**
  * Serves transactional db queries related to the Environment hierarchy, includes Logical/PhysicalDatabase
@@ -64,24 +65,43 @@ public class EnvironmentTx
   }
 
   /**
-   * Finds the named environment.  Actively loads its application vms and applications, but not databases.
+   * Finds the named environment, throws if not found.
+   * <p/>
+   * Since the data cascade is small, actively loads all references: databases, application vms and applications.
    */
   public Environment findNamedEnv(String envName)
   {
     Environment environment = environmentDAO.findNamedEnv(envName);
-    activeLoadApplicationVmsAndApplications(environment);
+    activeLoadAll(environment);
     return environment;
   }
 
   /**
-   * Actively loads the environment's applications and vms, while the tx is open.
+   * Finds the named environment, or null if not found.
    * <p/>
-   * Lets env databases remain lazy.
+   * Since the data cascade is small, actively loads all references: databases, application vms and applications.
    */
-  private void activeLoadApplicationVmsAndApplications(Environment environment)
+  public Environment findNamedEnvAllowNull(String envName)
+  {
+    Environment environment = environmentDAO.findNamedEnvAllowNull(envName);
+    activeLoadAll(environment);
+    return environment;
+  }
+
+  /**
+   * Actively loads the environment's databases, applications and vms, while the tx is open.
+   */
+  private void activeLoadAll(Environment environment)
   {
     if (environment != null)
     {
+      if (environment.getLogicalDatabases() != null)
+      {
+        for (LogicalDatabase logicalDatabase : environment.getLogicalDatabases())
+        {
+          logicalDatabase.getPhysicalDatabase(); //load
+        }
+      }
       if (environment.getApplicationVms() != null)
       {
         for (ApplicationVm applicationVm : environment.getApplicationVms())

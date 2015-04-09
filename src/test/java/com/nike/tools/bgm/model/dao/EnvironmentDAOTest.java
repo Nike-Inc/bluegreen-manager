@@ -58,6 +58,14 @@ public class EnvironmentDAOTest
   }
 
   @Test
+  public void testFindNamedEnvAllowNull()
+  {
+    Environment env = environmentDAO.findNamedEnvAllowNull(ENV_NAME1);
+
+    verify(mockEntityManager).createQuery(contains("SELECT"));
+  }
+
+  @Test
   public void testFindNamedEnvs()
   {
     List<Environment> envs = environmentDAO.findNamedEnvs(ENV_NAME1, ENV_NAME2);

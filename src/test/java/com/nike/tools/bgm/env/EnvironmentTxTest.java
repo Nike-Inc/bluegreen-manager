@@ -19,6 +19,7 @@ import com.nike.tools.bgm.model.domain.Environment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +63,27 @@ public class EnvironmentTxTest
   public void setUp()
   {
     when(environmentDAO.findNamedEnv(GOOD_ENVNAME1)).thenReturn(GOOD_ENV1);
+    when(environmentDAO.findNamedEnvAllowNull(BAD_ENVNAME1)).thenReturn(null);
     when(environmentDAO.findNamedEnvs(GOOD_ENVNAMES)).thenReturn(GOOD_ENVS);
     when(environmentDAO.findNamedEnvs(BAD_ENVNAMES)).thenReturn(null);
+  }
+
+  /**
+   * Finds a "good" env that "really exists".
+   */
+  @Test
+  public void testFindNamedEnv_Good()
+  {
+    assertEquals(GOOD_ENV1, environmentTx.findNamedEnv(GOOD_ENVNAME1));
+  }
+
+  /**
+   * Finds that a "bad" env that does not exist, by receiving null.
+   */
+  @Test
+  public void testFindNamedEnvAllowNull_Bad()
+  {
+    assertNull(environmentTx.findNamedEnv(BAD_ENVNAME1));
   }
 
   /**
@@ -94,7 +114,7 @@ public class EnvironmentTxTest
    * Lacking a hibernate session, this is not really a good test.
    */
   @Test
-  public void testActiveLoadEnvironmentAndApplications()
+  public void testActiveLoadAll()
   {
     Environment environment = environmentTx.findNamedEnv(GOOD_ENVNAME1);
     assertNotNull(environment.getApplicationVms().get(0).getApplications().get(0));
