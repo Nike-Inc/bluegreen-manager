@@ -43,7 +43,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * TODO - The high level restoreStage tests are too complicated...would help to make modularize RDSSnapshotRestoreTask better
+ * TODO - The high level restoreStage tests are too complicated...would help to modularize RDSSnapshotRestoreTask better, then tests would become simpler
  */
 @RunWith(MockitoJUnitRunner.class)
 public class RDSSnapshotRestoreTaskTest
