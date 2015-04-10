@@ -1,5 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.mockito.Mock;
@@ -14,10 +15,8 @@ import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 
-import static com.nike.tools.bgm.utils.TimeFakery.START_TIME_STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.when;
  */
 public abstract class TransitionTaskBaseTest
 {
-  private static final String PROGRESS_USER = "someUser";
   private static final Integer NO_OUTER_TRY = null;
   private static final Integer OUTER_FIRST_TRY = 0;
   protected static final Application FAKE_APPLICATION = ApplicationTestHelper.makeFakeApplication();
@@ -56,6 +54,8 @@ public abstract class TransitionTaskBaseTest
 
   protected ApplicationSession fakeSession;
 
+  private TransitionTestHelper transitionTestHelper = new TransitionTestHelper();
+
   /**
    * Common test setup.
    */
@@ -69,41 +69,35 @@ public abstract class TransitionTaskBaseTest
     transitionTask.initApplicationSession();
   }
 
-  /**
-   * Makes a fake progress object showing a lock error.
-   */
   protected DbFreezeProgress fakeLockErrorProgress()
   {
-    DbFreezeProgress progress = new DbFreezeProgress();
-    progress.setLockError(true);
-    return progress;
+    return transitionTestHelper.fakeLockErrorProgress();
   }
 
-  /**
-   * Makes a fake progress object showing a transition error.
-   */
   protected DbFreezeProgress fakeTransitionErrorProgress(DbFreezeMode transitionErrorMode)
   {
-    DbFreezeProgress progress = new DbFreezeProgress();
-    progress.setMode(transitionErrorMode);
-    progress.setUsername(PROGRESS_USER);
-    progress.setStartTime(START_TIME_STRING);
-    progress.setEndTime(START_TIME_STRING);
-    progress.setTransitionError("There was an error!");
-    return progress;
+    return transitionTestHelper.fakeTransitionErrorProgress(transitionErrorMode);
+  }
+
+  protected DbFreezeProgress fakeProgress(DbFreezeMode mode)
+  {
+    return transitionTestHelper.fakeProgress(mode);
   }
 
   /**
-   * Makes a fake progress object at a given mode (no errors).
+   * Prepares mock to return this progress after call to getDbFreezeProgress.
    */
-  protected DbFreezeProgress fakeProgress(DbFreezeMode mode)
+  private void whenGetDbFreezeProgress(DbFreezeProgress progress)
   {
-    DbFreezeProgress progress = new DbFreezeProgress();
-    progress.setMode(mode);
-    progress.setUsername(PROGRESS_USER);
-    progress.setStartTime(START_TIME_STRING);
-    progress.setEndTime(START_TIME_STRING);
-    return progress;
+    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY)).thenReturn(progress);
+  }
+
+  /**
+   * Verifies the mock received a call to getDbFreezeProgress.
+   */
+  private void verifyGetDbFreezeProgress()
+  {
+    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
   }
 
   /**
@@ -111,12 +105,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testAppIsReadyToTransition_NullProgress(TransitionTask transitionTask)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY)).thenReturn(null);
+    whenGetDbFreezeProgress(null);
 
     boolean isReady = transitionTask.appIsReadyToTransition();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -124,13 +118,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testAppIsReadyToTransition_LockError(TransitionTask transitionTask)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY))
-        .thenReturn(fakeLockErrorProgress());
+    whenGetDbFreezeProgress(fakeLockErrorProgress());
 
     boolean isReady = transitionTask.appIsReadyToTransition();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -138,13 +131,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testAppIsReadyToTransition_WrongMode(TransitionTask transitionTask, DbFreezeMode wrongMode)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY))
-        .thenReturn(fakeProgress(wrongMode));
+    whenGetDbFreezeProgress(fakeProgress(wrongMode));
 
     boolean isReady = transitionTask.appIsReadyToTransition();
 
     assertFalse(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -153,13 +145,12 @@ public abstract class TransitionTaskBaseTest
   protected void testAppIsReadyToTransition_AllowedStartMode(TransitionTask transitionTask,
                                                              DbFreezeMode allowedStartMode)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY))
-        .thenReturn(fakeProgress(allowedStartMode));
+    whenGetDbFreezeProgress(fakeProgress(allowedStartMode));
 
     boolean isReady = transitionTask.appIsReadyToTransition();
 
     assertTrue(isReady);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -167,11 +158,28 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testRequestTransition_Noop(TransitionTask transitionTask, String transitionMethodPath)
   {
-    DbFreezeProgress progress = transitionTask.requestTransition(true);
+    TransitionProgressChecker progressChecker = transitionTask.requestTransition(true);
 
-    assertNull(progress);
+    assertNull(progressChecker);
     verify(mockApplicationClient, never()).putRequestTransition(any(Application.class), any(ApplicationSession.class),
         eq(transitionMethodPath), eq(NO_OUTER_TRY));
+  }
+
+  /**
+   * Prepares mock to return the given progress after putRequestTransition.
+   */
+  private void whenPutRequestTransition(String transitionMethodPath, DbFreezeProgress progress)
+  {
+    when(mockApplicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY))
+        .thenReturn(progress);
+  }
+
+  /**
+   * Verifies mock received call to putRequestTransition.
+   */
+  private void verifyPutRequestTransition(String transitionMethodPath)
+  {
+    verify(mockApplicationClient).putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY);
   }
 
   /**
@@ -179,13 +187,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testRequestTransition_NullProgress(TransitionTask transitionTask, String transitionMethodPath)
   {
-    when(mockApplicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY))
-        .thenReturn(null);
+    whenPutRequestTransition(transitionMethodPath, null);
 
-    DbFreezeProgress progress = transitionTask.requestTransition(false);
+    TransitionProgressChecker progressChecker = transitionTask.requestTransition(false);
 
-    assertNull(progress);
-    verify(mockApplicationClient).putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY);
+    assertNull(progressChecker.getInitialProgress());
+    verifyPutRequestTransition(transitionMethodPath);
   }
 
   /**
@@ -193,13 +200,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testRequestTransition_LockError(TransitionTask transitionTask, String transitionMethodPath)
   {
-    when(mockApplicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY))
-        .thenReturn(null);
+    whenPutRequestTransition(transitionMethodPath, fakeLockErrorProgress());
 
-    DbFreezeProgress progress = transitionTask.requestTransition(false);
+    TransitionProgressChecker progressChecker = transitionTask.requestTransition(false);
 
-    assertNull(progress);
-    verify(mockApplicationClient).putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY);
+    assertTrue(progressChecker.getInitialProgress().isLockError());
+    verifyPutRequestTransition(transitionMethodPath);
   }
 
   /**
@@ -207,13 +213,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testRequestTransition_TransitionError(TransitionTask transitionTask, String transitionMethodPath)
   {
-    when(mockApplicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY))
-        .thenReturn(fakeTransitionErrorProgress(DbFreezeMode.FLUSH_ERROR));
+    whenPutRequestTransition(transitionMethodPath, fakeTransitionErrorProgress(DbFreezeMode.FLUSH_ERROR));
 
-    DbFreezeProgress progress = transitionTask.requestTransition(false);
+    TransitionProgressChecker progressChecker = transitionTask.requestTransition(false);
 
-    assertNull(progress);
-    verify(mockApplicationClient).putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY);
+    assertTrue(StringUtils.isNotBlank(progressChecker.getInitialProgress().getTransitionError()));
+    verifyPutRequestTransition(transitionMethodPath);
   }
 
   /**
@@ -221,25 +226,30 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testRequestTransition_Normal(TransitionTask transitionTask, String transitionMethodPath)
   {
-    when(mockApplicationClient.putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY))
-        .thenReturn(fakeProgress(DbFreezeMode.FLUSHING));
+    whenPutRequestTransition(transitionMethodPath, fakeProgress(DbFreezeMode.FLUSHING));
 
-    DbFreezeProgress progress = transitionTask.requestTransition(false);
+    TransitionProgressChecker progressChecker = transitionTask.requestTransition(false);
 
-    assertNotNull(progress);
-    verify(mockApplicationClient).putRequestTransition(FAKE_APPLICATION, fakeSession, transitionMethodPath, OUTER_FIRST_TRY);
+    assertEquals(DbFreezeMode.FLUSHING, progressChecker.getInitialProgress().getMode());
+    verifyPutRequestTransition(transitionMethodPath);
   }
 
   /**
-   * Tests that noop request doesn't invoke the applicationClient.
+   * Tests noop request.  ...Would be more useful to assert that there was no communication with the application,
+   * but we have no mocks to prove it was really noop.
    */
   protected void testWaitForTransition_Noop(TransitionTask transitionTask, String transitionMethodPath)
   {
-    boolean ok = transitionTask.waitForTransition(true, null);
+    assertTrue(transitionTask.waitForTransition(null, true));
+  }
 
-    assertTrue(ok);
-    verify(mockApplicationClient, never()).putRequestTransition(any(Application.class), any(ApplicationSession.class),
-        eq(transitionMethodPath), eq(OUTER_FIRST_TRY));
+  /**
+   * Makes a progressChecker with the given initialProgress and mocks/fakes.
+   */
+  private TransitionProgressChecker makeTestChecker(TransitionTask transitionTask, DbFreezeProgress initialProgress)
+  {
+    return new TransitionProgressChecker(transitionTask.getTransitionParameters(),
+        transitionTask.context(), initialProgress, mockApplicationClient, fakeSession, FAKE_APPLICATION);
   }
 
   /**
@@ -252,12 +262,13 @@ public abstract class TransitionTaskBaseTest
                                                             boolean expectSuccess) throws InterruptedException
   {
     transitionTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
+    TransitionProgressChecker progressChecker = makeTestChecker(transitionTask, fakeProgress(transitionalMode)/*progress #0*/);
     when(mockApplicationClient.getDbFreezeProgress(eq(FAKE_APPLICATION), eq(fakeSession), anyInt()))
         .thenReturn(fakeProgress(transitionalMode)) //progress #1, after 1st wait
         .thenReturn(fakeProgress(transitionalMode)) //progress #2, after 2nd wait
         .thenReturn(fourthProgress);                //progress #3, after 3rd wait
 
-    boolean transitionSuccess = transitionTask.waitForTransition(false, fakeProgress(transitionalMode)/*progress #0*/);
+    boolean transitionSuccess = transitionTask.waitForTransition(progressChecker, false);
 
     assertEquals(expectSuccess, transitionSuccess);
     verify(mockApplicationClient, times(3)).getDbFreezeProgress(eq(FAKE_APPLICATION), eq(fakeSession), anyInt());
@@ -269,13 +280,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testProcess_Noop(TransitionTask transitionTask, DbFreezeMode startMode)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY))
-        .thenReturn(fakeProgress(startMode));
+    whenGetDbFreezeProgress(fakeProgress(startMode));
 
     TaskStatus taskStatus = transitionTask.process(true);
 
     assertEquals(TaskStatus.NOOP, taskStatus);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -283,13 +293,12 @@ public abstract class TransitionTaskBaseTest
    */
   protected void testProcess_NoopError(TransitionTask transitionTask)
   {
-    when(mockApplicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY))
-        .thenReturn(null);
+    whenGetDbFreezeProgress(null);
 
     TaskStatus taskStatus = transitionTask.process(true);
 
     assertEquals(TaskStatus.ERROR, taskStatus);
-    verify(mockApplicationClient).getDbFreezeProgress(FAKE_APPLICATION, fakeSession, NO_OUTER_TRY);
+    verifyGetDbFreezeProgress();
   }
 
   /**
@@ -308,7 +317,7 @@ public abstract class TransitionTaskBaseTest
         .thenReturn(fakeProgress(startMode))        //initial state ...before requestTransition
         .thenReturn(fakeProgress(transitionalMode)) //progress #1, after 1st wait
         .thenReturn(fakeProgress(transitionalMode)) //progress #2, after 2nd wait
-        .thenReturn(fourthProgress);                //progress #3, after 3rd wait
+        .thenReturn(fourthProgress);                                     //progress #3, after 3rd wait
     when(mockApplicationClient.putRequestTransition(eq(FAKE_APPLICATION), eq(fakeSession), eq(transitionMethodPath), anyInt()))
         .thenReturn(fakeProgress(transitionalMode)/*progress #0*/);
 

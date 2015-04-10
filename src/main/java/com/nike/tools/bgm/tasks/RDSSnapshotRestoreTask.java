@@ -44,8 +44,14 @@ public class RDSSnapshotRestoreTask extends TaskImpl
 {
   public static final String SNAPSHOT_STATUS_AVAILABLE = "available";
   public static final String INSTANCE_STATUS_AVAILABLE = "available";
-  private static final String SNAPSHOT_PREFIX = "bluegreen:";
   private static final Pattern JDBC_URL = Pattern.compile("(jdbc:mysql://)([^:/]+)(.*)");
+
+  /**
+   * Using '9' as a delimiter char, since the only other special char allowed in a snapshotId is '-' and we are
+   * already using that inside the tokens we use to make the id.
+   */
+  private static final char SNAPSHOT_ID_DELIMITER = '9';
+  private static final String SNAPSHOT_PREFIX = "bluegreen";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RDSSnapshotRestoreTask.class);
 
@@ -304,7 +310,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Takes a snapshot of the live RDS instance.
+   * Takes a snapshot of the live RDS instance, waits for completion.
    * Sanity-checks the result.
    */
   DBSnapshot snapshotLive(boolean noop)
@@ -316,7 +322,10 @@ public class RDSSnapshotRestoreTask extends TaskImpl
       String snapshotId = makeSnapshotId();
       dbSnapshot = rdsCopier.createSnapshot(snapshotId, livePhysicalDatabase.getInstanceName());
       checkSnapshotId(dbSnapshot, snapshotId);
-      checkSnapshotStatus(dbSnapshot);
+      if (!snapshotIsAvailable(dbSnapshot))
+      {
+        dbSnapshot = waitTilSnapshotIsAvailable(snapshotId);
+      }
     }
     return dbSnapshot;
   }
@@ -330,8 +339,11 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   {
     StringBuilder sb = new StringBuilder();
     sb.append(SNAPSHOT_PREFIX);
-    sb.append(liveEnv.getEnvName() + ":");
-    sb.append(liveLogicalDatabase.getLogicalName() + ":");
+    sb.append(SNAPSHOT_ID_DELIMITER);
+    sb.append(liveEnv.getEnvName());
+    sb.append(SNAPSHOT_ID_DELIMITER);
+    sb.append(liveLogicalDatabase.getLogicalName());
+    sb.append(SNAPSHOT_ID_DELIMITER);
     sb.append(livePhysicalDatabase.getInstanceName());
     return sb.toString();
   }
@@ -367,6 +379,28 @@ public class RDSSnapshotRestoreTask extends TaskImpl
       throw new RuntimeException(liveContext() + "Snapshot '" + snapshotId +
           "': Synchronous snapshot creation finished but status is '" + status + "'");
     }
+  }
+
+  /**
+   * True if the snapshot has status=available.
+   * <p/>
+   * Does not check percentProgress.
+   */
+  private boolean snapshotIsAvailable(DBSnapshot dbSnapshot)
+  {
+    return dbSnapshot != null && StringUtils.equalsIgnoreCase(SNAPSHOT_STATUS_AVAILABLE, dbSnapshot.getStatus());
+  }
+
+  /**
+   * @param snapshotId
+   * @return
+   */
+  private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId)
+  {
+    LOGGER.info(liveContext() + "Waiting for snapshot to become available");
+    //checkSnapshotStatus(dbSnapshot);
+    //FIXME - work in progress
+    return null;
   }
 
   /**

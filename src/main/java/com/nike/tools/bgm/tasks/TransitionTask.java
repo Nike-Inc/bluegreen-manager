@@ -1,7 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
+import com.nike.tools.bgm.utils.Waiter;
 
 /**
  * Transitions the apps in the requested environment to the next dbfreeze-related steady state.
@@ -54,10 +54,10 @@ public abstract class TransitionTask extends ApplicationTask
     initApplicationSession();
     if (appIsReadyToTransition())
     {
-      DbFreezeProgress initialProgress = requestTransition(noop);
-      if (noop || initialProgress != null)
+      TransitionProgressChecker progressChecker = requestTransition(noop);
+      if (noop || !progressChecker.isDone())
       {
-        if (waitForTransition(noop, initialProgress))
+        if (waitForTransition(progressChecker, noop))
         {
           taskStatus = noop ? TaskStatus.NOOP : TaskStatus.DONE;
         }
@@ -113,45 +113,21 @@ public abstract class TransitionTask extends ApplicationTask
    * Requests that the application do the transition.
    *
    * @param noop If true, don't contact the application.
-   * @return Initial progress if we got a successful response from the application, or null if noop.
+   * @return Transition progress checker, or null if noop.
    */
-  DbFreezeProgress requestTransition(boolean noop)
+  TransitionProgressChecker requestTransition(boolean noop)
   {
     LOGGER.info(context() + "Requesting a " + transitionParameters.getVerb() + noopRemark(noop));
-    DbFreezeProgress dbFreezeProgress = null;
+    TransitionProgressChecker progressChecker = null;
     if (!noop)
     {
       final int waitNum = 0;
-      dbFreezeProgress = applicationClient.putRequestTransition(application, applicationSession,
+      DbFreezeProgress initialProgress = applicationClient.putRequestTransition(application, applicationSession,
           transitionParameters.getTransitionMethodPath(), waitNum);
-      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
+      progressChecker = new TransitionProgressChecker(transitionParameters, context(), initialProgress,
+          applicationClient, applicationSession, application);
     }
-    return dbFreezeProgress;
-  }
-
-  /**
-   * Returns the input progress object, or null if there is any kind of error.  If error then log about it too.
-   */
-  private DbFreezeProgress nullIfErrorProgress(DbFreezeProgress dbFreezeProgress, int waitNum)
-  {
-    LOGGER.debug(context() + "Application response after wait#" + waitNum + ": " + dbFreezeProgress);
-    if (dbFreezeProgress == null)
-    {
-      LOGGER.error(context() + "Null application response");
-    }
-    else if (dbFreezeProgress.isLockError())
-    {
-      LOGGER.error(context() + "Application responded with a lock error: " + dbFreezeProgress);
-    }
-    else if (StringUtils.isNotBlank(dbFreezeProgress.getTransitionError()))
-    {
-      LOGGER.error(context() + "Application responded with a transition error: " + dbFreezeProgress);
-    }
-    else
-    {
-      return dbFreezeProgress;
-    }
-    return null;
+    return progressChecker;
   }
 
   /**
@@ -161,89 +137,16 @@ public abstract class TransitionTask extends ApplicationTask
    * @return True if the application has reached destination mode prior to timeout, or if noop.
    * False if error or other failure to make transition.
    */
-  boolean waitForTransition(boolean noop, DbFreezeProgress initialProgress)
+  Boolean waitForTransition(TransitionProgressChecker progressChecker, boolean noop)
   {
     LOGGER.info(context() + "Waiting for " + transitionParameters.getVerb() + " to take effect" + noopRemark(noop));
     if (!noop)
     {
-      int waitNum = 0;
-      while (waitNum < maxNumWaits + 1) //Not counting "waitNum#0" since first one doesn't call sleep()
-      {
-        DbFreezeMode mode = waitNum == 0 ? initialProgress.getMode() : waitAndGetMode(waitNum);
-        if (mode == null)
-        {
-          // Application error, already logged.
-          // ApplicationClient already made MAX_NUM_TRIES, so mode==null means don't try again, client has a big problem.
-          return false;
-        }
-        else if (mode == transitionParameters.getDestinationMode())
-        {
-          LOGGER.info("Application successfully reached destination mode '" + transitionParameters.getDestinationMode() + "'");
-          return true;
-        }
-        else if (mode == transitionParameters.getTransitionErrorMode())
-        {
-          // Probably will never get here, nullIfErrorProgress will warn and set mode==null
-          LOGGER.error("Application responded with transition error '" + transitionParameters.getTransitionErrorMode() + "'");
-          return false;
-        }
-        else if (mode == transitionParameters.getTransitionalMode())
-        {
-          LOGGER.info("Application is in transitional mode '" + transitionParameters.getTransitionalMode() + "'");
-          //Expected response, keep trying.
-        }
-        else
-        {
-          LOGGER.error("Application has reached unexpected mode '" + mode + "'");
-          return false;
-        }
-        ++waitNum;
-      }
-      LOGGER.error("Application failed to reach destination mode '" + transitionParameters.getDestinationMode()
-          + "' prior to timeout");
-      return false;
+      Waiter<Boolean> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
+          progressChecker);
+      return waiter.waitTilDone();
     }
     return true;
-  }
-
-  /**
-   * Waits and then gets the application's current progress mode.
-   */
-  private DbFreezeMode waitAndGetMode(int waitNum)
-  {
-    if (waitNum > 0)
-    {
-      if (waitNum % waitReportInterval == 0)
-      {
-        // "Seconds elapsed" is approximate, since ApplicationClient can have its own sleep delay for each "wait" here.
-        LOGGER.info("Wait #" + waitNum + " (max " + maxNumWaits + ") for application " + transitionParameters.getVerb()
-            + " ... " + ((waitNum * WAIT_DELAY_MILLISECONDS) / 1000L) + " seconds elapsed");
-      }
-      sleep();
-      DbFreezeProgress dbFreezeProgress = applicationClient.getDbFreezeProgress(application, applicationSession, waitNum);
-      dbFreezeProgress = nullIfErrorProgress(dbFreezeProgress, waitNum);
-      if (dbFreezeProgress != null)
-      {
-        return dbFreezeProgress.getMode();
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Sleeps for the wait delay, and catches interrupt exceptions.
-   */
-  private void sleep()
-  {
-    LOGGER.debug("Going to sleep, will check again");
-    try
-    {
-      threadSleeper.sleep(WAIT_DELAY_MILLISECONDS);
-    }
-    catch (InterruptedException e) //NOSONAR
-    {
-      LOGGER.warn("Sleep was interrupted");
-    }
   }
 
   // Test purposes only
@@ -256,5 +159,11 @@ public abstract class TransitionTask extends ApplicationTask
   static void setMaxNumWaits(int maxNumWaits)
   {
     TransitionTask.maxNumWaits = maxNumWaits;
+  }
+
+  // Test purposes only
+  public TransitionParameters getTransitionParameters()
+  {
+    return transitionParameters;
   }
 }

@@ -136,21 +136,6 @@ public class RDSSnapshotRestoreTaskTest
   /**
    * Tests the case where the snapshot is created with an unexpected status.
    */
-  @Test(expected = RuntimeException.class)
-  public void testSnapshotLive_BadStatus()
-  {
-    normalSetup();
-    DBSnapshot dbSnapshot = new DBSnapshot();
-    dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
-    dbSnapshot.setStatus("unknown");
-    when(mockRdsCopier.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
-
-    rdsSnapshotRestoreTask.snapshotLive(false/*noop*/);
-  }
-
-  /**
-   * Tests the case where the snapshot is created with an unexpected status.
-   */
   @Test
   public void testSnapshotLive_Pass()
   {

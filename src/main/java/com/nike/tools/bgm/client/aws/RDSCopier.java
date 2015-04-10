@@ -3,6 +3,7 @@ package com.nike.tools.bgm.client.aws;
 import java.util.Collection;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ public class RDSCopier
    */
   public DBInstance describeInstance(String instanceName)
   {
-    LOGGER.debug("describeDBInstances start");
+    LOGGER.debug("describeDBInstances(instanceName: " + instanceName + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
@@ -73,7 +74,7 @@ public class RDSCopier
    */
   public DBSnapshot createSnapshot(String snapshotId, String instanceName)
   {
-    LOGGER.debug("createDBSnapshot start");
+    LOGGER.debug("createDBSnapshot(snapshotId: " + snapshotId + ", instanceName: " + instanceName + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
@@ -93,7 +94,8 @@ public class RDSCopier
    */
   public DBParameterGroup copyParameterGroup(String sourceParamGroupName, String destParamGroupName)
   {
-    LOGGER.debug("copyDBParameterGroup start");
+    LOGGER.debug("copyDBParameterGroup(sourceParamGroupName: " + sourceParamGroupName + ", destParamGroupName: "
+        + destParamGroupName + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
@@ -118,7 +120,7 @@ public class RDSCopier
    */
   public DBInstance restoreInstanceFromSnapshot(String instanceName, String snapshotId)
   {
-    LOGGER.debug("restoreDBInstanceFromDBSnapshot start");
+    LOGGER.debug("restoreDBInstanceFromDBSnapshot(instanceName: " + instanceName + ", snapshotId: " + snapshotId + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
@@ -141,7 +143,8 @@ public class RDSCopier
                                                      Collection<String> vpcSecurityGroupIds,
                                                      String paramGroupName)
   {
-    LOGGER.debug("modifyDBInstance start");
+    LOGGER.debug("modifyDBInstance(instanceName: " + instanceName + ", vpcSecurityGroupIds: ("
+        + StringUtils.join(vpcSecurityGroupIds, ", ") + "), paramGroupName: " + paramGroupName + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
