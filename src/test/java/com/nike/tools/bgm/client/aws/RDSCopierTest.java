@@ -15,6 +15,8 @@ import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
+import com.amazonaws.services.rds.model.DescribeDBSnapshotsRequest;
+import com.amazonaws.services.rds.model.DescribeDBSnapshotsResult;
 import com.amazonaws.services.rds.model.ModifyDBInstanceRequest;
 import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
 
@@ -31,6 +33,7 @@ public class RDSCopierTest
   private static final String INSTANCE_NAME = "my-rds-instance";
   private static final String ANOTHER_INSTANCE_NAME = "another-rds-instance";
   private static final String SNAPSHOT_ID = "the-snapshot-12354";
+  private static final String ANOTHER_SNAPSHOT_ID = "another-snapshot-67893";
   private static final String PARAM_GROUP = "default-mysql";
   private static final String SECURITY_GROUP = "rds-mysql";
 
@@ -94,6 +97,66 @@ public class RDSCopierTest
       }
     }
     result.setDBInstances(dbInstances);
+    return result;
+  }
+
+  /**
+   * Fail case: describe request gets result with empty list of snapshots.
+   */
+  @Test(expected = RuntimeException.class)
+  public void testDescribeSnapshot_CantFind()
+  {
+    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(null);
+    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
+
+    rdsCopier.describeSnapshot(SNAPSHOT_ID);
+  }
+
+  /**
+   * Warn case: describe request gets result with too many snapshots.  Returns first one.
+   */
+  @Test
+  public void testDescribeSnapshot_FoundTooMany()
+  {
+    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(SNAPSHOT_ID, ANOTHER_SNAPSHOT_ID);
+    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
+
+    DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
+
+    assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
+  }
+
+  /**
+   * Pass case: describe request gets result with exactly one snapshot.
+   */
+  @Test
+  public void testDescribeSnapshot_Pass()
+  {
+    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(SNAPSHOT_ID);
+    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
+
+    DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
+
+    assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
+  }
+
+  /**
+   * Test helper - makes describe result with a named snapshot.
+   */
+  private DescribeDBSnapshotsResult makeDescribeDBSnapshotsResult(String... snapshotNames)
+  {
+    DescribeDBSnapshotsResult result = new DescribeDBSnapshotsResult();
+    List<DBSnapshot> dbSnapshots = new ArrayList<DBSnapshot>();
+    if (ArrayUtils.isNotEmpty(snapshotNames))
+    {
+      for (String snapshotName : snapshotNames)
+      {
+        DBSnapshot dbSnapshot = new DBSnapshot();
+        dbSnapshot.setDBSnapshotIdentifier(snapshotName);
+        dbSnapshots.add(dbSnapshot);
+      }
+    }
+    result.setDBSnapshots(dbSnapshots);
     return result;
   }
 

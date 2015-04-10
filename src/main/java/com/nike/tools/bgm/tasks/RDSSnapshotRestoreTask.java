@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.nike.tools.bgm.client.aws.AvailableStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
 import com.nike.tools.bgm.client.aws.RDSCopier;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
@@ -27,6 +28,8 @@ import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.utils.ThreadSleeper;
+import com.nike.tools.bgm.utils.Waiter;
 
 /**
  * Takes a snapshot of the live RDS instance and restores it in the new staging environment.
@@ -42,9 +45,11 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 @Component
 public class RDSSnapshotRestoreTask extends TaskImpl
 {
-  public static final String SNAPSHOT_STATUS_AVAILABLE = "available";
-  public static final String INSTANCE_STATUS_AVAILABLE = "available";
   private static final Pattern JDBC_URL = Pattern.compile("(jdbc:mysql://)([^:/]+)(.*)");
+  private static final long WAIT_DELAY_MILLISECONDS = 10000L; //10sec
+
+  private static int maxNumWaits = 60; //10min
+  private static int waitReportInterval = 3; //30sec
 
   /**
    * Using '9' as a delimiter char, since the only other special char allowed in a snapshotId is '-' and we are
@@ -63,6 +68,9 @@ public class RDSSnapshotRestoreTask extends TaskImpl
 
   @Autowired
   private RDSAnalyzer rdsAnalyzer;
+
+  @Autowired
+  private ThreadSleeper threadSleeper;
 
   private Environment liveEnv;
   private LogicalDatabase liveLogicalDatabase;
@@ -321,11 +329,9 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     {
       String snapshotId = makeSnapshotId();
       dbSnapshot = rdsCopier.createSnapshot(snapshotId, livePhysicalDatabase.getInstanceName());
-      checkSnapshotId(dbSnapshot, snapshotId);
-      if (!snapshotIsAvailable(dbSnapshot))
-      {
-        dbSnapshot = waitTilSnapshotIsAvailable(snapshotId);
-      }
+      SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(null, snapshotId, liveContext(), rdsCopier,
+          dbSnapshot);
+      dbSnapshot = waitTilSnapshotIsAvailable(progressChecker);
     }
     return dbSnapshot;
   }
@@ -349,58 +355,20 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Asserts that the snapshot has the expected id.
+   * Creates a Waiter using the progressChecker, and returns the final DBSnapshot when waiting is done.
+   * In case of error - never returns null, throws instead.
    */
-  private void checkSnapshotId(DBSnapshot dbSnapshot, String expectedSnapshotId)
-  {
-    final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (!StringUtils.equals(expectedSnapshotId, snapshotId))
-    {
-      throw new IllegalStateException(liveContext() + "We requested snapshot id '" + expectedSnapshotId
-          + "' but RDS used the identifier '" + snapshotId + "'");
-    }
-  }
-
-  /**
-   * Asserts that the snapshot status is "available".
-   * <p/>
-   * The RDS api does not have an enum for snapshot creation status, but see CLI for rds-describe-db-snapshots.
-   */
-  private void checkSnapshotStatus(DBSnapshot dbSnapshot)
-  {
-    final String status = dbSnapshot.getStatus();
-    final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (StringUtils.equalsIgnoreCase(SNAPSHOT_STATUS_AVAILABLE, status))
-    {
-      LOGGER.info(liveContext() + "Snapshot '" + snapshotId + "': Response status '" + status + "'");
-    }
-    else
-    {
-      throw new RuntimeException(liveContext() + "Snapshot '" + snapshotId +
-          "': Synchronous snapshot creation finished but status is '" + status + "'");
-    }
-  }
-
-  /**
-   * True if the snapshot has status=available.
-   * <p/>
-   * Does not check percentProgress.
-   */
-  private boolean snapshotIsAvailable(DBSnapshot dbSnapshot)
-  {
-    return dbSnapshot != null && StringUtils.equalsIgnoreCase(SNAPSHOT_STATUS_AVAILABLE, dbSnapshot.getStatus());
-  }
-
-  /**
-   * @param snapshotId
-   * @return
-   */
-  private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId)
+  private DBSnapshot waitTilSnapshotIsAvailable(SnapshotProgressChecker progressChecker)
   {
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
-    //checkSnapshotStatus(dbSnapshot);
-    //FIXME - work in progress
-    return null;
+    Waiter<DBSnapshot> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
+        progressChecker);
+    DBSnapshot dbSnapshot = waiter.waitTilDone();
+    if (dbSnapshot == null)
+    {
+      throw new RuntimeException(liveContext() + "Snapshot did not become available");
+    }
+    return dbSnapshot;
   }
 
   /**
@@ -476,7 +444,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private void checkInstanceStatus(DBInstance dbInstance, String actionTaken)
   {
     final String status = dbInstance.getDBInstanceStatus();
-    if (StringUtils.equalsIgnoreCase(INSTANCE_STATUS_AVAILABLE, status))
+    if (AvailableStatus.AVAILABLE.equalsString(status))
     {
       LOGGER.info(stageContext() + actionTaken + " instance '" + dbInstance.getDBInstanceIdentifier()
           + "': Status '" + status + "'");

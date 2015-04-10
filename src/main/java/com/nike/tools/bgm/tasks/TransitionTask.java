@@ -17,10 +17,10 @@ import com.nike.tools.bgm.utils.Waiter;
 public abstract class TransitionTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(TransitionTask.class);
-  private static final long WAIT_DELAY_MILLISECONDS = 3000L;
+  private static final long WAIT_DELAY_MILLISECONDS = 3000L; //3sec
 
-  private static int maxNumWaits = 120;
-  private static int waitReportInterval = 10;
+  private static int maxNumWaits = 120; //6min
+  private static int waitReportInterval = 10; //30sec
 
   @Autowired
   private ThreadSleeper threadSleeper;

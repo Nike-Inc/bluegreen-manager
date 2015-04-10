@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class TransitionProgressCheckerTest
 {
-  private static final String LOG_CONTEXT = "(Log Context)";
+  private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
 
   @Mock
@@ -141,8 +141,8 @@ public class TransitionProgressCheckerTest
   @Test
   public void testFollowupCheck_Transitional()
   {
-    whenGetDbFreezeProgress(fakeProgress(DbFreezeMode.THAW));
     TransitionProgressChecker progressChecker = makeProgressChecker(fakeProgress(DbFreezeMode.THAW));
+    whenGetDbFreezeProgress(fakeProgress(DbFreezeMode.THAW));
     progressChecker.followupCheck(WAIT_NUM);
     assertFalse(progressChecker.isDone());
   }
@@ -153,8 +153,8 @@ public class TransitionProgressCheckerTest
   @Test
   public void testFollowupCheck_Destination()
   {
-    whenGetDbFreezeProgress(fakeProgress(DbFreezeMode.NORMAL));
     TransitionProgressChecker progressChecker = makeProgressChecker(fakeProgress(DbFreezeMode.THAW));
+    whenGetDbFreezeProgress(fakeProgress(DbFreezeMode.NORMAL));
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());
     assertTrue(progressChecker.getResult());

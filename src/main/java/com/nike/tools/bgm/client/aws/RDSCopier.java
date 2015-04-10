@@ -16,6 +16,8 @@ import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
+import com.amazonaws.services.rds.model.DescribeDBSnapshotsRequest;
+import com.amazonaws.services.rds.model.DescribeDBSnapshotsResult;
 import com.amazonaws.services.rds.model.ModifyDBInstanceRequest;
 import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
 
@@ -66,6 +68,36 @@ public class RDSCopier
     {
       stopWatch.stop();
       LOGGER.debug("describeDBInstances time elapsed: " + stopWatch);
+    }
+  }
+
+  /**
+   * Gets a description of the requested RDS snapshot.  Throws if not found.
+   */
+  public DBSnapshot describeSnapshot(String snapshotId)
+  {
+    LOGGER.debug("describeDBSnapshots(snapshotId: " + snapshotId + ")");
+    StopWatch stopWatch = new StopWatch();
+    try
+    {
+      stopWatch.start();
+      DescribeDBSnapshotsRequest request = new DescribeDBSnapshotsRequest();
+      request.setDBSnapshotIdentifier(snapshotId);
+      DescribeDBSnapshotsResult result = rdsClient.describeDBSnapshots(request);
+      if (result == null || CollectionUtils.isEmpty(result.getDBSnapshots()))
+      {
+        throw new RuntimeException("RDS cannot find snapshot '" + snapshotId + "'");
+      }
+      else if (result.getDBSnapshots().size() > 1)
+      {
+        LOGGER.warn("Expected 1 snapshot named '" + snapshotId + "', found " + result.getDBSnapshots().size());
+      }
+      return result.getDBSnapshots().get(0);
+    }
+    finally
+    {
+      stopWatch.stop();
+      LOGGER.debug("describeDBSnapshots time elapsed: " + stopWatch);
     }
   }
 
