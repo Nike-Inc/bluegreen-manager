@@ -38,7 +38,7 @@ VALUES
    'kraken_user', 'password', 4),
   (5, 'RDS', 'krakendev', 1, 'com.mysql.jdbc.Driver', 'does-not-exist-yet', 'nobody', 'password', 5),
   (6, 'RDS', 'krakenqa-blue', 1, 'com.mysql.jdbc.Driver',
-   'jdbc:mysql://krakenqadb.nikedev.com:3306/krakenqa?zeroDateTimeBehavior=convertToNull', 'nobody', 'password', 6);
+   'jdbc:mysql://krakenqadb.nikedev.com:3306/krakenqa?zeroDateTimeBehavior=convertToNull', 'krakenqa', 'password', 6);
 
 INSERT INTO APPLICATION_VM (APPVM_ID, APPVM_SIN_NUMBER, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID)
 VALUES

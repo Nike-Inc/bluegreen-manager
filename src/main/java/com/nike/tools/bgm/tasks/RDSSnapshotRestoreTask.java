@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
 import com.nike.tools.bgm.client.aws.RDSCopier;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
@@ -48,7 +47,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private static final Pattern JDBC_URL = Pattern.compile("(jdbc:mysql://)([^:/]+)(.*)");
   private static final long WAIT_DELAY_MILLISECONDS = 10000L; //10sec
 
-  private static int maxNumWaits = 60; //10min
+  private static int maxNumWaits = 120; //20min
   private static int waitReportInterval = 3; //30sec
 
   /**
@@ -329,9 +328,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     {
       String snapshotId = makeSnapshotId();
       dbSnapshot = rdsCopier.createSnapshot(snapshotId, livePhysicalDatabase.getInstanceName());
-      SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(null, snapshotId, liveContext(), rdsCopier,
-          dbSnapshot);
-      dbSnapshot = waitTilSnapshotIsAvailable(progressChecker);
+      dbSnapshot = waitTilSnapshotIsAvailable(snapshotId, dbSnapshot);
     }
     return dbSnapshot;
   }
@@ -355,12 +352,14 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Creates a Waiter using the progressChecker, and returns the final DBSnapshot when waiting is done.
+   * Creates a Waiter using a snapshot progress checker, and returns the final DBSnapshot when waiting is done.
    * In case of error - never returns null, throws instead.
    */
-  private DBSnapshot waitTilSnapshotIsAvailable(SnapshotProgressChecker progressChecker)
+  private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId, DBSnapshot initialSnapshot)
   {
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
+    SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(snapshotId, liveContext(), rdsCopier,
+        initialSnapshot);
     Waiter<DBSnapshot> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
         progressChecker);
     DBSnapshot dbSnapshot = waiter.waitTilDone();
@@ -428,32 +427,48 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     {
       String stagePhysicalInstanceName = dbMap.get(liveLogicalDatabase.getLogicalName());
       initModel(stagePhysicalInstanceName);
+      String subnetGroupName = getSubnetGroupName(liveInstance);
       DBInstance stageInstance = rdsCopier.restoreInstanceFromSnapshot(stagePhysicalInstanceName,
-          dbSnapshot.getDBSnapshotIdentifier());
-      checkInstanceStatus(stageInstance, "Restored");
+          dbSnapshot.getDBSnapshotIdentifier(), subnetGroupName);
+      stageInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, stageInstance, true/*create*/);
       DBInstance modifiedInstance = modifyInstance(stageInstance, stageParamGroup, liveInstance);
-      checkInstanceStatus(modifiedInstance, "Modified");
+      modifiedInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, modifiedInstance, false/*modify*/);
       return modifiedInstance;
     }
     return null;
   }
 
   /**
-   * Checks that the instance is available, after having taken the given action.
+   * Returns the instance's subnet group name, or null if none.
    */
-  private void checkInstanceStatus(DBInstance dbInstance, String actionTaken)
+  private String getSubnetGroupName(DBInstance dbInstance)
   {
-    final String status = dbInstance.getDBInstanceStatus();
-    if (InstanceStatus.AVAILABLE.equalsString(status))
+    if (dbInstance != null && dbInstance.getDBSubnetGroup() != null)
     {
-      LOGGER.info(stageContext() + actionTaken + " instance '" + dbInstance.getDBInstanceIdentifier()
-          + "': Status '" + status + "'");
+      return dbInstance.getDBSubnetGroup().getDBSubnetGroupName();
     }
-    else
+    return null;
+  }
+
+  /**
+   * Creates a Waiter using an instance progress checker, and returns the final DBInstance when waiting is done.
+   * In case of error - never returns null, throws instead.
+   *
+   * @param create True if we're waiting on Create Instance, false if Modify Instance.
+   */
+  private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance, boolean create)
+  {
+    LOGGER.info(liveContext() + "Waiting for instance to become available");
+    InstanceProgressChecker progressChecker = new InstanceProgressChecker(instanceId, liveContext(), rdsCopier,
+        initialInstance, create);
+    Waiter<DBInstance> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
+        progressChecker);
+    DBInstance dbInstance = waiter.waitTilDone();
+    if (dbInstance == null)
     {
-      throw new RuntimeException(stageContext() + actionTaken + " instance '" + dbInstance.getDBInstanceIdentifier() +
-          "': Synchronous api method finished but instance status is '" + status + "'");
+      throw new RuntimeException(liveContext() + progressChecker.getDescription() + " did not become available");
     }
+    return dbInstance;
   }
 
   /**

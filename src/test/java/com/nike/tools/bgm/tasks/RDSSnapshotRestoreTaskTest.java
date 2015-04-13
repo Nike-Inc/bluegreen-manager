@@ -15,6 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.Endpoint;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
@@ -55,7 +56,7 @@ public class RDSSnapshotRestoreTaskTest
   private static final String LIVE_PARAM_GROUP_NAME = "live-param-group";
   private static final String SIMPLE_STAGE_PARAM_GROUP_NAME = "stage-param-group";
   private static final String STAGE_ENDPOINT_ADDRESS = "stage.hello.com";
-  private static final SnapshotStatus UNKNOWN_STATUS = null;
+  private static final String SUBNET_GROUP = "bigvpcsubnet";
   private static final String UGLY_STAGE_PARAM_GROUP_NAME = LIVE_PARAM_GROUP_NAME + "-" + STAGE_PHYSICAL_NAME;
   private final Environment FAKE_STAGE_ENV = new Environment() //non-static: needs to be reinitialized on every test
   {{
@@ -214,6 +215,9 @@ public class RDSSnapshotRestoreTaskTest
       Endpoint endpoint = new Endpoint();
       endpoint.setAddress(STAGE_ENDPOINT_ADDRESS);
       dbInstance.setEndpoint(endpoint);
+      DBSubnetGroup dbSubnetGroup = new DBSubnetGroup();
+      dbSubnetGroup.setDBSubnetGroupName(SUBNET_GROUP);
+      dbInstance.setDBSubnetGroup(dbSubnetGroup);
       return dbInstance;
     }
 
@@ -257,7 +261,7 @@ public class RDSSnapshotRestoreTaskTest
                                             String snapshotId)
   {
     RestoreStageFakeData data = new RestoreStageFakeData(stageRestoreStatus, stageModifyStatus, stageParamGroupName, snapshotId);
-    when(mockRdsCopier.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId))
+    when(mockRdsCopier.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId, SUBNET_GROUP))
         .thenReturn(data.getStageRestoreInstance());
     when(mockRdsAnalyzer.extractVpcSecurityGroupIds(data.getLiveInstance())).thenReturn(data.getSecurityGroups());
     when(mockRdsCopier.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
@@ -302,7 +306,7 @@ public class RDSSnapshotRestoreTaskTest
 
     assertEquals(results.getResultInstance(), data.getStageModifyInstance());
     assertNull(results.getException());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID);
+    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
     verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
@@ -317,7 +321,7 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID);
+    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
     verify(mockRdsCopier, times(0)).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
@@ -332,7 +336,7 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID);
+    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
     verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
@@ -478,7 +482,7 @@ public class RDSSnapshotRestoreTaskTest
     inOrder.verify(mockRdsCopier).describeInstance(LIVE_PHYSICAL_NAME);
     inOrder.verify(mockRdsCopier).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
     inOrder.verify(mockRdsCopier).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
-    inOrder.verify(mockRdsCopier).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString());
+    inOrder.verify(mockRdsCopier).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
     inOrder.verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
   }
 

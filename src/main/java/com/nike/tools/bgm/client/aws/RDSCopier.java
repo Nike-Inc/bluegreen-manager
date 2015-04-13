@@ -150,15 +150,17 @@ public class RDSCopier
    * <p/>
    * New instance gets the default security group, otherwise should be same as snapshot.
    */
-  public DBInstance restoreInstanceFromSnapshot(String instanceName, String snapshotId)
+  public DBInstance restoreInstanceFromSnapshot(String instanceName, String snapshotId, String subnetGroupName)
   {
-    LOGGER.debug("restoreDBInstanceFromDBSnapshot(instanceName: " + instanceName + ", snapshotId: " + snapshotId + ")");
+    LOGGER.debug("restoreDBInstanceFromDBSnapshot(instanceName: " + instanceName + ", snapshotId: " + snapshotId
+        + ", subnetGroupName: " + subnetGroupName + ")");
     StopWatch stopWatch = new StopWatch();
     try
     {
       stopWatch.start();
       RestoreDBInstanceFromDBSnapshotRequest request = new RestoreDBInstanceFromDBSnapshotRequest(
           instanceName, snapshotId);
+      request.setDBSubnetGroupName(subnetGroupName);
       return rdsClient.restoreDBInstanceFromDBSnapshot(request);
     }
     finally

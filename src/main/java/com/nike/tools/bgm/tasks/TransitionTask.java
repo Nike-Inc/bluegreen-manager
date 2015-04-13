@@ -19,7 +19,7 @@ public abstract class TransitionTask extends ApplicationTask
   private static final Logger LOGGER = LoggerFactory.getLogger(TransitionTask.class);
   private static final long WAIT_DELAY_MILLISECONDS = 3000L; //3sec
 
-  private static int maxNumWaits = 120; //6min
+  private static int maxNumWaits = 200; //10min
   private static int waitReportInterval = 10; //30sec
 
   @Autowired

@@ -36,6 +36,7 @@ public class RDSCopierTest
   private static final String ANOTHER_SNAPSHOT_ID = "another-snapshot-67893";
   private static final String PARAM_GROUP = "default-mysql";
   private static final String SECURITY_GROUP = "rds-mysql";
+  private static final String SUBNET_GROUP = "vpcsubnet";
 
   private AmazonRDSClient mockRdsClient = mock(AmazonRDSClient.class);
   private RDSCopier rdsCopier = new RDSCopier(mockRdsClient);
@@ -194,7 +195,7 @@ public class RDSCopierTest
     when(mockRdsClient.restoreDBInstanceFromDBSnapshot(any(RestoreDBInstanceFromDBSnapshotRequest.class)))
         .thenReturn(mockInstance);
 
-    assertEquals(mockInstance, rdsCopier.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID));
+    assertEquals(mockInstance, rdsCopier.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID, SUBNET_GROUP));
   }
 
   /**

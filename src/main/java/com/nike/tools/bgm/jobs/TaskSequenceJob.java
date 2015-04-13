@@ -170,11 +170,11 @@ public abstract class TaskSequenceJob implements Job
     sb.append("\n");
     sb.append("CommandLine: " + commandLine + "\n");
     sb.append("\n");
-    sb.append("JobName: " + getName() + "\n");
-    sb.append("Noop: " + noop + "\n");
-    sb.append("Force: " + force + "\n");
+    sb.append("JobName:   " + getName() + "\n");
+    sb.append("Noop:      " + noop + "\n");
+    sb.append("Force:     " + force + "\n");
     sb.append("StartTime: " + newJobHistory.getStartTime() + "\n");
-    sb.append("EndTime: " + newJobHistory.getEndTime() + "\n");
+    sb.append("EndTime:   " + newJobHistory.getEndTime() + "\n");
     sb.append("JobStatus: " + newJobHistory.getStatus() + "\n");
     sb.append("\n");
     sb.append("Tasks Attempted:\n");

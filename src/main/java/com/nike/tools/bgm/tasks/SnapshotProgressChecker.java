@@ -16,7 +16,6 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotProgressChecker.class);
 
-  private String description;
   private String snapshotId;
   private String logContext;
   private RDSCopier rdsCopier;
@@ -24,12 +23,10 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   private boolean done;
   private DBSnapshot result;
 
-  public SnapshotProgressChecker(String description,
-                                 String snapshotId,
+  public SnapshotProgressChecker(String snapshotId,
                                  String logContext,
                                  RDSCopier rdsCopier, DBSnapshot initialSnapshot)
   {
-    this.description = description;
     this.snapshotId = snapshotId;
     this.logContext = logContext;
     this.rdsCopier = rdsCopier;
@@ -39,7 +36,7 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   @Override
   public String getDescription()
   {
-    return description;
+    return "Create Snapshot '" + snapshotId + "'";
   }
 
   /**
@@ -88,6 +85,7 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
     final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
     if (SnapshotStatus.AVAILABLE.equalsString(status))
     {
+      LOGGER.info("RDS Snapshot '" + snapshotId + "' is done");
       done = true;
       result = dbSnapshot;
     }

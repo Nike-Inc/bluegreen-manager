@@ -21,7 +21,6 @@ public class SnapshotProgressCheckerTest
 {
   private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
-  private static final String DESCRIPTION = "The Snapshot Activity";
   private static final String SNAPSHOT_ID = "the-snapshot-123";
   private static final String ANOTHER_SNAPSHOT_ID = "another-snapshot-456";
   private static final String INSTANCE_ID = "rds-instance-hello";
@@ -32,7 +31,7 @@ public class SnapshotProgressCheckerTest
 
   private SnapshotProgressChecker makeProgressChecker(DBSnapshot initialSnapshot)
   {
-    return new SnapshotProgressChecker(DESCRIPTION, SNAPSHOT_ID, LOG_CONTEXT, mockRdsCopier, initialSnapshot);
+    return new SnapshotProgressChecker(SNAPSHOT_ID, LOG_CONTEXT, mockRdsCopier, initialSnapshot);
   }
 
   /**
@@ -51,7 +50,7 @@ public class SnapshotProgressCheckerTest
   public void testGetDescription()
   {
     SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.AVAILABLE));
-    assertEquals(DESCRIPTION, progressChecker.getDescription());
+    assertTrue(progressChecker.getDescription().contains(SNAPSHOT_ID));
   }
 
   /**

@@ -46,7 +46,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   @Override
   public String getDescription()
   {
-    return create ? "Create Instance" : "Modify Instance";
+    return (create ? "Create Instance" : "Modify Instance") + " '" + instanceId + "'";
   }
 
   /**
@@ -69,7 +69,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   {
     DBInstance dbInstance = rdsCopier.describeInstance(instanceId);
     checkInstanceId(dbInstance);
-    LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + initialInstance.getDBInstanceStatus());
+    LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
     checkInstanceStatus(dbInstance);
   }
 
@@ -95,6 +95,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
     final String instanceId = dbInstance.getDBInstanceIdentifier();
     if (InstanceStatus.AVAILABLE.equalsString(status))
     {
+      LOGGER.info("RDS " + getDescription() + " '" + instanceId + "' is done");
       done = true;
       result = dbInstance;
     }
