@@ -16,10 +16,11 @@ import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.amazonaws.services.rds.model.Endpoint;
-import com.nike.tools.bgm.client.aws.AvailableStatus;
+import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
 import com.nike.tools.bgm.client.aws.RDSCopier;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
+import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.DatabaseTestHelper;
 import com.nike.tools.bgm.model.domain.Environment;
@@ -54,7 +55,7 @@ public class RDSSnapshotRestoreTaskTest
   private static final String LIVE_PARAM_GROUP_NAME = "live-param-group";
   private static final String SIMPLE_STAGE_PARAM_GROUP_NAME = "stage-param-group";
   private static final String STAGE_ENDPOINT_ADDRESS = "stage.hello.com";
-  private static final AvailableStatus UNKNOWN_STATUS = null;
+  private static final SnapshotStatus UNKNOWN_STATUS = null;
   private static final String UGLY_STAGE_PARAM_GROUP_NAME = LIVE_PARAM_GROUP_NAME + "-" + STAGE_PHYSICAL_NAME;
   private final Environment FAKE_STAGE_ENV = new Environment() //non-static: needs to be reinitialized on every test
   {{
@@ -142,7 +143,7 @@ public class RDSSnapshotRestoreTaskTest
     normalSetup();
     DBSnapshot dbSnapshot = new DBSnapshot();
     dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
-    dbSnapshot.setStatus(AvailableStatus.AVAILABLE.toString());
+    dbSnapshot.setStatus(SnapshotStatus.AVAILABLE.toString());
     when(mockRdsCopier.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
     assertEquals(dbSnapshot, rdsSnapshotRestoreTask.snapshotLive(false/*noop*/));
@@ -188,24 +189,24 @@ public class RDSSnapshotRestoreTaskTest
     private static final String UNKNOWN_STATUS = "unknown";
     private DBSnapshot dbSnapshot = new DBSnapshot();
     private DBParameterGroup stageParamGroup = new DBParameterGroup();
-    private DBInstance liveInstance = makeInstance(LIVE_PHYSICAL_NAME, AvailableStatus.AVAILABLE);
+    private DBInstance liveInstance = makeInstance(LIVE_PHYSICAL_NAME, InstanceStatus.AVAILABLE);
     private DBInstance stageRestoreInstance;
     private DBInstance stageModifyInstance;
     private Collection<String> securityGroups = Arrays.asList("security-group-1");
 
-    public RestoreStageFakeData(AvailableStatus stageRestoreStatus,
-                                AvailableStatus stageModifyStatus,
+    public RestoreStageFakeData(InstanceStatus stageRestoreStatus,
+                                InstanceStatus stageModifyStatus,
                                 String stageParamGroupName,
                                 String snapshotId)
     {
       dbSnapshot.setDBSnapshotIdentifier(snapshotId);
-      dbSnapshot.setStatus(AvailableStatus.AVAILABLE.toString());
+      dbSnapshot.setStatus(SnapshotStatus.AVAILABLE.toString());
       stageParamGroup.setDBParameterGroupName(stageParamGroupName);
       stageRestoreInstance = makeInstance(STAGE_PHYSICAL_NAME, stageRestoreStatus);
       stageModifyInstance = makeInstance(STAGE_PHYSICAL_NAME, stageModifyStatus);
     }
 
-    private DBInstance makeInstance(String name, AvailableStatus status)
+    private DBInstance makeInstance(String name, InstanceStatus status)
     {
       DBInstance dbInstance = new DBInstance();
       dbInstance.setDBInstanceIdentifier(name);
@@ -250,8 +251,8 @@ public class RDSSnapshotRestoreTaskTest
   /**
    * Sets up fake data and mocks for restoreStage.
    */
-  private RestoreStageFakeData restoreSetup(AvailableStatus stageRestoreStatus,
-                                            AvailableStatus stageModifyStatus,
+  private RestoreStageFakeData restoreSetup(InstanceStatus stageRestoreStatus,
+                                            InstanceStatus stageModifyStatus,
                                             String stageParamGroupName,
                                             String snapshotId)
   {
@@ -270,8 +271,8 @@ public class RDSSnapshotRestoreTaskTest
    * @param stageRestoreStatus Instance status of stage physicaldb after restore-from-snapshot operation.
    * @param stageModifyStatus  Instance status of stage physicaldb after modify operation.
    */
-  private RestoreStageResults testRestoreStage(AvailableStatus stageRestoreStatus,
-                                               AvailableStatus stageModifyStatus,
+  private RestoreStageResults testRestoreStage(InstanceStatus stageRestoreStatus,
+                                               InstanceStatus stageModifyStatus,
                                                String stageParamGroupName)
   {
     normalSetup();
@@ -296,7 +297,7 @@ public class RDSSnapshotRestoreTaskTest
   @Test
   public void testRestoreStage_Pass()
   {
-    RestoreStageResults results = testRestoreStage(AvailableStatus.AVAILABLE, AvailableStatus.AVAILABLE, SIMPLE_STAGE_PARAM_GROUP_NAME);
+    RestoreStageResults results = testRestoreStage(InstanceStatus.AVAILABLE, InstanceStatus.AVAILABLE, SIMPLE_STAGE_PARAM_GROUP_NAME);
     RestoreStageFakeData data = results.getData();
 
     assertEquals(results.getResultInstance(), data.getStageModifyInstance());
@@ -311,7 +312,7 @@ public class RDSSnapshotRestoreTaskTest
   @Test
   public void testRestoreStage_FailRestore()
   {
-    RestoreStageResults results = testRestoreStage(UNKNOWN_STATUS, AvailableStatus.AVAILABLE, SIMPLE_STAGE_PARAM_GROUP_NAME);
+    RestoreStageResults results = testRestoreStage(null, InstanceStatus.AVAILABLE, SIMPLE_STAGE_PARAM_GROUP_NAME);
     RestoreStageFakeData data = results.getData();
 
     assertNull(results.getResultInstance());
@@ -326,7 +327,7 @@ public class RDSSnapshotRestoreTaskTest
   @Test
   public void testRestoreStage_FailModify()
   {
-    RestoreStageResults results = testRestoreStage(AvailableStatus.AVAILABLE, UNKNOWN_STATUS, SIMPLE_STAGE_PARAM_GROUP_NAME);
+    RestoreStageResults results = testRestoreStage(InstanceStatus.AVAILABLE, null, SIMPLE_STAGE_PARAM_GROUP_NAME);
     RestoreStageFakeData data = results.getData();
 
     assertNull(results.getResultInstance());
@@ -430,8 +431,8 @@ public class RDSSnapshotRestoreTaskTest
    * @param stageRestoreStatus Instance status of stage physicaldb after restore-from-snapshot operation.
    * @param stageModifyStatus  Instance status of stage physicaldb after modify operation.
    */
-  private ProcessResults testProcess(AvailableStatus stageRestoreStatus,
-                                     AvailableStatus stageModifyStatus,
+  private ProcessResults testProcess(InstanceStatus stageRestoreStatus,
+                                     InstanceStatus stageModifyStatus,
                                      boolean noop)
   {
     normalSetup();
@@ -468,7 +469,7 @@ public class RDSSnapshotRestoreTaskTest
   @Test
   public void testProcess_Pass() throws Throwable
   {
-    ProcessResults results = testProcess(AvailableStatus.AVAILABLE, AvailableStatus.AVAILABLE, false);
+    ProcessResults results = testProcess(InstanceStatus.AVAILABLE, InstanceStatus.AVAILABLE, false);
     RestoreStageFakeData data = results.getData();
 
     assertNoException(results.getException());
@@ -487,7 +488,7 @@ public class RDSSnapshotRestoreTaskTest
   @Test
   public void testProcess_Noop() throws Throwable
   {
-    ProcessResults results = testProcess(AvailableStatus.AVAILABLE, AvailableStatus.AVAILABLE, true);
+    ProcessResults results = testProcess(InstanceStatus.AVAILABLE, InstanceStatus.AVAILABLE, true);
 
     assertNoException(results.getException());
     assertEquals(TaskStatus.NOOP, results.getTaskStatus());

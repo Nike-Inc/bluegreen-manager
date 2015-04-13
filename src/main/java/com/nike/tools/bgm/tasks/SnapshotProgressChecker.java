@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.AvailableStatus;
 import com.nike.tools.bgm.client.aws.RDSCopier;
+import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
@@ -86,12 +86,12 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   {
     final String status = dbSnapshot.getStatus();
     final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (AvailableStatus.AVAILABLE.equalsString(status))
+    if (SnapshotStatus.AVAILABLE.equalsString(status))
     {
       done = true;
       result = dbSnapshot;
     }
-    else if (AvailableStatus.CREATING.equalsString(status))
+    else if (SnapshotStatus.CREATING.equalsString(status))
     {
       //Keep trying.
     }

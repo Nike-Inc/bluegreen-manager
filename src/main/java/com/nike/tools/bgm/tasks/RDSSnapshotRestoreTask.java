@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.AvailableStatus;
+import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
 import com.nike.tools.bgm.client.aws.RDSCopier;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
@@ -444,7 +444,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private void checkInstanceStatus(DBInstance dbInstance, String actionTaken)
   {
     final String status = dbInstance.getDBInstanceStatus();
-    if (AvailableStatus.AVAILABLE.equalsString(status))
+    if (InstanceStatus.AVAILABLE.equalsString(status))
     {
       LOGGER.info(stageContext() + actionTaken + " instance '" + dbInstance.getDBInstanceIdentifier()
           + "': Status '" + status + "'");
