@@ -80,7 +80,7 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   }
 
   /**
-   * Checks if snapshot has attained the desired availability status.
+   * Checks if the snapshot is in an acceptable intermediate status, and flags done if status=available.
    */
   private void checkSnapshotStatus(DBSnapshot dbSnapshot)
   {
@@ -93,7 +93,7 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
     }
     else if (SnapshotStatus.CREATING.equalsString(status))
     {
-      //Keep trying.
+      //Keep waiting.
     }
     else
     {

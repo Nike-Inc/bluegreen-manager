@@ -166,5 +166,6 @@ public class SnapshotProgressCheckerTest
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());
     assertEquals(followupSnapshot, progressChecker.getResult());
+    verifyDescribeSnapshot();
   }
 }
