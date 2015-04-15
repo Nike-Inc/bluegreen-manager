@@ -39,7 +39,7 @@ public class SshVmCreateProgressCheckerTest
   private static final String DONE_FOLLOWUP_STDOUT = "VM is all done!\nThe End";
   private static final String ERROR_FOLLOWUP_STDOUT = "Error starting your VM";
   private static final String NOTDONE_FOLLOWUP_STDOUT = "VM is still starting up";
-  private static final String FOLLOWUP_CMD = "check how ${hostname} is doing";
+  private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String SUBSTITUTED_FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all done";
   private static final String FOLLOWUP_REGEXP_ERROR = "[Ee]rror";

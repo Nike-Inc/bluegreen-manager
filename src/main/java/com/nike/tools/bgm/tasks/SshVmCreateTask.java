@@ -23,7 +23,7 @@ import com.nike.tools.bgm.utils.Waiter;
 @Component
 public class SshVmCreateTask extends ApplicationVmTask
 {
-  private static final String CMDVAR_ENVNAME = "${envName}";
+  private static final String CMDVAR_ENVNAME = "%{envName}";
   private static final long WAIT_DELAY_MILLISECONDS = 30000L; //30sec
 
   private static int maxNumWaits = 120; //1 hour
@@ -88,8 +88,10 @@ public class SshVmCreateTask extends ApplicationVmTask
   }
 
   /**
-   * Substitutes variables of the form '${vblname}' in the original string, returns the replaced version.
+   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
    * Currently supports only one variable: envName
+   * <p/>
+   * Can't support '${..}' since Spring already substitutes that in properties file.
    */
   private String substituteInitialVariables(String original)
   {

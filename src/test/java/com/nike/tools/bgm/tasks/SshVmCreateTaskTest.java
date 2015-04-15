@@ -32,7 +32,7 @@ public class SshVmCreateTaskTest
 {
   private static final Environment FAKE_EMPTY_ENVIRONMENT = ApplicationTestHelper.makeFakeEnvironment();
   private static final String FAKE_EMPTY_ENV_NAME = FAKE_EMPTY_ENVIRONMENT.getEnvName();
-  private static final String INITIAL_CMD = "run stuff in env ${envName}";
+  private static final String INITIAL_CMD = "run stuff in env %{envName}";
   private static final String SUBSTITUTED_INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
@@ -42,7 +42,7 @@ public class SshVmCreateTaskTest
   private static final String DONE_FOLLOWUP_STDOUT = "New VM is all DONE";
   private static final String ERROR_FOLLOWUP_STDOUT = "New VM has EXPLODED";
   private static final String NOTDONE_FOLLOWUP_STDOUT = "New VM is still starting up";
-  private static final String FOLLOWUP_CMD = "check how ${hostname} is doing";
+  private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all DONE$";
   private static final String FOLLOWUP_REGEXP_ERROR = "EXPLODED$";
 

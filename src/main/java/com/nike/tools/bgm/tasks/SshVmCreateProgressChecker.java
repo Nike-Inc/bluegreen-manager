@@ -19,7 +19,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateProgressChecker.class);
   private static final String HYPHEN_LINE = "----------------------------------------------------------------------";
-  private static final String CMDVAR_HOSTNAME = "${hostname}";
+  private static final String CMDVAR_HOSTNAME = "%{hostname}";
 
   private String initialOutput;
   private String logContext;
@@ -178,8 +178,10 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   }
 
   /**
-   * Substitutes variables of the form '${vblname}' in the original string, returns the replaced version.
+   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
    * Currently supports only one variable: hostname
+   * <p/>
+   * Can't support '${..}' since Spring already substitutes that in properties file.
    */
   private String substituteFollowupVariables(String original)
   {
