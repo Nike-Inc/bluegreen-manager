@@ -85,10 +85,28 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
     {
       throw new RuntimeException("Blank initial output from " + getDescription());
     }
-    LOGGER.debug("Initial output from " + getDescription() + ":\n" + HYPHEN_LINE + "\n" + initialOutput + HYPHEN_LINE);
+    LOGGER.debug("Initial output from " + getDescription() + ":\n"
+        + HYPHEN_LINE + "\n" + closeWithNewline(initialOutput) + HYPHEN_LINE);
     hostname = getRequiredCapture("hostname", initialOutput, initialPatternHostname);
     ipAddress = getRequiredCapture("ipAddress", initialOutput, initialPatternIpAddress);
     LOGGER.info(context() + "STARTED");
+  }
+
+  /**
+   * Returns the input string plus a newline if it does not already end with one.
+   */
+  private String closeWithNewline(String str)
+  {
+    if (str == null)
+    {
+      return str;
+    }
+    if (!str.endsWith("\n"))
+    {
+      return str + "\n";
+      //Incomplete, doesn't solve for case where ssh host is windows ...but this is just for debug assistance anyway
+    }
+    return str;
   }
 
   /**
@@ -136,7 +154,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
    */
   private String[] parseLines(String output)
   {
-    return output.split("[\\n\\r]+");
+    return output.split("[\\r\\n]+");
   }
 
   /**

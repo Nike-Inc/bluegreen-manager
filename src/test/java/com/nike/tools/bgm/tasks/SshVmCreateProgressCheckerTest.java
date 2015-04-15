@@ -33,9 +33,9 @@ public class SshVmCreateProgressCheckerTest
   private static final String VM_IPADDRESS = "123.45.67.89";
   private static final String GOOD_INITIAL_STDOUT = "New VM started:\nHostname=" + VM_HOSTNAME + "\nIP Address=" + VM_IPADDRESS + "\n";
   private static final String BAD_INITIAL_STDOUT = "New VM started:\nHostname=" + VM_HOSTNAME + "\nNo IP Address\n";
-  private static final String INIT_CMD = "run stuff";
-  private static final String INIT_REGEXP_IPADDR = "^IP Address=(.*)";
-  private static final String INIT_REGEXP_HOST = "^Hostname=(.*)";
+  private static final String INITIAL_CMD = "run stuff";
+  private static final String INITIAL_REGEXP_IPADDR = "^IP Address=(.*)";
+  private static final String INITIAL_REGEXP_HOST = "^Hostname=(.*)";
   private static final String DONE_FOLLOWUP_STDOUT = "VM is all done!\nThe End";
   private static final String ERROR_FOLLOWUP_STDOUT = "Error starting your VM";
   private static final String NOTDONE_FOLLOWUP_STDOUT = "VM is still starting up";
@@ -43,7 +43,7 @@ public class SshVmCreateProgressCheckerTest
   private static final String SUBSTITUTED_FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all done";
   private static final String FOLLOWUP_REGEXP_ERROR = "[Ee]rror";
-  private static final SshVmCreateConfig FAKE_CONFIG = new SshVmCreateConfig(INIT_CMD, INIT_REGEXP_IPADDR, INIT_REGEXP_HOST,
+  private static final SshVmCreateConfig FAKE_CONFIG = new SshVmCreateConfig(INITIAL_CMD, INITIAL_REGEXP_IPADDR, INITIAL_REGEXP_HOST,
       FOLLOWUP_CMD, FOLLOWUP_REGEXP_DONE, FOLLOWUP_REGEXP_ERROR);
 
   @Mock

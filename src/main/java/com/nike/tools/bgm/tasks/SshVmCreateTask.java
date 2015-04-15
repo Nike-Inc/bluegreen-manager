@@ -59,21 +59,24 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Override
   public TaskStatus process(boolean noop)
   {
-    initSshClient();
+    initSshClient(noop);
     execSshVmCreateCommand(noop);
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
 
-  private void initSshClient()
+  private void initSshClient(boolean noop)
   {
-    sshClient = new SshClient().init(sshTarget);
+    if (!noop)
+    {
+      sshClient = new SshClient().init(sshTarget);
+    }
   }
 
   /**
    * Executes the initial command to create a vm.
    */
-  private void execSshVmCreateCommand(boolean noop)
+  void execSshVmCreateCommand(boolean noop)
   {
     LOGGER.info(context() + "Executing vm-create command over ssh" + noopRemark(noop));
     if (!noop)
@@ -123,5 +126,17 @@ public class SshVmCreateTask extends ApplicationVmTask
       applicationVm.setEnvironment(environment);
       environmentTx.updateEnvironment(environment); //Cascades to new applicationVm.
     }
+  }
+
+  //Test purposes only
+  static void setMaxNumWaits(int maxNumWaits)
+  {
+    SshVmCreateTask.maxNumWaits = maxNumWaits;
+  }
+
+  //Test purposes only
+  static void setWaitReportInterval(int waitReportInterval)
+  {
+    SshVmCreateTask.waitReportInterval = waitReportInterval;
   }
 }

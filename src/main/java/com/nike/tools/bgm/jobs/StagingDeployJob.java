@@ -52,7 +52,7 @@ public class StagingDeployJob extends TaskSequenceJob
     //tasks.add(new RegisterStageTask(stageEnv));
     tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
     //tasks.add(new EnvXmlMergeTask(liveEnv, stageEnv)); //PT-2018
-    //tasks.add(new StagingDeployTask(liveEnv, stageEnv, pkgnames)); //PT-2019
+    //tasks.add(new DeployPackagesTask(liveEnv, stageEnv, pkgnames)); //PT-2019
     this.tasks = tasks;
   }
 
