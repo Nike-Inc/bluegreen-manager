@@ -126,4 +126,11 @@ public class EnvironmentTx
     environmentDAO.persist(environment);
   }
 
+  /**
+   * Persists changes to the environment, and any associated application vms or logical database.
+   */
+  public void updateEnvironment(Environment environment)
+  {
+    environmentDAO.merge(environment);
+  }
 }

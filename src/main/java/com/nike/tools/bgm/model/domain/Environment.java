@@ -87,6 +87,15 @@ public class Environment
     logicalDatabases.add(logicalDatabase);
   }
 
+  public void addApplicationVm(ApplicationVm applicationVm)
+  {
+    if (applicationVms == null)
+    {
+      applicationVms = new ArrayList<ApplicationVm>();
+    }
+    applicationVms.add(applicationVm);
+  }
+
   /**
    * Equality based solely on database identity.
    */

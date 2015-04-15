@@ -2,6 +2,9 @@ package com.nike.tools.bgm.model.domain;
 
 import java.util.Arrays;
 
+/**
+ * Makes fake entities related to environment, applicationVm, and application.
+ */
 public class ApplicationTestHelper
 {
   private static final String ENV_NAME = "theEnv";
@@ -18,19 +21,37 @@ public class ApplicationTestHelper
    */
   public static Application makeFakeApplication()
   {
-    Environment environment = new Environment();
-    environment.setEnvName(ENV_NAME);
-    ApplicationVm applicationVm = new ApplicationVm();
-    applicationVm.setEnvironment(environment);
-    applicationVm.setHostname(VMHOSTNAME);
+    ApplicationVm applicationVm = makeFakeApplicationVm(); //Includes environment.
     Application application = new Application();
     application.setApplicationVm(applicationVm);
     application.setPort(PORT);
     application.setScheme(SCHEME);
     application.setHostname(HOSTNAME);
     application.setUrlPath(URL_PATH);
-    environment.setApplicationVms(Arrays.asList(applicationVm));
     applicationVm.setApplications(Arrays.asList(application));
     return application;
+  }
+
+  /**
+   * Makes an applicationVm pointing to an environment.  No applications.
+   */
+  public static ApplicationVm makeFakeApplicationVm()
+  {
+    Environment environment = makeFakeEnvironment();
+    ApplicationVm applicationVm = new ApplicationVm();
+    applicationVm.setEnvironment(environment);
+    applicationVm.setHostname(VMHOSTNAME);
+    environment.setApplicationVms(Arrays.asList(applicationVm));
+    return applicationVm;
+  }
+
+  /**
+   * Makes an environment with a name but nothing else.
+   */
+  public static Environment makeFakeEnvironment()
+  {
+    Environment environment = new Environment();
+    environment.setEnvName(ENV_NAME);
+    return environment;
   }
 }

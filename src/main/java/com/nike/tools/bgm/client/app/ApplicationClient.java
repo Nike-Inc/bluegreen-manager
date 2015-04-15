@@ -24,6 +24,8 @@ import com.nike.tools.bgm.utils.ThreadSleeper;
  * HTTP client that makes requests to a blue-green compliant application, and knows to try again if
  * it gets a lock error.
  * <p/>
+ * Currently only support one of these in the whole app! i.e. use of @Value.
+ * <p/>
  * TODO - start capturing http response code, need to know if client has thrown an exception or responded non-200
  */
 @Lazy
