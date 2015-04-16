@@ -58,7 +58,7 @@ public class SshClientTest
 
   private void initWithFakeTarget()
   {
-    sshClient.init(new SshTarget(HOSTNAME, USERNAME, PASSWORD, TIMEOUT));
+    sshClient.init(new SshTarget(HOSTNAME, USERNAME, PASSWORD, TIMEOUT, TIMEOUT));
   }
 
   /**

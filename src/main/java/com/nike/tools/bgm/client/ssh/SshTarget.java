@@ -22,19 +22,37 @@ public class SshTarget
   @Value("${bluegreen.sshtarget.password}")
   private String password;
 
-  @Value("${bluegreen.sshtarget.connectTimeoutMilliseconds}")
-  private long connectTimeoutMilliseconds;
+  /**
+   * Ganymed-specific parameter applied to java.net.Socket SO_TIMEOUT and Socket.connect(addr, timeout).
+   * <p/>
+   * SO_TIMEOUT is the max time the socket will block on a call to read().
+   */
+  @Value("${bluegreen.sshtarget.soTimeoutMilliseconds}")
+  private long soTimeoutMilliseconds;
+
+  /**
+   * Ganymed-specific parameter applied to ssh KEX timeout.
+   * <p/>
+   * Max time the ssh library will wait for completion of initial ssh handshake.
+   */
+  @Value("${bluegreen.sshtarget.keyExchangeTimeoutMilliseconds}")
+  private long keyExchangeTimeoutMilliseconds;
 
   public SshTarget()
   {
   }
 
-  public SshTarget(String hostname, String username, String password, long connectTimeoutMilliseconds)
+  public SshTarget(String hostname,
+                   String username,
+                   String password,
+                   long soTimeoutMilliseconds,
+                   long keyExchangeTimeoutMilliseconds)
   {
     this.hostname = hostname;
     this.username = username;
     this.password = password;
-    this.connectTimeoutMilliseconds = connectTimeoutMilliseconds;
+    this.soTimeoutMilliseconds = soTimeoutMilliseconds;
+    this.keyExchangeTimeoutMilliseconds = keyExchangeTimeoutMilliseconds;
   }
 
   public String getHostname()
@@ -67,13 +85,23 @@ public class SshTarget
     this.password = password;
   }
 
-  public long getConnectTimeoutMilliseconds()
+  public long getSoTimeoutMilliseconds()
   {
-    return connectTimeoutMilliseconds;
+    return soTimeoutMilliseconds;
   }
 
-  public void setConnectTimeoutMilliseconds(long connectTimeoutMilliseconds)
+  public void setSoTimeoutMilliseconds(long soTimeoutMilliseconds)
   {
-    this.connectTimeoutMilliseconds = connectTimeoutMilliseconds;
+    this.soTimeoutMilliseconds = soTimeoutMilliseconds;
+  }
+
+  public long getKeyExchangeTimeoutMilliseconds()
+  {
+    return keyExchangeTimeoutMilliseconds;
+  }
+
+  public void setKeyExchangeTimeoutMilliseconds(long keyExchangeTimeoutMilliseconds)
+  {
+    this.keyExchangeTimeoutMilliseconds = keyExchangeTimeoutMilliseconds;
   }
 }

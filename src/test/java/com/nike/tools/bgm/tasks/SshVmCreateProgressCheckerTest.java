@@ -28,7 +28,7 @@ public class SshVmCreateProgressCheckerTest
   private static final String SSH_USERNAME = "target_user";
   private static final String SSH_PASSWORD = "password";
   private static final long SSH_TIMEOUT = 10L;
-  private static final SshTarget FAKE_SSH_TARGET = new SshTarget(SSH_HOSTNAME, SSH_USERNAME, SSH_PASSWORD, SSH_TIMEOUT);
+  private static final SshTarget FAKE_SSH_TARGET = new SshTarget(SSH_HOSTNAME, SSH_USERNAME, SSH_PASSWORD, SSH_TIMEOUT, SSH_TIMEOUT);
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
   private static final String GOOD_INITIAL_STDOUT = "New VM started:\nHostname=" + VM_HOSTNAME + "\nIP Address=" + VM_IPADDRESS + "\n";

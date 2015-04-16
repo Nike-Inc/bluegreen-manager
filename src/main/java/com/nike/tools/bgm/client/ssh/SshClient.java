@@ -45,12 +45,13 @@ public class SshClient
     this.sshTarget = sshTarget;
     final String hostname = sshTarget.getHostname();
     final String username = sshTarget.getUsername();
-    final int timeout = (int) sshTarget.getConnectTimeoutMilliseconds();
+    final int connectTimeout = (int) sshTarget.getSoTimeoutMilliseconds();
+    final int kexTimeout = (int) sshTarget.getKeyExchangeTimeoutMilliseconds();
     connection = sshConnectionFactory.create(hostname);
     boolean authenticated = false;
     try
     {
-      connection.connect(null, timeout, timeout);//TODO - specify ServerHostKeyVerifier
+      connection.connect(null, connectTimeout, kexTimeout);//TODO - specify ServerHostKeyVerifier
       authenticated = connection.authenticateWithPassword(username, sshTarget.getPassword());
     }
     catch (IOException e)
@@ -90,7 +91,7 @@ public class SshClient
     }
     catch (IOException e)
     {
-      throw new RuntimeException(context() + "Error executing command '" + wrappedCommand + "'", e);
+      throw new RuntimeException(context() + "Error executing command '" + wrappedCommand + "', time elapsed: " + stopWatch, e);
     }
     finally
     {
