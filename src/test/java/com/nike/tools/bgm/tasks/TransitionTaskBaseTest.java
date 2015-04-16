@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.mockito.Mock;
+import org.mockito.Spy;
 
 import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.ApplicationSession;
@@ -14,6 +15,7 @@ import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,6 +38,9 @@ public abstract class TransitionTaskBaseTest
   private static final Integer NO_OUTER_TRY = null;
   private static final Integer OUTER_FIRST_TRY = 0;
   protected static final Application FAKE_APPLICATION = ApplicationTestHelper.makeFakeApplication();
+
+  @Spy
+  protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);
 
   @Mock
   protected ApplicationClient mockApplicationClient;
@@ -261,7 +266,6 @@ public abstract class TransitionTaskBaseTest
                                                             DbFreezeProgress fourthProgress,
                                                             boolean expectSuccess) throws InterruptedException
   {
-    transitionTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
     TransitionProgressChecker progressChecker = makeTestChecker(transitionTask, fakeProgress(transitionalMode)/*progress #0*/);
     when(mockApplicationClient.getDbFreezeProgress(eq(FAKE_APPLICATION), eq(fakeSession), anyInt()))
         .thenReturn(fakeProgress(transitionalMode)) //progress #1, after 1st wait
@@ -312,7 +316,6 @@ public abstract class TransitionTaskBaseTest
                                                   DbFreezeProgress fourthProgress,
                                                   TaskStatus expectedStatus) throws InterruptedException
   {
-    transitionTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
     when(mockApplicationClient.getDbFreezeProgress(eq(FAKE_APPLICATION), eq(fakeSession), anyInt()))
         .thenReturn(fakeProgress(startMode))        //initial state ...before requestTransition
         .thenReturn(fakeProgress(transitionalMode)) //progress #1, after 1st wait

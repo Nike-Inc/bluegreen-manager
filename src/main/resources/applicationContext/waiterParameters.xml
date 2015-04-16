@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+    <qualifier value="rdsSnapshotRestoreTask"/>
+    <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.rdsSnapshotRestoreTask.initialWaitDelayMilliseconds}"/>
+    <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.rdsSnapshotRestoreTask.followupWaitDelayMilliseconds}"/>
+    <property name="waitReportInterval" value="${bluegreen.waiter.rdsSnapshotRestoreTask.waitReportInterval}"/>
+    <property name="maxNumWaits" value="${bluegreen.waiter.rdsSnapshotRestoreTask.maxNumWaits}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+    <qualifier value="sshVmCreateTask"/>
+    <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.initialWaitDelayMilliseconds}"/>
+    <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.followupWaitDelayMilliseconds}"/>
+    <property name="waitReportInterval" value="${bluegreen.waiter.sshVmCreateTask.waitReportInterval}"/>
+    <property name="maxNumWaits" value="${bluegreen.waiter.sshVmCreateTask.maxNumWaits}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+    <qualifier value="transitionTask"/>
+    <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.transitionTask.initialWaitDelayMilliseconds}"/>
+    <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.transitionTask.followupWaitDelayMilliseconds}"/>
+    <property name="waitReportInterval" value="${bluegreen.waiter.transitionTask.waitReportInterval}"/>
+    <property name="maxNumWaits" value="${bluegreen.waiter.transitionTask.maxNumWaits}"/>
+  </bean>
+
+</beans>

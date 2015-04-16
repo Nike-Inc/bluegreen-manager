@@ -15,6 +15,7 @@ import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyLong;
@@ -49,6 +50,9 @@ public class SshVmCreateTaskTest
   @InjectMocks
   private SshVmCreateTask sshVmCreateTask;
 
+  @Spy
+  protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);
+
   @Mock
   private ThreadSleeper mockThreadSleeper;
 
@@ -80,7 +84,6 @@ public class SshVmCreateTaskTest
                                                               Class<? extends Throwable> expectedExceptionType)
       throws InterruptedException
   {
-    sshVmCreateTask.setWaitReportInterval(2); //Just to see the extra logging on progress object #2, can't assert it though
     when(mockSshClient.execCommand(anyString()))
         .thenReturn(INITIAL_STDOUT)           //progress #0
         .thenReturn(NOTDONE_FOLLOWUP_STDOUT)  //progress #1, after 1st wait
@@ -130,7 +133,7 @@ public class SshVmCreateTaskTest
   @Test
   public void testExecSshVmCreateCommand_FourNotDoneThenTimeout() throws InterruptedException
   {
-    sshVmCreateTask.setMaxNumWaits(4);
+    fakeWaiterParameters.setMaxNumWaits(4);
     testExecSshVmCreateCommand_ThreeNotDoneThenEnd(NOTDONE_FOLLOWUP_STDOUT, RuntimeException.class);
   }
 

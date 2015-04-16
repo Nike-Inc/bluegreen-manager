@@ -13,6 +13,7 @@
   </bean>
 
   <import resource="persist.xml"/>
+  <import resource="waiterParameters.xml"/>
 
   <bean id="httpClient" class="org.apache.http.client.HttpClient" factory-bean="httpClientSSLFactory" factory-method="makeHttpClient"/>
 

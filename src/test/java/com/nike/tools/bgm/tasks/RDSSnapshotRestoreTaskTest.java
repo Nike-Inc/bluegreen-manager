@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBInstance;
@@ -28,6 +29,7 @@ import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static com.nike.tools.bgm.model.domain.DatabaseTestHelper.LIVE_ENV_NAME;
 import static com.nike.tools.bgm.model.domain.DatabaseTestHelper.LIVE_LOGICAL_NAME;
@@ -69,6 +71,9 @@ public class RDSSnapshotRestoreTaskTest
 
   @InjectMocks
   private RDSSnapshotRestoreTask rdsSnapshotRestoreTask;
+
+  @Spy
+  protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);
 
   @Mock
   private EnvironmentTx mockEnvironmentTx;

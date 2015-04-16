@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
  * Runs a configurable command over ssh to a third-party system that knows how to
@@ -24,12 +26,12 @@ import com.nike.tools.bgm.utils.Waiter;
 public class SshVmCreateTask extends ApplicationVmTask
 {
   private static final String CMDVAR_ENVNAME = "%{envName}";
-  private static final long WAIT_DELAY_MILLISECONDS = 30000L; //30sec
-
-  private static int maxNumWaits = 120; //1 hour
-  private static int waitReportInterval = 4; //2min
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateTask.class);
+
+  @Autowired
+  @Qualifier("sshVmCreateTask")
+  private WaiterParameters waiterParameters;
 
   @Autowired
   private ThreadSleeper threadSleeper;
@@ -43,6 +45,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Autowired
   private SshVmCreateConfig sshVmCreateConfig;
 
+  @Autowired
   private SshClient sshClient;
 
   public Task init(int position, String envName)
@@ -69,7 +72,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   {
     if (!noop)
     {
-      sshClient = new SshClient().init(sshTarget);
+      sshClient.init(sshTarget);
     }
   }
 
@@ -107,8 +110,7 @@ public class SshVmCreateTask extends ApplicationVmTask
     LOGGER.info(context() + "Waiting for applicationVm to become available");
     SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialOutput, context(),
         sshClient, sshTarget, sshVmCreateConfig);
-    Waiter<ApplicationVm> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
-        progressChecker);
+    Waiter<ApplicationVm> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     applicationVm = waiter.waitTilDone();
     if (applicationVm == null)
     {
@@ -130,15 +132,4 @@ public class SshVmCreateTask extends ApplicationVmTask
     }
   }
 
-  //Test purposes only
-  static void setMaxNumWaits(int maxNumWaits)
-  {
-    SshVmCreateTask.maxNumWaits = maxNumWaits;
-  }
-
-  //Test purposes only
-  static void setWaitReportInterval(int waitReportInterval)
-  {
-    SshVmCreateTask.waitReportInterval = waitReportInterval;
-  }
 }

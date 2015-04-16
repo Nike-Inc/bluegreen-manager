@@ -4,12 +4,14 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
  * Transitions the apps in the requested environment to the next dbfreeze-related steady state.
@@ -17,10 +19,10 @@ import com.nike.tools.bgm.utils.Waiter;
 public abstract class TransitionTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(TransitionTask.class);
-  private static final long WAIT_DELAY_MILLISECONDS = 3000L; //3sec
 
-  private static int maxNumWaits = 200; //10min
-  private static int waitReportInterval = 10; //30sec
+  @Autowired
+  @Qualifier("transitionTask")
+  private WaiterParameters waiterParameters;
 
   @Autowired
   private ThreadSleeper threadSleeper;
@@ -142,23 +144,10 @@ public abstract class TransitionTask extends ApplicationTask
     LOGGER.info(context() + "Waiting for " + transitionParameters.getVerb() + " to take effect" + noopRemark(noop));
     if (!noop)
     {
-      Waiter<Boolean> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
-          progressChecker);
+      Waiter<Boolean> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
       return waiter.waitTilDone();
     }
     return true;
-  }
-
-  // Test purposes only
-  static void setWaitReportInterval(int waitReportInterval)
-  {
-    TransitionTask.waitReportInterval = waitReportInterval;
-  }
-
-  // Test purposes only
-  static void setMaxNumWaits(int maxNumWaits)
-  {
-    TransitionTask.maxNumWaits = maxNumWaits;
   }
 
   // Test purposes only

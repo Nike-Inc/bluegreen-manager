@@ -173,7 +173,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testWaitForTransition_TimeoutOnThirdWait() throws InterruptedException
   {
-    freezeTask.setMaxNumWaits(3);
+    fakeWaiterParameters.setMaxNumWaits(3);
     testWaitForTransition_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FLUSHING), false);
   }
 
@@ -256,7 +256,7 @@ public class FreezeTaskTest extends TransitionTaskBaseTest
   @Test
   public void testProcess_TimeoutOnThirdWait() throws InterruptedException
   {
-    freezeTask.setMaxNumWaits(3);
+    fakeWaiterParameters.setMaxNumWaits(3);
     testProcess_ThreeFlushingThenEnd(fakeProgress(DbFreezeMode.FLUSHING), TaskStatus.ERROR);
   }
 

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,7 @@ import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
+import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
  * Takes a snapshot of the live RDS instance and restores it in the new staging environment.
@@ -45,10 +47,6 @@ import com.nike.tools.bgm.utils.Waiter;
 public class RDSSnapshotRestoreTask extends TaskImpl
 {
   private static final Pattern JDBC_URL = Pattern.compile("(jdbc:mysql://)([^:/]+)(.*)");
-  private static final long WAIT_DELAY_MILLISECONDS = 10000L; //10sec
-
-  private static int maxNumWaits = 120; //20min
-  private static int waitReportInterval = 3; //30sec
 
   /**
    * Using '9' as a delimiter char, since the only other special char allowed in a snapshotId is '-' and we are
@@ -58,6 +56,10 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private static final String SNAPSHOT_PREFIX = "bluegreen";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RDSSnapshotRestoreTask.class);
+
+  @Autowired
+  @Qualifier("rdsSnapshotRestoreTask")
+  private WaiterParameters waiterParameters;
 
   @Autowired
   private EnvironmentTx environmentTx;
@@ -360,8 +362,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
     SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(snapshotId, liveContext(), rdsCopier,
         initialSnapshot);
-    Waiter<DBSnapshot> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
-        progressChecker);
+    Waiter<DBSnapshot> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBSnapshot dbSnapshot = waiter.waitTilDone();
     if (dbSnapshot == null)
     {
@@ -461,8 +462,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     LOGGER.info(liveContext() + "Waiting for instance to become available");
     InstanceProgressChecker progressChecker = new InstanceProgressChecker(instanceId, liveContext(), rdsCopier,
         initialInstance, create);
-    Waiter<DBInstance> waiter = new Waiter(maxNumWaits, waitReportInterval, WAIT_DELAY_MILLISECONDS, threadSleeper,
-        progressChecker);
+    Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBInstance dbInstance = waiter.waitTilDone();
     if (dbInstance == null)
     {

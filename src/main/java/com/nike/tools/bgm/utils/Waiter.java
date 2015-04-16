@@ -18,20 +18,21 @@ public class Waiter<T>
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(Waiter.class);
 
-  private int maxNumWaits;
-  private int waitReportInterval; //Set to 1 to report time elapsed on every iteration, or 10 for every 10th iteration.
-  private long waitDelayMilliseconds;
+  /**
+   * Sleep longer than this threshold is "long" from the perspective of someone watching the logs live, and
+   * merits an extra line of debug logging.
+   */
+  private static final long LONG_SLEEP_THRESHOLD = 30000L; //30sec
+
+  private WaiterParameters waiterParameters;
   private ThreadSleeper threadSleeper;
   private ProgressChecker<T> progressChecker;
 
-  public Waiter(int maxNumWaits,
-                int waitReportInterval,
-                long waitDelayMilliseconds,
-                ThreadSleeper threadSleeper, ProgressChecker<T> progressChecker)
+  public Waiter(WaiterParameters waiterParameters,
+                ThreadSleeper threadSleeper,
+                ProgressChecker<T> progressChecker)
   {
-    this.maxNumWaits = maxNumWaits;
-    this.waitReportInterval = waitReportInterval;
-    this.waitDelayMilliseconds = waitDelayMilliseconds;
+    this.waiterParameters = waiterParameters;
     this.threadSleeper = threadSleeper;
     this.progressChecker = progressChecker;
   }
@@ -46,7 +47,7 @@ public class Waiter<T>
     StopWatch stopWatch = new StopWatch();
     stopWatch.start();
     int waitNum = 0;
-    while (waitNum < maxNumWaits + 1) //Not counting "waitNum#0" since first one doesn't call sleep()
+    while (waitNum < waiterParameters.getMaxNumWaits() + 1) //Not counting "waitNum#0" since first one doesn't call sleep()
     {
       if (waitNum == 0)
       {
@@ -71,16 +72,22 @@ public class Waiter<T>
    */
   private void sleep(int waitNum, StopWatch stopWatch)
   {
-    if (0 < waitNum && waitNum < maxNumWaits + 1)
+    if (0 < waitNum && waitNum < waiterParameters.getMaxNumWaits() + 1)
     {
-      if (waitNum % waitReportInterval == 0)
+      if (waitNum % waiterParameters.getWaitReportInterval() == 0)
       {
-        LOGGER.info("Wait #" + waitNum + " (max " + maxNumWaits + ") for " + progressChecker.getDescription()
-            + " ... time elapsed: " + stopWatch.toString());
+        LOGGER.info("Wait #" + waitNum + " (max " + waiterParameters.getMaxNumWaits() + ") for "
+            + progressChecker.getDescription() + " ... time elapsed: " + stopWatch.toString());
+      }
+      final long delay = waitNum == 1 ? waiterParameters.getInitialWaitDelayMilliseconds()
+          : waiterParameters.getFollowupWaitDelayMilliseconds();
+      if (delay >= LONG_SLEEP_THRESHOLD)
+      {
+        LOGGER.debug("Going to sleep for " + delay + " milliseconds");
       }
       try
       {
-        threadSleeper.sleep(waitDelayMilliseconds);
+        threadSleeper.sleep(delay);
       }
       catch (InterruptedException e) //NOSONAR
       {
