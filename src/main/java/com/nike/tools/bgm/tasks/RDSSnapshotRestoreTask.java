@@ -87,6 +87,8 @@ public class RDSSnapshotRestoreTask extends TaskImpl
    * Looks up the environment entities by name.
    * Currently requires that the live env has exactly one logicaldb, with one physicaldb.
    * Error if any prior stage database exists.
+   *
+   * @param dbMap Maps live logical dbname to new stage physical dbname.
    */
   public Task init(int position, String liveEnvName, String stageEnvName, Map<String, String> dbMap)
   {

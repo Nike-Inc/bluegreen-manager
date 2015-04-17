@@ -18,7 +18,7 @@ import com.nike.tools.bgm.utils.Waiter;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
- * Runs a configurable command over ssh to a third-party system that knows how to
+ * Executes a long-running configurable command over ssh to a third-party system that knows how to
  * create an application vm.
  */
 @Lazy
