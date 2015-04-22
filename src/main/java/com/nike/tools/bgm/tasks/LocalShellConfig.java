@@ -14,10 +14,10 @@ public class LocalShellConfig
   @Value("${bluegreen.localshell.command}")
   private String command;
 
-  @Value("#{bluegreen.localshell.regexp.error}")
+  @Value("${bluegreen.localshell.regexp.error}")
   private String regexpError;
 
-  @Value("#{bluegreen.localshell.exitvalue.success}")
+  @Value("${bluegreen.localshell.exitvalue.success}")
   private Integer exitvalueSuccess;
 
   public LocalShellConfig()

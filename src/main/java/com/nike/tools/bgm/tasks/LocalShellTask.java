@@ -180,7 +180,6 @@ public class LocalShellTask extends TaskImpl
         stopWatch.start();
         Process process = processBuilderAdapter.start();
         String output = blockAndLogOutput(process);
-        LOGGER.debug("Command exit code: " + process.exitValue());
         taskStatus = checkForErrors(output, process.exitValue());
       }
       catch (IOException e)
@@ -254,6 +253,8 @@ public class LocalShellTask extends TaskImpl
   /**
    * Iterates over the process stdout until there is no more.  Blocks til the process is done.
    * Returns the output as a single string.
+   * <p/>
+   * Also logs the process exit value.
    */
   private String blockAndLogOutput(Process process) throws IOException
   {
@@ -268,6 +269,7 @@ public class LocalShellTask extends TaskImpl
       sb.append(line + "\n");
     }
     LOGGER.debug("---------- OUTPUT ENDS ----------");
+    logExitValue(process.exitValue());
     return sb.toString();
   }
 
@@ -295,5 +297,21 @@ public class LocalShellTask extends TaskImpl
   private boolean checkExitValue(int exitValue)
   {
     return localShellConfig.getExitvalueSuccess() == null || localShellConfig.getExitvalueSuccess() == exitValue;
+  }
+
+  /**
+   * Logs the exit value, remarking on success/failure if the local shell config has defined the success value.
+   */
+  private void logExitValue(int exitValue)
+  {
+    if (localShellConfig.getExitvalueSuccess() == null)
+    {
+      LOGGER.debug("Command exit code: " + exitValue);
+    }
+    else
+    {
+      boolean success = localShellConfig.getExitvalueSuccess() == exitValue;
+      LOGGER.debug("Command exit code: " + exitValue + " " + (success ? "(success)" : "(failure)"));
+    }
   }
 }
