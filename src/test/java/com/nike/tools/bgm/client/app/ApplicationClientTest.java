@@ -15,7 +15,7 @@ import com.nike.tools.bgm.client.http.ExecutorFactory;
 import com.nike.tools.bgm.client.http.HttpHelper;
 import com.nike.tools.bgm.client.http.HttpMethodType;
 import com.nike.tools.bgm.model.domain.Application;
-import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
+import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +39,7 @@ public class ApplicationClientTest
   private static final String JSON_DISCOVERY_RESULT = "{'physicalDatabase':{'envName':'env1', 'logicalName':'hello', 'dbUrl':'theUrl', 'dbUsername':'user', 'dbIsLive':true}, 'lockError':false, 'discoveryError':null}";
   private static final String TEST_URI = "http://helloworld.com:8080/restful/interface";
   private static final String METHOD_PATH = "someResourceService";
-  private static final Application FAKE_APPLICATION = ApplicationTestHelper.makeFakeApplication();
+  private static final Application FAKE_APPLICATION = EnvironmentTestHelper.makeFakeApplication();
   private static final String FAKE_APP_URI = FAKE_APPLICATION.makeHostnameUri() + "/" + METHOD_PATH;
   private static final Integer NO_OUTER_TRY = null;
   private static final Integer OUTER_FIRST_TRY = 0;

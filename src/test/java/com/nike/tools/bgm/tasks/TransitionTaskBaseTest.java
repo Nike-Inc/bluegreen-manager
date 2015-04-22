@@ -12,7 +12,7 @@ import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
-import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
+import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
@@ -37,7 +37,7 @@ public abstract class TransitionTaskBaseTest
 {
   private static final Integer NO_OUTER_TRY = null;
   private static final Integer OUTER_FIRST_TRY = 0;
-  protected static final Application FAKE_APPLICATION = ApplicationTestHelper.makeFakeApplication();
+  protected static final Application FAKE_APPLICATION = EnvironmentTestHelper.makeFakeApplication();
 
   @Spy
   protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);

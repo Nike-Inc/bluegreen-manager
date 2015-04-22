@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
-import com.nike.tools.bgm.tasks.SshVmCreateTask;
+import com.nike.tools.bgm.tasks.LocalShellTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
@@ -50,8 +50,8 @@ public class StagingDeployJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(RDSSnapshotRestoreTask.class).init(position++, liveEnv, stageEnv, dbMap));
     //tasks.add(applicationContext.getBean(ThawTask.class).initTransition(position++, liveEnv));
     //tasks.add(new RegisterStageTask(stageEnv));
-    tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
-    //tasks.add(new EnvXmlMergeTask(liveEnv, stageEnv)); //PT-2018
+    //tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv));
     //tasks.add(new DeployPackagesTask(liveEnv, stageEnv, pkgnames)); //PT-2019
     this.tasks = tasks;
   }

@@ -11,8 +11,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.nike.tools.bgm.client.ssh.SshClient;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.Environment;
+import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class SshVmCreateTaskTest
 {
-  private static final Environment FAKE_EMPTY_ENVIRONMENT = ApplicationTestHelper.makeFakeEnvironment();
+  private static final Environment FAKE_EMPTY_ENVIRONMENT = EnvironmentTestHelper.makeFakeEnvironment();
   private static final String FAKE_EMPTY_ENV_NAME = FAKE_EMPTY_ENVIRONMENT.getEnvName();
   private static final String INITIAL_CMD = "run stuff in env %{envName}";
   private static final String SUBSTITUTED_INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;

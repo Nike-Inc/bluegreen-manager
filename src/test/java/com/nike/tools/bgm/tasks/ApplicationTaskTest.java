@@ -13,7 +13,7 @@ import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
-import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
+import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
 import static org.junit.Assert.assertTrue;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationTaskTest
 {
-  protected static final Application FAKE_APPLICATION = ApplicationTestHelper.makeFakeApplication();
+  protected static final Application FAKE_APPLICATION = EnvironmentTestHelper.makeFakeApplication();
 
   @InjectMocks
   private ApplicationTask applicationTask = new ApplicationTask()

@@ -7,9 +7,9 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.ApplicationTestHelper;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
+import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
 import static org.junit.Assert.assertFalse;
@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationVmTaskTest
 {
-  protected static final ApplicationVm FAKE_APPLICATION_VM = ApplicationTestHelper.makeFakeApplicationVm();
-  protected static final Environment FAKE_EMPTY_ENVIRONMENT = ApplicationTestHelper.makeFakeEnvironment();
+  protected static final ApplicationVm FAKE_APPLICATION_VM = EnvironmentTestHelper.makeFakeApplicationVm();
+  protected static final Environment FAKE_EMPTY_ENVIRONMENT = EnvironmentTestHelper.makeFakeEnvironment();
 
   @InjectMocks
   private ApplicationVmTask applicationVmTask = new ApplicationVmTask()
