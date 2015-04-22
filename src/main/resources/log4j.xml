@@ -21,13 +21,15 @@
     <priority value="INFO"/>
     <!-- just startup messages -->
   </category>
-  <category name="org.hibernate.SQL">
-    <priority value="DEBUG"/>
-  </category>
-  <!--JDBC bind parameter runtime args -->
+
+  <!--
+   <category name="org.hibernate.SQL">
+     <priority value="DEBUG"/>
+   </category> -->
+  <!--JDBC bind parameter runtime args
   <category name="org.hibernate.type">
     <priority value="TRACE"/>
-  </category>
+  </category> -->
   <category name="org.hibernate.jpa.internal.util.LogHelper">
     <priority value="DEBUG"/>
     <!--shows list of managed classes-->
@@ -39,6 +41,15 @@
   <category name="org.springframework">
     <priority value="INFO"/>
   </category>
+  <!--
+  <category name="org.springframework.beans.factory.support">
+    <priority value="DEBUG"/>
+  </category>
+  <category name="org.springframework.context.support">
+    <priority value="DEBUG"/>
+  </category>
+  -->
+  <!--
   <category name="org.springframework.orm.jpa">
     <priority value="DEBUG"/>
   </category>
@@ -46,6 +57,16 @@
     <priority value="DEBUG"/>
   </category>
   <category name="org.springframework.transaction.interceptor">
+    <priority value="DEBUG"/>
+  </category> -->
+
+  <category name="org.apache.http.headers">
+    <priority value="DEBUG"/>
+  </category>
+  <category name="org.apache.http.wire">
+    <priority value="DEBUG"/>
+  </category>
+  <category name="org.apache.http">
     <priority value="DEBUG"/>
   </category>
 
