@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
@@ -175,10 +176,11 @@ public class LocalShellTask extends TaskImpl
           .redirectErrorStream(true);
       LOGGER.info("Executing command '" + StringUtils.join(commandTokens, " ") + "'");
       StopWatch stopWatch = new StopWatch();
+      Process process = null;
       try
       {
         stopWatch.start();
-        Process process = processBuilderAdapter.start();
+        process = processBuilderAdapter.start();
         String output = blockAndLogOutput(process);
         taskStatus = checkForErrors(output, process.exitValue());
       }
@@ -187,10 +189,16 @@ public class LocalShellTask extends TaskImpl
         LOGGER.error("Shell command failed: " + StringUtils.join(commandTokens, " "), e);
         taskStatus = TaskStatus.ERROR;
       }
+      catch (InterruptedException e)
+      {
+        LOGGER.error("Shell command interrupted: " + StringUtils.join(commandTokens, " "), e);
+        taskStatus = TaskStatus.ERROR;
+      }
       finally
       {
         stopWatch.stop();
         LOGGER.debug("Time elapsed: " + stopWatch);
+        closeProcessStreams(process);
       }
     }
     return taskStatus;
@@ -256,7 +264,7 @@ public class LocalShellTask extends TaskImpl
    * <p/>
    * Also logs the process exit value.
    */
-  private String blockAndLogOutput(Process process) throws IOException
+  private String blockAndLogOutput(Process process) throws IOException, InterruptedException
   {
     // Yes, stdout is 'getInputStream'.
     StringBuilder sb = new StringBuilder();
@@ -269,7 +277,7 @@ public class LocalShellTask extends TaskImpl
       sb.append(line + "\n");
     }
     LOGGER.debug("---------- OUTPUT ENDS ----------");
-    logExitValue(process.exitValue());
+    logExitValue(process.waitFor());
     return sb.toString();
   }
 
@@ -312,6 +320,21 @@ public class LocalShellTask extends TaskImpl
     {
       boolean success = localShellConfig.getExitvalueSuccess() == exitValue;
       LOGGER.debug("Command exit code: " + exitValue + " " + (success ? "(success)" : "(failure)"));
+    }
+  }
+
+  /**
+   * Closes all i/o streams, whether used or not.  It's not clear whether this is necessary after waitFor,
+   * but better safe than sorry.
+   */
+  private void closeProcessStreams(Process process)
+  {
+    if (process != null)
+    {
+      LOGGER.debug("Closing process i/o streams");
+      IOUtils.closeQuietly(process.getInputStream());
+      IOUtils.closeQuietly(process.getErrorStream());
+      IOUtils.closeQuietly(process.getOutputStream());
     }
   }
 }
