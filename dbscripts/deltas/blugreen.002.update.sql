@@ -18,9 +18,9 @@ VALUES
   (10, 'MYSQL', 'krakenlocal', 0, 'com.mysql.jdbc.Driver',
    'jdbc:mysql://127.0.0.1:3306/krakenlocal?zeroDateTimeBehavior=convertToNull', 'admin', 'password', 10);
 
-INSERT INTO APPLICATION_VM (APPVM_ID, APPVM_SIN_NUMBER, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID)
+INSERT INTO APPLICATION_VM (APPVM_ID, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID)
 VALUES
-  (10, 1, 'localhost', '127.0.0.1', 10);
+  (10, 'localhost', '127.0.0.1', 10);
 
 INSERT INTO APPLICATION (APP_ID, FK_APPVM_ID, APP_SCHEME, APP_HOSTNAME, APP_PORT, APP_URL_PATH)
 VALUES
