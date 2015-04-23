@@ -121,6 +121,14 @@ public abstract class TaskSequenceJob implements Job
       TaskRun taskRun = new TaskRun(task, noop, force, newJobHistory, oldJobHistory);
       TaskStatus taskStatus = taskRunProcessor.attemptTask(taskRun);
       LOGGER.info("TASK #" + task.getPosition() + " of " + tasks.size() + " END: " + task.getName() + " " + taskStatus);
+      if (taskStatus == TaskStatus.PROCESSING)
+      {
+        throw new IllegalStateException("Task #" + task.getPosition() + " " + task.getName() + " ended but status is 'processing'");
+      }
+      if (taskStatus == TaskStatus.ERROR)
+      {
+        return JobStatus.ERROR;
+      }
     }
     return JobStatus.DONE;
   }
