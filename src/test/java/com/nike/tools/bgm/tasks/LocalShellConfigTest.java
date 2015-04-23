@@ -81,7 +81,7 @@ public class LocalShellConfigTest
   {
     verify(mockProcessBuilderAdapterFactory).create(any(String[].class));
     verify(mockProcessBuilderAdapter).start();
-    verify(mockProcess).getInputStream();
+    verify(mockProcess, atLeastOnce()).getInputStream();
     verify(mockProcess, atLeastOnce()).exitValue();
   }
 
