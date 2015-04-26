@@ -52,14 +52,6 @@ public class StagingDeployJob extends TaskSequenceJob
     this.stageEnv = stageEnv;
     this.dbMap = dbMap;
     this.packages = packages;
-    defineSubstitutionsForDeployPackages();
-  }
-
-  private void defineSubstitutionsForDeployPackages()
-  {
-    Map<String, String> substitutions = new TreeMap<String, String>();
-    substitutions.put(CMDVAR_PACKAGES, StringUtils.join(packages, ","));
-    deployPackagesConfig.setExtraSubstitutions(substitutions);
   }
 
   /**
@@ -70,6 +62,7 @@ public class StagingDeployJob extends TaskSequenceJob
   @PostConstruct
   private void instantiateTasks()
   {
+    defineSubstitutionsForDeployPackages();
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
     //tasks.add(applicationContext.getBean(FreezeTask.class).initTransition(position++, liveEnv));
@@ -79,6 +72,13 @@ public class StagingDeployJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, createStageEnvConfig));
     tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, deployPackagesConfig));
     this.tasks = tasks;
+  }
+
+  private void defineSubstitutionsForDeployPackages()
+  {
+    Map<String, String> substitutions = new TreeMap<String, String>();
+    substitutions.put(CMDVAR_PACKAGES, StringUtils.join(packages, ","));
+    deployPackagesConfig.setExtraSubstitutions(substitutions);
   }
 
   @Override
