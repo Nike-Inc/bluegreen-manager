@@ -33,7 +33,7 @@ public class JobFactory
   public static final String PARAMNAME_LIVE_ENV = "liveEnv";
   public static final String PARAMNAME_STAGE_ENV = "stageEnv";
   public static final String PARAMNAME_DB_MAP = "dbMap";
-  public static final String PARAMNAME_PKGNAMES = "pkgnames";
+  public static final String PARAMNAME_PACKAGES = "packages";
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
   public static final String PARAMNAME_NOOP = "noop";
@@ -78,7 +78,7 @@ public class JobFactory
     sb.append("\t\t\tIt must not exist beforehand, because this job creates it.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DB_MAP + " [ <liveLogicalName> <stagePhysicalInstName> ]+\n");
     sb.append("\t\t\tWe will copy the live logical database(s) to a stage physical database having the requested instance name.\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_PKGNAMES + " <list of stage pkgs>\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_PACKAGES + " <list of stage pkgs>\n");
     sb.append("\t\t\tList of packages to deploy to stage, which are DIFFERENT from what is on the live env.\n");
     sb.append("\t\t\tUse full package names as they will be recognized by your package repository.\n");
     sb.append("\n");
@@ -137,8 +137,8 @@ public class JobFactory
   private Job makeStagingDeployJob(List<List<String>> parameters, String commandLine)
   {
     Map<String, String> dbMap = listToMap(getParameterValues(PARAMNAME_DB_MAP, parameters), PARAMNAME_DB_MAP);
-    List<String> pkgnames = getParameterValues(PARAMNAME_PKGNAMES, parameters);
-    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, false, dbMap, pkgnames);
+    List<String> packages = getParameterValues(PARAMNAME_PACKAGES, parameters);
+    return makeGenericJob(StagingDeployJob.class, parameters, commandLine, PARAMNAME_LIVE_ENV, PARAMNAME_STAGE_ENV, false, dbMap, packages);
   }
 
   /**

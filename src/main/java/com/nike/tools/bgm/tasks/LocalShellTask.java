@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -71,11 +72,9 @@ public class LocalShellTask extends TaskImpl
   private EnvironmentTx environmentTx;
 
   @Autowired
-  private LocalShellConfig localShellConfig;
-
-  @Autowired
   private ProcessBuilderAdapterFactory processBuilderAdapterFactory;
 
+  private LocalShellConfig localShellConfig;
   private Environment liveEnv;
   private ApplicationVm liveApplicationVm;
   private PhysicalDatabase livePhysicalDatabase;
@@ -84,20 +83,24 @@ public class LocalShellTask extends TaskImpl
   private PhysicalDatabase stagePhysicalDatabase;
   private Pattern patternError;
 
-  public Task init(int position, String liveEnvName, String stageEnvName)
+  public Task init(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
   {
     if (StringUtils.equals(liveEnvName, stageEnvName))
     {
       throw new IllegalArgumentException("Live env must be different from stage env, cannot target env '" + liveEnvName + "' for both");
     }
     super.init(position);
+    this.localShellConfig = localShellConfig;
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
     this.stageEnv = environmentTx.findNamedEnv(stageEnvName);
     this.liveApplicationVm = findApplicationVmFromEnvironment(liveEnv);
     this.stageApplicationVm = findApplicationVmFromEnvironment(stageEnv);
     this.livePhysicalDatabase = findPhysicalDatabaseFromEnvironment(liveEnv);
     this.stagePhysicalDatabase = findPhysicalDatabaseFromEnvironment(stageEnv);
-    this.patternError = Pattern.compile(localShellConfig.getRegexpError());
+    if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
+    {
+      this.patternError = Pattern.compile(localShellConfig.getRegexpError());
+    }
     return this;
   }
 
@@ -171,6 +174,7 @@ public class LocalShellTask extends TaskImpl
     TaskStatus taskStatus = TaskStatus.NOOP;
     if (!noop)
     {
+      checkConfig();
       String[] commandTokens = substituteVariables(localShellConfig.getCommand()).split("\\s+");
       ProcessBuilderAdapter processBuilderAdapter = processBuilderAdapterFactory.create(commandTokens)
           .redirectErrorStream(true);
@@ -205,8 +209,19 @@ public class LocalShellTask extends TaskImpl
   }
 
   /**
+   * Checks that the local shell config gives a way to verify success or failure of the process run.
+   */
+  private void checkConfig()
+  {
+    if (localShellConfig.getExitvalueSuccess() == null && StringUtils.isBlank(localShellConfig.getRegexpError()))
+    {
+      throw new IllegalArgumentException("Configuration should specify one or both of exitvalueSuccess and regexpError");
+    }
+  }
+
+  /**
    * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   * Currently supports only the following variables: liveEnv, stageEnv, applicationVmMap
+   * Currently supports only the following variables: liveEnv, stageEnv, applicationVmMap, physicalDbMap.
    * <p/>
    * Can't support '${..}' since Spring already substitutes that in properties file.
    */
@@ -221,6 +236,13 @@ public class LocalShellTask extends TaskImpl
     substituted = StringUtils.replace(substituted, CMDVAR_STAGE_ENV, stageEnv.getEnvName());
     substituted = StringUtils.replace(substituted, CMDVAR_APPLICATION_VM_MAP, makeApplicationVmMapString());
     substituted = StringUtils.replace(substituted, CMDVAR_PHYSICAL_DB_MAP, makePhysicalDbMapString());
+    if (localShellConfig.getExtraSubstitutions() != null)
+    {
+      for (Map.Entry<String, String> entry : localShellConfig.getExtraSubstitutions().entrySet())
+      {
+        substituted = StringUtils.replace(substituted, entry.getKey(), entry.getValue());
+      }
+    }
     return substituted;
   }
 
@@ -290,11 +312,12 @@ public class LocalShellTask extends TaskImpl
   }
 
   /**
-   * True if output looks ok, false if it matches the error-regexp.
+   * True if output looks ok, or if error-regexp hasn't been defined.
+   * False if output matches the error-regexp.
    */
   private boolean checkOutput(String output)
   {
-    return !patternError.matcher(output).find();
+    return patternError == null || !patternError.matcher(output).find();
   }
 
   /**

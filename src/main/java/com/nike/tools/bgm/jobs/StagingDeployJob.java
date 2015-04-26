@@ -3,12 +3,17 @@ package com.nike.tools.bgm.jobs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
+import com.nike.tools.bgm.tasks.LocalShellConfig;
 import com.nike.tools.bgm.tasks.LocalShellTask;
 import com.nike.tools.bgm.tasks.Task;
 
@@ -20,20 +25,41 @@ import com.nike.tools.bgm.tasks.Task;
 @Component
 public class StagingDeployJob extends TaskSequenceJob
 {
+  /**
+   * Variable to be substituted with a comma-separated list of package names.
+   */
+  private static final String CMDVAR_PACKAGES = "%{packages}";
+
+  @Autowired
+  @Qualifier("createStageEnv")
+  private LocalShellConfig createStageEnvConfig;
+
+  @Autowired
+  @Qualifier("deployPackages")
+  private LocalShellConfig deployPackagesConfig;
+
   private String liveEnv;
   private String stageEnv;
   private Map<String, String> dbMap;
-  private List<String> pkgnames;
+  private List<String> packages;
 
   public StagingDeployJob(String commandLine, boolean noop, boolean force,
                           JobHistory oldJobHistory, String liveEnv, String stageEnv,
-                          Map<String, String> dbMap, List<String> pkgnames)
+                          Map<String, String> dbMap, List<String> packages)
   {
     super(commandLine, noop, force, oldJobHistory);
     this.liveEnv = liveEnv;
     this.stageEnv = stageEnv;
     this.dbMap = dbMap;
-    this.pkgnames = pkgnames;
+    this.packages = packages;
+    defineSubstitutionsForDeployPackages();
+  }
+
+  private void defineSubstitutionsForDeployPackages()
+  {
+    Map<String, String> substitutions = new TreeMap<String, String>();
+    substitutions.put(CMDVAR_PACKAGES, StringUtils.join(packages, ","));
+    deployPackagesConfig.setExtraSubstitutions(substitutions);
   }
 
   /**
@@ -49,10 +75,9 @@ public class StagingDeployJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(FreezeTask.class).initTransition(position++, liveEnv));
     //tasks.add(applicationContext.getBean(RDSSnapshotRestoreTask.class).init(position++, liveEnv, stageEnv, dbMap));
     //tasks.add(applicationContext.getBean(ThawTask.class).initTransition(position++, liveEnv));
-    //tasks.add(new RegisterStageTask(stageEnv));
     //tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv));
-    //tasks.add(new DeployPackagesTask(liveEnv, stageEnv, pkgnames)); //PT-2019
+    //tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, createStageEnvConfig));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, deployPackagesConfig));
     this.tasks = tasks;
   }
 

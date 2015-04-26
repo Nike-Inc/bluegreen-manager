@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.env.EnvironmentTx;
@@ -48,9 +47,6 @@ public class LocalShellConfigTest
   @Mock
   private EnvironmentTx mockEnvironmentTx;
 
-  @Spy
-  private LocalShellConfig localShellConfig = new LocalShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS);
-
   @Mock
   private ProcessBuilderAdapterFactory mockProcessBuilderAdapterFactory;
 
@@ -60,12 +56,14 @@ public class LocalShellConfigTest
   @Mock
   private Process mockProcess;
 
+  private LocalShellConfig localShellConfig = new LocalShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
+
   @Before
   public void setUp()
   {
     when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
     when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
-    localShellTask.init(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName());
+    localShellTask.init(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), localShellConfig);
   }
 
   private void setUpProcessBuilder(String fakeOutput, int fakeExitValue) throws IOException

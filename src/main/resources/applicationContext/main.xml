@@ -14,6 +14,7 @@
 
   <import resource="persist.xml"/>
   <import resource="waiterParameters.xml"/>
+  <import resource="localShellConfig.xml"/>
 
   <bean id="httpClient" class="org.apache.http.client.HttpClient" factory-bean="httpClientSSLFactory" factory-method="makeHttpClient"/>
 

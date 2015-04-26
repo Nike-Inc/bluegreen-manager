@@ -89,7 +89,7 @@ public class JobFactoryTest
   public void testMakeJob_StagingDeploy()
   {
     when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
-    String commandLine = "stagingDeploy --liveEnv env1 --stageEnv env2 --noop --pkgnames a b c --dbMap d e";
+    String commandLine = "stagingDeploy --liveEnv env1 --stageEnv env2 --noop --packages a b c --dbMap d e";
     parseAndMakeJob(commandLine);
     verify(mockApplicationContext).getBean(eq(StagingDeployJob.class), new Object[] {
         eq(commandLine), eq(true)/*noop*/, eq(false), isNull(), eq("env1"), eq("env2"), anyMap(), anyListOf(String.class)

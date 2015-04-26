@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.util.Map;
+
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -11,24 +12,42 @@ import org.springframework.stereotype.Component;
 @Component
 public class LocalShellConfig
 {
-  @Value("${bluegreen.localshell.command}")
+  /**
+   * Shell command, which may include instances of "%{variable}".
+   */
   private String command;
 
-  @Value("${bluegreen.localshell.regexp.error}")
+  /**
+   * Optional regular expression which, if matched in the command output, would indicate the command ended in error.
+   */
   private String regexpError;
 
-  @Value("${bluegreen.localshell.exitvalue.success}")
+  /**
+   * Optional exit value which, if specified, must match the shell return code to indicate the command ended in success.
+   */
   private Integer exitvalueSuccess;
+
+  /**
+   * Optional map from %{variable} to 'replacement-value'.  e.g. Map('%{hello}', 'world') applied to command
+   * "doStuff --arg %{hello}" would result in a shell command "doStuff --arg world".
+   * <p/>
+   * This is in addition to the datamodel-related variables defined in LocalShellTask for all shell commands.
+   */
+  private Map<String, String> extraSubstitutions;
 
   public LocalShellConfig()
   {
   }
 
-  public LocalShellConfig(String command, String regexpError, Integer exitvalueSuccess)
+  public LocalShellConfig(String command,
+                          String regexpError,
+                          Integer exitvalueSuccess,
+                          Map<String, String> extraSubstitutions)
   {
     this.command = command;
     this.regexpError = regexpError;
     this.exitvalueSuccess = exitvalueSuccess;
+    this.extraSubstitutions = extraSubstitutions;
   }
 
   public String getCommand()
@@ -59,5 +78,15 @@ public class LocalShellConfig
   public void setExitvalueSuccess(Integer exitvalueSuccess)
   {
     this.exitvalueSuccess = exitvalueSuccess;
+  }
+
+  public Map<String, String> getExtraSubstitutions()
+  {
+    return extraSubstitutions;
+  }
+
+  public void setExtraSubstitutions(Map<String, String> extraSubstitutions)
+  {
+    this.extraSubstitutions = extraSubstitutions;
   }
 }
