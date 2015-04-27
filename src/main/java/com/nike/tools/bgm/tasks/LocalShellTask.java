@@ -3,11 +3,9 @@ package com.nike.tools.bgm.tasks;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -17,11 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.ApplicationVm;
-import com.nike.tools.bgm.model.domain.Environment;
-import com.nike.tools.bgm.model.domain.LogicalDatabase;
-import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
@@ -38,7 +31,7 @@ import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
  */
 @Lazy
 @Component
-public class LocalShellTask extends TaskImpl
+public class LocalShellTask extends TwoEnvTask
 {
   /**
    * Variable to be substituted with the name of the live environment.
@@ -69,97 +62,20 @@ public class LocalShellTask extends TaskImpl
   private static final Logger LOGGER = LoggerFactory.getLogger(LocalShellTask.class);
 
   @Autowired
-  private EnvironmentTx environmentTx;
-
-  @Autowired
   private ProcessBuilderAdapterFactory processBuilderAdapterFactory;
 
   private LocalShellConfig localShellConfig;
-  private Environment liveEnv;
-  private ApplicationVm liveApplicationVm;
-  private PhysicalDatabase livePhysicalDatabase;
-  private Environment stageEnv;
-  private ApplicationVm stageApplicationVm;
-  private PhysicalDatabase stagePhysicalDatabase;
   private Pattern patternError;
 
   public Task init(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
   {
-    if (StringUtils.equals(liveEnvName, stageEnvName))
-    {
-      throw new IllegalArgumentException("Live env must be different from stage env, cannot target env '" + liveEnvName + "' for both");
-    }
-    super.init(position);
+    super.init(position, liveEnvName, stageEnvName);
     this.localShellConfig = localShellConfig;
-    this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
-    this.stageEnv = environmentTx.findNamedEnv(stageEnvName);
-    this.liveApplicationVm = findApplicationVmFromEnvironment(liveEnv);
-    this.stageApplicationVm = findApplicationVmFromEnvironment(stageEnv);
-    this.livePhysicalDatabase = findPhysicalDatabaseFromEnvironment(liveEnv);
-    this.stagePhysicalDatabase = findPhysicalDatabaseFromEnvironment(stageEnv);
     if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
     {
       this.patternError = Pattern.compile(localShellConfig.getRegexpError());
     }
     return this;
-  }
-
-  private String context(Environment environment)
-  {
-    return "[Environment '" + environment.getEnvName() + "']: ";
-  }
-
-  /**
-   * Gets the env's persisted application vm record.  (Currently support only 1.)
-   */
-  protected ApplicationVm findApplicationVmFromEnvironment(Environment environment)
-  {
-    List<ApplicationVm> applicationVms = environment.getApplicationVms();
-    if (CollectionUtils.isEmpty(applicationVms))
-    {
-      throw new IllegalStateException(context(environment) + "No application vms");
-    }
-    else
-    {
-      if (applicationVms.size() > 1)
-      {
-        throw new UnsupportedOperationException(context(environment) + "Currently only support case of 1 applicationVm, but environment '"
-            + environment.getEnvName() + "' has " + applicationVms.size());
-      }
-      return applicationVms.get(0);
-    }
-  }
-
-  /**
-   * Gets the env's persisted physicaldb record.  Requires exactly 1.
-   */
-  private PhysicalDatabase findPhysicalDatabaseFromEnvironment(Environment environment)
-  {
-    LogicalDatabase logicalDatabase = findLogicalDatabaseFromEnvironment(environment);
-    return logicalDatabase.getPhysicalDatabase();
-  }
-
-  /**
-   * Gets the env's persisted logicaldb record.  Requires exactly 1.
-   */
-  private LogicalDatabase findLogicalDatabaseFromEnvironment(Environment environment)
-  {
-    List<LogicalDatabase> logicalDatabases = environment.getLogicalDatabases();
-    if (CollectionUtils.isEmpty(logicalDatabases))
-    {
-      throw new IllegalStateException(context(environment) + "No logical databases");
-    }
-    else if (logicalDatabases.size() > 1)
-    {
-      //TODO - start sharing code with RDSSnapshotRestoreTask et al
-      throw new UnsupportedOperationException(context(environment) + "Currently only support case of 1 logicalDatabase, but live env has "
-          + logicalDatabases.size()); // + ": " + listOfNames(logicalDatabases));
-    }
-    else if (StringUtils.isBlank(logicalDatabases.get(0).getLogicalName()))
-    {
-      throw new IllegalStateException(context(environment) + "Logical database has blank name");
-    }
-    return logicalDatabases.get(0);
   }
 
   /**

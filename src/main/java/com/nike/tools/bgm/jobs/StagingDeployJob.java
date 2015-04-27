@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.LocalShellConfig;
-import com.nike.tools.bgm.tasks.LocalShellTask;
+import com.nike.tools.bgm.tasks.RegisterApplicationTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
@@ -70,7 +70,9 @@ public class StagingDeployJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(ThawTask.class).initTransition(position++, liveEnv));
     //tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
     //tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, createStageEnvConfig));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, deployPackagesConfig));
+    //tasks.add(applicationContext.getBean(LocalShellTask.class).init(position++, liveEnv, stageEnv, deployPackagesConfig));
+    tasks.add(applicationContext.getBean(RegisterApplicationTask.class).init(position++, liveEnv, stageEnv));
+    //tasks.add(applicationContext.getBean(SmokeTestTask.class).init(position++, stageEnv));
     this.tasks = tasks;
   }
 

@@ -56,6 +56,10 @@ public class ApplicationClient
   @Value("${bluegreen.application.password}")
   private String applicationPassword;
 
+  //FIXME - unpleasantness for local dev/test until app restful api is made consistent
+  @Value("#{bluegreen.application.urlcontext")
+  private String applicationUrlContext;
+
 
   /**
    * Initializes an http communication session with the application.
@@ -65,7 +69,7 @@ public class ApplicationClient
     String alternateUrlPath = DbFreezeRest.POST_LOGIN;
     if (StringUtils.equals("localhost", application.getHostname()))
     {
-      alternateUrlPath = "/kraken" + alternateUrlPath; //FIXME - horrible hack for local dev/test until app restful api is made consistent
+      alternateUrlPath = applicationUrlContext + alternateUrlPath; //FIXME - unpleasantness for local dev/test until app restful api is made consistent
     }
     String uri = application.makeAlternateUri(alternateUrlPath);
     Executor httpExecutor = executorFactory.makeExecutor();

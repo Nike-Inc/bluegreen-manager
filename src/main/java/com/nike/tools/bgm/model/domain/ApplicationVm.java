@@ -1,5 +1,6 @@
 package com.nike.tools.bgm.model.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -95,6 +96,15 @@ public class ApplicationVm
   public void setApplications(List<Application> applications)
   {
     this.applications = applications;
+  }
+
+  public void addApplication(Application application)
+  {
+    if (applications == null)
+    {
+      applications = new ArrayList<Application>();
+    }
+    applications.add(application);
   }
 
   /**
