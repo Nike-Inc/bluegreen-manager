@@ -57,7 +57,7 @@ public class ApplicationClient
   private String applicationPassword;
 
   //FIXME - unpleasantness for local dev/test until app restful api is made consistent
-  @Value("#{bluegreen.application.urlcontext")
+  @Value("#{bluegreen.application.urlcontext}")
   private String applicationUrlContext;
 
 
