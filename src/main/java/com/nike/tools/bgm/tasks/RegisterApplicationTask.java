@@ -56,7 +56,7 @@ public class RegisterApplicationTask extends TwoEnvTask
    */
   private void persistModel(Application stageApplication, boolean noop)
   {
-    LOGGER.info(context(stageEnv) + "Registering stage application");
+    LOGGER.info(context(stageEnv) + "Registering stage application" + noopRemark(noop));
     if (!noop)
     {
       stageApplicationVm.addApplication(stageApplication);

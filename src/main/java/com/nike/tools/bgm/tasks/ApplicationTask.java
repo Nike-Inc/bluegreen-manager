@@ -25,11 +25,13 @@ public abstract class ApplicationTask extends ApplicationVmTask
    * Looks up the environment entity by name.
    * Currently requires that the env has exactly one applicationVm and one application.
    */
-  protected void init(int position, String envName)
+  protected Task init(int position, String envName)
   {
     super.init(position, envName, false/*createVm*/);
 
     findApplicationFromVm();
+
+    return this;
   }
 
   /**
