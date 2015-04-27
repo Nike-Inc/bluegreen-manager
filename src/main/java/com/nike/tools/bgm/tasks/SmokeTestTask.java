@@ -2,12 +2,16 @@ package com.nike.tools.bgm.tasks;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
 /**
  * Touches the application's bluegreen client api just to make sure the endpoint is alive.
  */
+@Lazy
+@Component
 public class SmokeTestTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTestTask.class);
