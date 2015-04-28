@@ -13,6 +13,9 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
  * <p/>
  * For the case where stage application deployment had to be handled "out-of-band" with a local shell task or
  * remote ssh task.
+ * <p/>
+ * The purpose of registering the stage app is so bluegreen can freeze/thaw during Go-Live.  Separately you should
+ * consider how to make the stage app visible on the network for purposes of integration test.
  */
 @Lazy
 @Component
@@ -40,13 +43,15 @@ public class RegisterApplicationTask extends TwoEnvTask
 
   /**
    * Makes a transient Application entity for stage based on the existing live application.
+   * <p/>
+   * There are some big assumptions here.  Stage should be "secret" so we're not expecting an ELB
    */
   private Application defineStageApplication()
   {
     Application stageApplication = new Application();
     stageApplication.setApplicationVm(stageApplicationVm);
     stageApplication.setScheme(liveApplication.getScheme());
-    stageApplication.setHostname(stageApplicationVm.getHostname()); //TODO: support ELB situations
+    stageApplication.setHostname(stageApplicationVm.getHostname());
     stageApplication.setPort(liveApplication.getPort()); //Big assumption: same port in both envs.
     stageApplication.setUrlPath(liveApplication.getUrlPath()); //App should definitely have same client api in both envs.
     return stageApplication;
