@@ -102,8 +102,8 @@ public abstract class TaskSequenceJob implements Job
       }
       closeJobHistory(newJobHistory, jobStatus);
       logSummaryOfJobAndHistory();
-      return jobStatus;
     }
+    return jobStatus;
   }
 
   /**
