@@ -59,6 +59,7 @@ public class Waiter<T>
       }
       if (progressChecker.isDone())
       {
+        LOGGER.info("Done: " + progressChecker.getDescription() + " ... time elapsed: " + stopWatch.toString());
         return progressChecker.getResult();
       }
       ++waitNum;
