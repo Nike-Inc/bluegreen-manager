@@ -47,9 +47,10 @@ public class TwoEnvTaskTest
   }
 
   @Test
-  public void testInit()
+  public void testLoadDataModel()
   {
-    twoEnvTask.init(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName());
+    twoEnvTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName());
+    twoEnvTask.loadDataModel();
     verify(mockEnvironmentTx, times(2)).findNamedEnv(anyString());
     //Not much else to assert except that we got here and it didn't throw
   }

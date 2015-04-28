@@ -63,7 +63,7 @@ public class LocalShellConfigTest
   {
     when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
     when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
-    localShellTask.init(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), localShellConfig);
+    localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), localShellConfig);
   }
 
   private void setUpProcessBuilder(String fakeOutput, int fakeExitValue) throws IOException
@@ -89,6 +89,7 @@ public class LocalShellConfigTest
   @Test
   public void testSubstituteVariables()
   {
+    localShellTask.loadDataModel();
     String command = "run stuff with LIVE_ENV=%{liveEnv}; STAGE_ENV=%{stageEnv}; APPLICATION_VM_MAP=%{applicationVmMap}; PHYSICAL_DB_MAP=%{physicalDbMap}!";
     String result = localShellTask.substituteVariables(command);
     assertTrue(result.contains("LIVE_ENV=" + FAKE_LIVE_ENV.getEnvName()));
@@ -149,7 +150,7 @@ public class LocalShellConfigTest
   }
 
   /**
-   * Noop always returns noop.  Also implicitly tests init().
+   * Noop always returns noop.  Also implicitly tests assign().
    */
   @Test
   public void testProcessNoop()

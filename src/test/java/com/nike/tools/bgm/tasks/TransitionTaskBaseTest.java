@@ -70,7 +70,8 @@ public abstract class TransitionTaskBaseTest
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
-    transitionTask.initTransition(1, envName);
+    transitionTask.assignTransition(1, envName);
+    transitionTask.loadDataModel();
     transitionTask.initApplicationSession();
   }
 

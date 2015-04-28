@@ -74,6 +74,7 @@ public class SshVmCreateTaskTest
   {
     when(mockEnvironmentTx.findNamedEnv(FAKE_EMPTY_ENV_NAME)).thenReturn(FAKE_EMPTY_ENVIRONMENT);
     sshVmCreateTask.init(1, FAKE_EMPTY_ENV_NAME);
+    sshVmCreateTask.loadDataModel();
   }
 
   /**
@@ -139,6 +140,8 @@ public class SshVmCreateTaskTest
 
   /**
    * Noop should return status=noop and not invoke sshClient.
+   * <p/>
+   * As the only test to invoke process(), this results in calling loadDataModel() twice. Should be ok.
    */
   @Test
   public void testProcess_Noop()

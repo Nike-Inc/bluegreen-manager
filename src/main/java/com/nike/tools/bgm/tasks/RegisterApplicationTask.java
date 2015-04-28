@@ -20,9 +20,9 @@ public class RegisterApplicationTask extends TwoEnvTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(RegisterApplicationTask.class);
 
-  public Task init(int position, String liveEnvName, String stageEnvName)
+  public Task assign(int position, String liveEnvName, String stageEnvName)
   {
-    super.init(position, liveEnvName, stageEnvName);
+    super.assign(position, liveEnvName, stageEnvName);
     return this;
   }
 
@@ -32,6 +32,7 @@ public class RegisterApplicationTask extends TwoEnvTask
   @Override
   public TaskStatus process(boolean noop)
   {
+    loadDataModel();
     Application stageApplication = defineStageApplication();
     persistModel(stageApplication, noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;

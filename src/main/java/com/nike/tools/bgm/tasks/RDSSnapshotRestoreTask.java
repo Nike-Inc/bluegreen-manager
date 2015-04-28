@@ -73,39 +73,50 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   @Autowired
   private ThreadSleeper threadSleeper;
 
+  private String liveEnvName;
+  private String stageEnvName;
+  private Map<String, String> dbMap; //Maps liveLogicalName to new stagePhysicalInstanceName
+
   private Environment liveEnv;
   private LogicalDatabase liveLogicalDatabase;
   private PhysicalDatabase livePhysicalDatabase;
-  private String stageEnvName;
   private Environment stageEnv;
   private LogicalDatabase stageLogicalDatabase;
   private PhysicalDatabase stagePhysicalDatabase;
-  private Map<String, String> dbMap; //Maps liveLogicalName to new stagePhysicalInstanceName
   private RDSCopier rdsCopier;
 
   /**
-   * Looks up the environment entities by name.
-   * Currently requires that the live env has exactly one logicaldb, with one physicaldb.
-   * Error if any prior stage database exists.
-   *
    * @param dbMap Maps live logical dbname to new stage physical dbname.
    */
-  public Task init(int position, String liveEnvName, String stageEnvName, Map<String, String> dbMap)
+  public Task assign(int position, String liveEnvName, String stageEnvName, Map<String, String> dbMap)
   {
     if (StringUtils.equals(liveEnvName, stageEnvName))
     {
       throw new IllegalArgumentException("Live env must be different from stage env, cannot target env '" + liveEnvName + "' for both");
     }
-    super.init(position);
+    super.assign(position);
+    this.liveEnvName = liveEnvName;
+    this.stageEnvName = stageEnvName;
+    this.dbMap = dbMap;
+    return this;
+  }
+
+  /**
+   * Loads datamodel entities and asserts preconditions on them.  These assertions should be true at the moment when
+   * this task is about to begin processing.
+   * <p/>
+   * Looks up the environment entities by name.
+   * Currently requires that the live env has exactly one logicaldb, with one physicaldb.
+   * Error if any prior stage database exists.
+   */
+  protected void loadDataModel()
+  {
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
     this.liveLogicalDatabase = findLiveLogicalDatabaseFromEnvironment();
     this.livePhysicalDatabase = liveLogicalDatabase.getPhysicalDatabase();
     checkLivePhysicalDatabase();
-    this.stageEnvName = stageEnvName;
     checkNoStageEnvironment();
-    this.dbMap = dbMap;
     checkDbMap();
-    return this;
   }
 
   /**
@@ -300,6 +311,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   @Override
   public TaskStatus process(boolean noop)
   {
+    loadDataModel();
     rdsCopier = rdsCopierFactory.create();
     DBInstance liveInstance = describeLiveInstance();
     DBSnapshot dbSnapshot = snapshotLive(noop);

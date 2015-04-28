@@ -16,9 +16,9 @@ public class SmokeTestTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTestTask.class);
 
-  public Task init(int position, String envName)
+  public Task assign(int position, String envName)
   {
-    super.init(position, envName);
+    super.assign(position, envName);
     return this;
   }
 
@@ -30,6 +30,7 @@ public class SmokeTestTask extends ApplicationTask
   @Override
   public TaskStatus process(boolean noop)
   {
+    loadDataModel();
     LOGGER.info(context() + "Touching application to see that it is alive" + noopRemark(noop));
     if (!noop)
     {

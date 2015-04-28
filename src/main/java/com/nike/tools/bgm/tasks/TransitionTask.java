@@ -29,20 +29,11 @@ public abstract class TransitionTask extends ApplicationTask
 
   private TransitionParameters transitionParameters;
 
-  /**
-   * Finishes initializing the task.  (Mockito prevents it from being all done in constructor.)
-   *
-   * @return Self, so job can construct, init, and add to task list in one line.
-   */
-  public abstract TransitionTask initTransition(int position, String envName);
+  public abstract TransitionTask assignTransition(int position, String envName);
 
-  /**
-   * Looks up the environment entity by name.
-   * Currently requires that the env has exactly one applicationVm and one application.
-   */
-  protected void init(int position, String envName, TransitionParameters transitionParameters)
+  protected void assign(int position, String envName, TransitionParameters transitionParameters)
   {
-    super.init(position, envName);
+    super.assign(position, envName);
     this.transitionParameters = transitionParameters;
   }
 
@@ -53,6 +44,7 @@ public abstract class TransitionTask extends ApplicationTask
   public TaskStatus process(boolean noop)
   {
     TaskStatus taskStatus = TaskStatus.ERROR;
+    loadDataModel();
     initApplicationSession();
     if (appIsReadyToTransition())
     {

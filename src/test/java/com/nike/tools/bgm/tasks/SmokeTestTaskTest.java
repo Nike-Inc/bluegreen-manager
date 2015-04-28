@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Not much to unit test other than init.
+ * Not much to unit test other than assign.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SmokeTestTaskTest
@@ -47,7 +47,7 @@ public class SmokeTestTaskTest
     Environment fakeEnv = FAKE_APPLICATION.getApplicationVm().getEnvironment();
     when(mockEnvironmentTx.findNamedEnv(fakeEnv.getEnvName())).thenReturn(fakeEnv);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(mockApplicationSession);
-    smokeTestTask.init(1, fakeEnv.getEnvName());
+    smokeTestTask.assign(1, fakeEnv.getEnvName());
   }
 
   @Test

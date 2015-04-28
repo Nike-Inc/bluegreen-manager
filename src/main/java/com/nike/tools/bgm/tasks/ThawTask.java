@@ -27,12 +27,12 @@ public class ThawTask extends TransitionTask
   /**
    * Finishes initializing the task.  (Mockito prevents it from being all done in constructor.)
    *
-   * @return Self, so job can construct, init, and add to task list in one line.
+   * @return Self, so job can construct, assign, and add to task list in one line.
    */
   @Override
-  public TransitionTask initTransition(int position, String envName)
+  public TransitionTask assignTransition(int position, String envName)
   {
-    init(position, envName, TRANSITION_PARAMETERS);
+    assign(position, envName, TRANSITION_PARAMETERS);
     return this;
   }
 }

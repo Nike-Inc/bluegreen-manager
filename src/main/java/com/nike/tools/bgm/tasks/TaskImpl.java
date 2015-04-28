@@ -17,12 +17,10 @@ public abstract class TaskImpl implements Task
   private String name;
 
   /**
-   * This would be a TaskImpl constructor except mockito can't mock the argument.
-   * <p/>
-   * Derived classes should override init() and add any additional post-construct activities that should happen
-   * immediately, before tasks start executing.
+   * "assign" is the activity of saving task arguments.  This would live in the constructor except for the annoying
+   * limitation of our mock library mockito which can't mock value types like String and int.
    */
-  protected void init(int position)
+  protected void assign(int position)
   {
     this.position = position;
     this.name = getClass().getSimpleName();

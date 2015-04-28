@@ -22,6 +22,9 @@ public abstract class TwoEnvTask extends TaskImpl
   @Autowired
   protected EnvironmentTx environmentTx;
 
+  private String liveEnvName;
+  private String stageEnvName;
+
   protected Environment liveEnv;
   protected ApplicationVm liveApplicationVm;
   protected Application liveApplication;
@@ -30,18 +33,28 @@ public abstract class TwoEnvTask extends TaskImpl
   protected ApplicationVm stageApplicationVm;
   protected PhysicalDatabase stagePhysicalDatabase;
 
-  /**
-   * Looks up the two environments by name.
-   * Currently requires that the envs have exactly one applicationVm, one logical/physicaldb, and that the live env
-   * has exactly one application.
-   */
-  protected Task init(int position, String liveEnvName, String stageEnvName)
+  protected Task assign(int position, String liveEnvName, String stageEnvName)
   {
     if (StringUtils.equals(liveEnvName, stageEnvName))
     {
       throw new IllegalArgumentException("Live env must be different from stage env, cannot target env '" + liveEnvName + "' for both");
     }
-    super.init(position);
+    super.assign(position);
+    this.liveEnvName = liveEnvName;
+    this.stageEnvName = stageEnvName;
+    return this;
+  }
+
+  /**
+   * Loads datamodel entities and asserts preconditions on them.  These assertions should be true at the moment when
+   * this task is about to begin processing.
+   * <p/>
+   * Looks up the two environments by name.
+   * Currently requires that the envs have exactly one applicationVm, one logical/physicaldb, and that the live env
+   * has exactly one application.
+   */
+  protected void loadDataModel()
+  {
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
     this.stageEnv = environmentTx.findNamedEnv(stageEnvName);
     this.liveApplicationVm = findApplicationVmFromEnvironment(liveEnv);
@@ -49,7 +62,6 @@ public abstract class TwoEnvTask extends TaskImpl
     this.stageApplicationVm = findApplicationVmFromEnvironment(stageEnv);
     this.livePhysicalDatabase = findPhysicalDatabaseFromEnvironment(liveEnv);
     this.stagePhysicalDatabase = findPhysicalDatabaseFromEnvironment(stageEnv);
-    return this;
   }
 
   protected String context(Environment environment)

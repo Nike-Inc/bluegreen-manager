@@ -67,9 +67,9 @@ public class LocalShellTask extends TwoEnvTask
   private LocalShellConfig localShellConfig;
   private Pattern patternError;
 
-  public Task init(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
+  public Task assign(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
   {
-    super.init(position, liveEnvName, stageEnvName);
+    super.assign(position, liveEnvName, stageEnvName);
     this.localShellConfig = localShellConfig;
     if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
     {
@@ -87,6 +87,7 @@ public class LocalShellTask extends TwoEnvTask
   public TaskStatus process(boolean noop)
   {
     LOGGER.info("Launching local shell command" + noopRemark(noop));
+    loadDataModel();
     TaskStatus taskStatus = TaskStatus.NOOP;
     if (!noop)
     {

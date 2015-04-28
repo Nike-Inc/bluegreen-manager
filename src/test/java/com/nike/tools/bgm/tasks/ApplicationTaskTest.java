@@ -55,7 +55,8 @@ public class ApplicationTaskTest
     ApplicationSession fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
-    applicationTask.init(1, envName);
+    applicationTask.assign(1, envName);
+    applicationTask.loadDataModel();
   }
 
   /**

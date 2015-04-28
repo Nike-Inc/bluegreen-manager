@@ -45,7 +45,8 @@ public class ApplicationVmTaskTest
   {
     String envName = FAKE_EMPTY_ENVIRONMENT.getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_EMPTY_ENVIRONMENT);
-    applicationVmTask.init(1, envName, true);
+    applicationVmTask.assign(1, envName, true);
+    applicationVmTask.loadDataModel();
   }
 
   /**
@@ -55,7 +56,8 @@ public class ApplicationVmTaskTest
   {
     String envName = FAKE_APPLICATION_VM.getEnvironment().getEnvName();
     when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION_VM.getEnvironment());
-    applicationVmTask.init(1, envName, false);
+    applicationVmTask.assign(1, envName, false);
+    applicationVmTask.loadDataModel();
   }
 
   /**

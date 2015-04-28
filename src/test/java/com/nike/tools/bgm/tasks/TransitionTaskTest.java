@@ -20,9 +20,9 @@ public class TransitionTaskTest extends TransitionTaskBaseTest
   @InjectMocks
   private TransitionTask transitionTask = new TransitionTask()
   {
-    public TransitionTask initTransition(int position, String envName)
+    public TransitionTask assignTransition(int position, String envName)
     {
-      init(position, envName, TransitionTestHelper.TRANSITION_PARAMETERS);
+      assign(position, envName, TransitionTestHelper.TRANSITION_PARAMETERS);
       return this;
     }
   };

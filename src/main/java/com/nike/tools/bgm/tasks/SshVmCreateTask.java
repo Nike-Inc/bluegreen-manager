@@ -50,7 +50,7 @@ public class SshVmCreateTask extends ApplicationVmTask
 
   public Task init(int position, String envName)
   {
-    super.init(position, envName, true/*createVm*/);
+    super.assign(position, envName, true/*createVm*/);
     return this;
   }
 
@@ -62,6 +62,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Override
   public TaskStatus process(boolean noop)
   {
+    loadDataModel();
     initSshClient(noop);
     execSshVmCreateCommand(noop);
     persistModel(noop);

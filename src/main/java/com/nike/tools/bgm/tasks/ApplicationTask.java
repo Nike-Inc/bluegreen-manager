@@ -21,17 +21,23 @@ public abstract class ApplicationTask extends ApplicationVmTask
 
   protected Application application;
 
+  protected Task assign(int position, String envName)
+  {
+    super.assign(position, envName, false/*createVm*/);
+    return this;
+  }
+
   /**
+   * Loads datamodel entities and asserts preconditions on them.  These assertions should be true at the moment when
+   * this task is about to begin processing.
+   * <p/>
    * Looks up the environment entity by name.
    * Currently requires that the env has exactly one applicationVm and one application.
    */
-  protected Task init(int position, String envName)
+  protected void loadDataModel()
   {
-    super.init(position, envName, false/*createVm*/);
-
+    super.loadDataModel();
     findApplicationFromVm();
-
-    return this;
   }
 
   /**
@@ -79,7 +85,7 @@ public abstract class ApplicationTask extends ApplicationVmTask
   /**
    * Initializes an authenticated session with the application.
    * <p/>
-   * Could be called later than {@link #init(int, String)}.
+   * Could be called later than {@link #assign(int, String)}.
    */
   void initApplicationSession()
   {

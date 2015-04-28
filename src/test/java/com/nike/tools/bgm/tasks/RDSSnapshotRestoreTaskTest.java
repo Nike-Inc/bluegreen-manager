@@ -95,13 +95,14 @@ public class RDSSnapshotRestoreTaskTest
     when(mockEnvironmentTx.findNamedEnv(LIVE_ENV_NAME)).thenReturn(FAKE_PHYSICAL_DATABASE.getLogicalDatabase().getEnvironment());
     when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(null);
     when(mockRdsCopierFactory.create()).thenReturn(mockRdsCopier);
-    rdsSnapshotRestoreTask.init(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
+    rdsSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
+    rdsSnapshotRestoreTask.loadDataModel();
   }
 
-  //TODO - test init() WITHOUT normalSetup() ...i.e. error cases
+  //TODO - test loadDataModel() WITHOUT normalSetup() ...i.e. error cases
 
   /**
-   * Live context after init should show env/logical/physical.
+   * Live context after assign should show env/logical/physical.
    */
   @Test
   public void testLiveContext()
@@ -114,7 +115,7 @@ public class RDSSnapshotRestoreTaskTest
   }
 
   /**
-   * Stage context after init should show env/logical/physical using stageContextFromArgs.
+   * Stage context after assign should show env/logical/physical using stageContextFromArgs.
    */
   @Test
   public void testStageContext()
@@ -346,7 +347,7 @@ public class RDSSnapshotRestoreTaskTest
   }
 
   /**
-   * Tests that we can init transient database entities for stage logical and physical.
+   * Tests that we can assign transient database entities for stage logical and physical.
    * <p/>
    * Physical should have everything but url.
    */
