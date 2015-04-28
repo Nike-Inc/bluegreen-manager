@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.jobs;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
+import com.nike.tools.bgm.model.domain.JobStatus;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.tasks.TaskFakery;
 
@@ -43,9 +44,9 @@ public class JobFakery
     {
 
       @Override
-      public void process()
+      public JobStatus process()
       {
-        //Do nothing
+        return JobStatus.DONE;
       }
 
       @Override
