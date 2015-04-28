@@ -76,12 +76,12 @@ public abstract class TaskSequenceJob implements Job
   }
 
   /**
-   * Writes new job history and executes the tasks of the job.  Returns silently if success, throws if error.
+   * Writes new job history and executes the tasks of the job.  Returns jobStatus or throws if error.
    * <p/>
    * Concludes with a summary.
    */
   @Override
-  public void process()
+  public JobStatus process()
   {
     if (tasks == null || tasks.size() == 0)
     {
@@ -102,6 +102,7 @@ public abstract class TaskSequenceJob implements Job
       }
       closeJobHistory(newJobHistory, jobStatus);
       logSummaryOfJobAndHistory();
+      return jobStatus;
     }
   }
 

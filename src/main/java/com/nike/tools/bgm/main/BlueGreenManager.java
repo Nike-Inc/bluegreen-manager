@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.jobs.Job;
 import com.nike.tools.bgm.jobs.JobFactory;
+import com.nike.tools.bgm.model.domain.JobStatus;
 
 import static com.nike.tools.bgm.main.ReturnCode.CMDLINE_ERROR;
 import static com.nike.tools.bgm.main.ReturnCode.PROCESSING_ERROR;
@@ -52,7 +53,16 @@ public class BlueGreenManager
       Job job = blueGreenManager.parseArgsToJob(args);
       if (job != null)
       {
-        job.process();
+        JobStatus jobStatus = job.process();
+        switch (jobStatus)
+        {
+          case DONE:
+            break; //returnCode already set
+          case ERROR:
+          default:
+            returnCode = PROCESSING_ERROR;
+            break;
+        }
       }
     }
     catch (CmdlineException e)

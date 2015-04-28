@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,12 +55,15 @@ public class TaskRunProcessor
   {
     TaskStatus taskStatus = null;
     TaskHistory taskHistory = openTaskHistory(taskRun);
+    StopWatch stopWatch = new StopWatch();
     try
     {
+      stopWatch.start();
       taskStatus = taskRun.getTask().process(taskRun.isNoop());
     }
     finally
     {
+      LOGGER.debug("Task " + taskRun.getTask().getName() + " done ... time elapsed: " + stopWatch.toString());
       if (taskStatus == null)
       {
         taskStatus = TaskStatus.ERROR;

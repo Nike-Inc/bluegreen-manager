@@ -1,14 +1,16 @@
 package com.nike.tools.bgm.jobs;
 
+import com.nike.tools.bgm.model.domain.JobStatus;
+
 /**
  * A job is a sequence of tasks that the bluegreen-manager can run.
  */
 public interface Job
 {
   /**
-   * Executes the tasks.  Returns silently if success, throws if error.
+   * Executes the tasks.  Returns jobStatus or throws if error.
    */
-  void process();
+  JobStatus process();
 
   /**
    * Returns job name, i.e. what kind of job.
