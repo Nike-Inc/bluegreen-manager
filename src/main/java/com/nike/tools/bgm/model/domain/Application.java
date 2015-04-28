@@ -55,7 +55,7 @@ public class Application
   @Column(name = COLUMN_PORT)
   private Integer port;
 
-  @Pattern(regexp = "^/")
+  @Pattern(regexp = "^/.*")
   @Column(name = COLUMN_URL_PATH, nullable = false, length = LENGTH_URL_PATH)
   private String urlPath;
 

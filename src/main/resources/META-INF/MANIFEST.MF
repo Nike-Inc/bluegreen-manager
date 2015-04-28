@@ -10,6 +10,8 @@ Class-Path:  dependency/antlr-2.7.7.jar
   dependency/commons-lang3-3.3.2.jar
   dependency/commons-logging-1.2.jar
   dependency/dom4j-1.6.1.jar
+  dependency/el-api-2.2.jar
+  dependency/el-impl-2.2.jar
   dependency/fluent-hc-4.3.1.jar
   dependency/ganymed-ssh2-262.jar
   dependency/gson-2.3.1.jar
