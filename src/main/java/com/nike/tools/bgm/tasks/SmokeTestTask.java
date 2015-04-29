@@ -35,6 +35,7 @@ public class SmokeTestTask extends ApplicationTask
     if (!noop)
     {
       initApplicationSession();
+      LOGGER.info(context() + "Smoke test passed");
     }
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
