@@ -2,6 +2,23 @@
 <log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
 
   <appender name="consoleAppender" class="org.apache.log4j.ConsoleAppender">
+    <param name="threshold" value="INFO"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{MM/dd/yy HH:mm:ss} %5p %C.%M(%L) - %m%n"/>
+    </layout>
+  </appender>
+  <appender name="infoFileAppender" class="org.apache.log4j.FileAppender">
+    <param name="file" value="info.log"/>
+    <param name="append" value="false"/>
+    <param name="threshold" value="INFO"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{MM/dd/yy HH:mm:ss} %5p %C.%M(%L) - %m%n"/>
+    </layout>
+  </appender>
+  <appender name="debugFileAppender" class="org.apache.log4j.FileAppender">
+    <param name="file" value="debug.log"/>
+    <param name="append" value="false"/>
+    <param name="threshold" value="DEBUG"/>
     <layout class="org.apache.log4j.PatternLayout">
       <param name="ConversionPattern" value="%d{MM/dd/yy HH:mm:ss} %5p %C.%M(%L) - %m%n"/>
     </layout>
@@ -77,5 +94,7 @@
   <root>
     <level value="INFO"/>
     <appender-ref ref="consoleAppender"/>
+    <appender-ref ref="infoFileAppender"/>
+    <appender-ref ref="debugFileAppender"/>
   </root>
 </log4j:configuration>
