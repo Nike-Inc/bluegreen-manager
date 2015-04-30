@@ -114,7 +114,7 @@ public class TransitionProgressChecker implements ProgressChecker<Boolean>
     }
     else if (mode == transitionParameters.getTransitionalMode())
     {
-      LOGGER.info("Application is in transitional mode '" + transitionParameters.getTransitionalMode() + "'");
+      LOGGER.debug("Application is in transitional mode '" + transitionParameters.getTransitionalMode() + "'");
       //Expected response, keep trying.
     }
     else
