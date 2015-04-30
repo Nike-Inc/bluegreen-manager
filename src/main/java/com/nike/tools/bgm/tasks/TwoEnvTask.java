@@ -33,7 +33,7 @@ public abstract class TwoEnvTask extends TaskImpl
   protected ApplicationVm stageApplicationVm;
   protected PhysicalDatabase stagePhysicalDatabase;
 
-  protected Task assign(int position, String liveEnvName, String stageEnvName)
+  public Task assign(int position, String liveEnvName, String stageEnvName)
   {
     if (StringUtils.equals(liveEnvName, stageEnvName))
     {

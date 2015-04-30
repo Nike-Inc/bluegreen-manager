@@ -21,7 +21,7 @@ public abstract class ApplicationTask extends ApplicationVmTask
 
   protected Application application;
 
-  protected Task assign(int position, String envName)
+  public Task assign(int position, String envName)
   {
     super.assign(position, envName, false/*createVm*/);
     return this;

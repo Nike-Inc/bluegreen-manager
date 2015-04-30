@@ -8,10 +8,16 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
+import com.nike.tools.bgm.tasks.DiscoveryTask;
+import com.nike.tools.bgm.tasks.FreezeTask;
+import com.nike.tools.bgm.tasks.LinkLiveDatabaseTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
  * Swaps the liveness of the old and new envs.  Old becomes live.
+ * <p/>
+ * stagingDeploy liveEnv becomes goLive oldLiveEnv.
+ * stagingDeploy stageEnv becomes goLive newLiveEnv.
  */
 @Lazy
 @Component
@@ -38,7 +44,10 @@ public class GoLiveJob extends TaskSequenceJob
   {
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    //TODO - fill this in
+    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnv));
+    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnv));
+    tasks.add(applicationContext.getBean(LinkLiveDatabaseTask.class).assign(position++, oldLiveEnv, newLiveEnv));
+    tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnv));
     this.tasks = tasks;
   }
 

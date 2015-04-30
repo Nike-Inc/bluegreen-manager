@@ -11,6 +11,17 @@ public class DiscoveryResult implements Lockable
 
   private String discoveryError;
 
+  public DiscoveryResult()
+  {
+  }
+
+  public DiscoveryResult(PhysicalDatabase physicalDatabase, boolean lockError, String discoveryError)
+  {
+    this.physicalDatabase = physicalDatabase;
+    this.lockError = lockError;
+    this.discoveryError = discoveryError;
+  }
+
   public PhysicalDatabase getPhysicalDatabase()
   {
     return physicalDatabase;

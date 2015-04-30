@@ -17,6 +17,19 @@ public class PhysicalDatabase
 
   private boolean dbIsLive;
 
+  public PhysicalDatabase()
+  {
+  }
+
+  public PhysicalDatabase(String envName, String logicalName, String dbUrl, String dbUsername, boolean dbIsLive)
+  {
+    this.envName = envName;
+    this.logicalName = logicalName;
+    this.dbUrl = dbUrl;
+    this.dbUsername = dbUsername;
+    this.dbIsLive = dbIsLive;
+  }
+
   public String getEnvName()
   {
     return envName;
@@ -65,5 +78,24 @@ public class PhysicalDatabase
   public void setDbIsLive(boolean dbIsLive)
   {
     this.dbIsLive = dbIsLive;
+  }
+
+  @Override
+  public String toString()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append("PhysicalDatabase[");
+    sb.append("envName: ");
+    sb.append(envName);
+    sb.append(", logicalName: ");
+    sb.append(logicalName);
+    sb.append(", dbUrl: ");
+    sb.append(dbUrl);
+    sb.append(", dbUsername: ");
+    sb.append(dbUsername);
+    sb.append(", dbIsLive: ");
+    sb.append(dbIsLive);
+    sb.append("]");
+    return sb.toString();
   }
 }
