@@ -16,6 +16,6 @@ public class Ec2ClientFactory
 
   public Ec2Client create()
   {
-    return new Ec2Client(awsClientFactory.makeRegionalEC2Client());
+    return new Ec2Client(awsClientFactory.makeRegionalEc2Client());
   }
 }

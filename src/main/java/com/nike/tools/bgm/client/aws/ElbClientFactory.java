@@ -16,6 +16,6 @@ public class ElbClientFactory
 
   public ElbClient create()
   {
-    return new ElbClient(awsClientFactory.makeRegionalELBClient());
+    return new ElbClient(awsClientFactory.makeRegionalElbClient());
   }
 }

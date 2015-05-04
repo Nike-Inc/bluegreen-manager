@@ -42,7 +42,7 @@ public class AwsClientFactory
   /**
    * Constructs an AmazonEC2Client and sets the region.
    */
-  public AmazonEC2Client makeRegionalEC2Client()
+  public AmazonEC2Client makeRegionalEc2Client()
   {
     AWSCredentials credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretAccessKey);
     AmazonEC2Client ec2 = new AmazonEC2Client(credentials);
@@ -53,7 +53,7 @@ public class AwsClientFactory
   /**
    * Constructs an AmazonElasticLoadBalancingClient and sets the region.
    */
-  public AmazonElasticLoadBalancingClient makeRegionalELBClient()
+  public AmazonElasticLoadBalancingClient makeRegionalElbClient()
   {
     AWSCredentials credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretAccessKey);
     AmazonElasticLoadBalancingClient elb = new AmazonElasticLoadBalancingClient(credentials);
@@ -64,7 +64,7 @@ public class AwsClientFactory
   /**
    * Constructs an AmazonRDSClient and sets the region.
    */
-  public AmazonRDSClient makeRegionalRDSClient()
+  public AmazonRDSClient makeRegionalRdsClient()
   {
     AWSCredentials credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretAccessKey);
     AmazonRDSClient rds = new AmazonRDSClient(credentials);

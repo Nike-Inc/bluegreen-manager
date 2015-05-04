@@ -16,6 +16,6 @@ public class RdsCopierFactory
 
   public RdsClient create()
   {
-    return new RdsClient(awsClientFactory.makeRegionalRDSClient());
+    return new RdsClient(awsClientFactory.makeRegionalRdsClient());
   }
 }

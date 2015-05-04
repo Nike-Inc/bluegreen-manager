@@ -34,7 +34,7 @@ public class AwsClientFactoryTest
   @Test
   public void testMakeRegionalEC2Client()
   {
-    AmazonEC2Client ec2 = awsClientFactory.makeRegionalEC2Client();
+    AmazonEC2Client ec2 = awsClientFactory.makeRegionalEc2Client();
     assertEquals(ServiceAbbreviations.EC2, ec2.getServiceName());
   }
 
@@ -44,7 +44,7 @@ public class AwsClientFactoryTest
   @Test
   public void testMakeRegionalELBClient()
   {
-    AmazonElasticLoadBalancingClient elb = awsClientFactory.makeRegionalELBClient();
+    AmazonElasticLoadBalancingClient elb = awsClientFactory.makeRegionalElbClient();
     assertEquals(ServiceAbbreviations.ElasticLoadbalancing, elb.getServiceName());
   }
 
@@ -54,7 +54,7 @@ public class AwsClientFactoryTest
   @Test
   public void testMakeRegionalRDSClient()
   {
-    AmazonRDSClient rds = awsClientFactory.makeRegionalRDSClient();
+    AmazonRDSClient rds = awsClientFactory.makeRegionalRdsClient();
     assertEquals(ServiceAbbreviations.RDS, rds.getServiceName());
   }
 }
