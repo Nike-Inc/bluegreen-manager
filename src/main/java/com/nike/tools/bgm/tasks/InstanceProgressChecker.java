@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBInstance;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
-import com.nike.tools.bgm.client.aws.RDSClient;
+import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
@@ -24,7 +24,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
 
   private String instanceId;
   private String logContext;
-  private RDSClient rdsClient;
+  private RdsClient rdsClient;
   private DBInstance initialInstance;
   private boolean create; //False: modify
   private InstanceStatus[] intermediateStates;
@@ -33,7 +33,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
 
   public InstanceProgressChecker(String instanceId,
                                  String logContext,
-                                 RDSClient rdsClient, DBInstance initialInstance, boolean create)
+                                 RdsClient rdsClient, DBInstance initialInstance, boolean create)
   {
     this.instanceId = instanceId;
     this.logContext = logContext;

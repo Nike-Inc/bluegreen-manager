@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.RDSClient;
+import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
@@ -18,14 +18,14 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
 
   private String snapshotId;
   private String logContext;
-  private RDSClient rdsClient;
+  private RdsClient rdsClient;
   private DBSnapshot initialSnapshot;
   private boolean done;
   private DBSnapshot result;
 
   public SnapshotProgressChecker(String snapshotId,
                                  String logContext,
-                                 RDSClient rdsClient, DBSnapshot initialSnapshot)
+                                 RdsClient rdsClient, DBSnapshot initialSnapshot)
   {
     this.snapshotId = snapshotId;
     this.logContext = logContext;
