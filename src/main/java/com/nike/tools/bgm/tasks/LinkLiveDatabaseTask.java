@@ -2,6 +2,8 @@ package com.nike.tools.bgm.tasks;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
@@ -11,6 +13,8 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
  * <p/>
  * This is just a change to the bluegreen datamodel, it does not affect any running applications.
  */
+@Lazy
+@Component
 public class LinkLiveDatabaseTask extends TwoEnvTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(LinkLiveDatabaseTask.class);

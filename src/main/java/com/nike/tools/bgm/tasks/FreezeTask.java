@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.app.DbFreezeMode;
@@ -11,6 +12,7 @@ import com.nike.tools.bgm.client.app.DbFreezeRest;
  */
 @Lazy
 @Component
+@Scope("prototype")
 public class FreezeTask extends TransitionTask
 {
   private static final String VERB = "freeze";

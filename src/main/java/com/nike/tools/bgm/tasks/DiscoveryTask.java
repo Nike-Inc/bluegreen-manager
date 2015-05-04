@@ -3,6 +3,8 @@ package com.nike.tools.bgm.tasks;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.app.DiscoveryResult;
 import com.nike.tools.bgm.client.app.PhysicalDatabase;
@@ -15,6 +17,8 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
  * Assumes the target apps have already been frozen, assumes the live db has already been linked to the target applications.
  * Currently assumes exactly 1 application.
  */
+@Lazy
+@Component
 public class DiscoveryTask extends ApplicationTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryTask.class);

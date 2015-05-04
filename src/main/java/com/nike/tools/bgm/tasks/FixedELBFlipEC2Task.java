@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.InstanceState;
@@ -27,6 +29,8 @@ import com.nike.tools.bgm.utils.WaiterParameters;
  * The old app is already frozen.  Assuming the app's internal logic and user experience will be ok with having both
  * apps running during the healthcheck timeframe.
  */
+@Lazy
+@Component
 public class FixedELBFlipEC2Task extends TwoEnvTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(FixedELBFlipEC2Task.class);
