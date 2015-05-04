@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.DiscoveryTask;
-import com.nike.tools.bgm.tasks.FixedElbFlipEc2Task;
+import com.nike.tools.bgm.tasks.FixedELBFlipEC2Task;
 import com.nike.tools.bgm.tasks.FreezeTask;
 import com.nike.tools.bgm.tasks.LinkLiveDatabaseTask;
 import com.nike.tools.bgm.tasks.SmokeTestTask;
@@ -59,7 +59,7 @@ public class GoLiveJob extends TaskSequenceJob
       waiting longer for live thaw.  If you thaw first, the ELB would send some users to a thawed instance and others to
       the frozen oldLive instance until flip is done.  Your choice depends on how the nature of your app and its users.
      */
-    tasks.add(applicationContext.getBean(FixedElbFlipEc2Task.class).assign(position++, oldLiveEnv, newLiveEnv, fixedLbName));
+    tasks.add(applicationContext.getBean(FixedELBFlipEC2Task.class).assign(position++, oldLiveEnv, newLiveEnv, fixedLbName));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, newLiveEnv));
     this.tasks = tasks;
   }

@@ -6,7 +6,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.RdsClient;
+import com.nike.tools.bgm.client.aws.RDSClient;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 
 import static org.junit.Assert.assertEquals;
@@ -27,7 +27,7 @@ public class SnapshotProgressCheckerTest
   private static final String STATUS_UNKNOWN = "unknown";
 
   @Mock
-  private RdsClient mockRdsClient;
+  private RDSClient mockRdsClient;
 
   private SnapshotProgressChecker makeProgressChecker(DBSnapshot initialSnapshot)
   {

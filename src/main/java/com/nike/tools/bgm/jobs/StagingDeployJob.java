@@ -16,7 +16,7 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.FreezeTask;
 import com.nike.tools.bgm.tasks.LocalShellConfig;
 import com.nike.tools.bgm.tasks.LocalShellTask;
-import com.nike.tools.bgm.tasks.RdsSnapshotRestoreTask;
+import com.nike.tools.bgm.tasks.RDSSnapshotRestoreTask;
 import com.nike.tools.bgm.tasks.RegisterApplicationTask;
 import com.nike.tools.bgm.tasks.SmokeTestTask;
 import com.nike.tools.bgm.tasks.SshVmCreateTask;
@@ -72,7 +72,7 @@ public class StagingDeployJob extends TaskSequenceJob
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, liveEnv));
-    tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnv, stageEnv, dbMap));
+    tasks.add(applicationContext.getBean(RDSSnapshotRestoreTask.class).assign(position++, liveEnv, stageEnv, dbMap));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnv));
     tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
     tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnv, stageEnv, createStageEnvConfig));
