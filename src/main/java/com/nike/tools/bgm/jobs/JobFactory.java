@@ -85,13 +85,13 @@ public class JobFactory
     sb.append("\n");
     sb.append("Job '" + JOBNAME_GO_LIVE + "'\n");
     sb.append("Description: Reassigns liveness from the old env to the new env.  When done, the old env is frozen and removed\n");
-    sb.append("             from the live load balancer's vm pool.");
+    sb.append("             from the live load balancer's vm pool.\n");
     sb.append("Required Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_LIVE_ENV + " <envName>\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NEW_LIVE_ENV + " <envName>\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_FIXED_LB + " <loadBalancerName>\n");
     sb.append("\t\t\tName of a fixed live load-balancer currently hosting the old live application.  We keep the LB fixed in place,\n");
-    sb.append("\t\t\tregister the new live application vm with this LB, and deregister the old live application vm\n");
+    sb.append("\t\t\tregister the new live application vm with this LB, and deregister the old live application vm.\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_TEARDOWN + "'\n");
     sb.append("Description: Spins down and destroys the old live env, and the test database left in the new live env.\n");
