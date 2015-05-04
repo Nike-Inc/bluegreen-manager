@@ -26,7 +26,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * RDSCopier is mostly declarative, so these tests are a bit thin.
+ * Tests error-handling capabilities when mock aws returns unexpected results.
+ * <p/>
+ * Or for the solely declarative methods, simply tests that the aws client is invoked and returns a result (not much
+ * of a test, really).
  */
 public class RDSCopierTest
 {
@@ -47,9 +50,7 @@ public class RDSCopierTest
   @Test(expected = RuntimeException.class)
   public void testDescribeInstance_CantFind()
   {
-    DescribeDBInstancesResult fakeResult = makeDescribeDBInstancesResult(null);
-    when(mockRdsClient.describeDBInstances(any(DescribeDBInstancesRequest.class))).thenReturn(fakeResult);
-
+    setupMock(makeDescribeDBInstancesResult(null));
     rdsCopier.describeInstance(INSTANCE_NAME);
   }
 
@@ -59,8 +60,7 @@ public class RDSCopierTest
   @Test
   public void testDescribeInstance_FoundTooMany()
   {
-    DescribeDBInstancesResult fakeResult = makeDescribeDBInstancesResult(INSTANCE_NAME, ANOTHER_INSTANCE_NAME);
-    when(mockRdsClient.describeDBInstances(any(DescribeDBInstancesRequest.class))).thenReturn(fakeResult);
+    setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME, ANOTHER_INSTANCE_NAME));
 
     DBInstance dbInstance = rdsCopier.describeInstance(INSTANCE_NAME);
 
@@ -73,12 +73,19 @@ public class RDSCopierTest
   @Test
   public void testDescribeInstance_Pass()
   {
-    DescribeDBInstancesResult fakeResult = makeDescribeDBInstancesResult(INSTANCE_NAME);
-    when(mockRdsClient.describeDBInstances(any(DescribeDBInstancesRequest.class))).thenReturn(fakeResult);
+    setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME));
 
     DBInstance dbInstance = rdsCopier.describeInstance(INSTANCE_NAME);
 
     assertEquals(INSTANCE_NAME, dbInstance.getDBInstanceIdentifier());
+  }
+
+  /**
+   * Sets up the mock rds client to return a fakeResult for the describe-db-instances call.
+   */
+  private void setupMock(DescribeDBInstancesResult fakeResult)
+  {
+    when(mockRdsClient.describeDBInstances(any(DescribeDBInstancesRequest.class))).thenReturn(fakeResult);
   }
 
   /**
@@ -107,9 +114,7 @@ public class RDSCopierTest
   @Test(expected = RuntimeException.class)
   public void testDescribeSnapshot_CantFind()
   {
-    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(null);
-    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
-
+    setupMock(makeDescribeDBSnapshotsResult(null));
     rdsCopier.describeSnapshot(SNAPSHOT_ID);
   }
 
@@ -119,8 +124,7 @@ public class RDSCopierTest
   @Test
   public void testDescribeSnapshot_FoundTooMany()
   {
-    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(SNAPSHOT_ID, ANOTHER_SNAPSHOT_ID);
-    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
+    setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID, ANOTHER_SNAPSHOT_ID));
 
     DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
 
@@ -133,12 +137,19 @@ public class RDSCopierTest
   @Test
   public void testDescribeSnapshot_Pass()
   {
-    DescribeDBSnapshotsResult fakeResult = makeDescribeDBSnapshotsResult(SNAPSHOT_ID);
-    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
+    setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID));
 
     DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
 
     assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
+  }
+
+  /**
+   * Sets up the mock rds client to return a fakeResult for the describe-db-snapshots call.
+   */
+  private void setupMock(DescribeDBSnapshotsResult fakeResult)
+  {
+    when(mockRdsClient.describeDBSnapshots(any(DescribeDBSnapshotsRequest.class))).thenReturn(fakeResult);
   }
 
   /**

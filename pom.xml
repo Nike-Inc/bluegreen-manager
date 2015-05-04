@@ -16,6 +16,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <com.amazonaws.version>1.9.33</com.amazonaws.version>
     <org.springframework.version>4.1.5.RELEASE</org.springframework.version>
     <org.hibernate.version>4.3.8.Final</org.hibernate.version>
     <!-- JPA 2.1 -->
@@ -147,8 +148,18 @@
 
     <dependency>
       <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-ec2</artifactId>
+      <version>${com.amazonaws.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-elasticloadbalancing</artifactId>
+      <version>${com.amazonaws.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-rds</artifactId>
-      <version>1.9.17</version>
+      <version>${com.amazonaws.version}</version>
     </dependency>
 
     <dependency>
@@ -176,7 +187,7 @@
     </dependency>
 
     <dependency>
-    <groupId>org.apache.commons</groupId>
+      <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.3.2</version>
     </dependency>

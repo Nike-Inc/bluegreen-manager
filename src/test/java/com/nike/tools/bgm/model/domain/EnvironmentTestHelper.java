@@ -10,6 +10,7 @@ public class EnvironmentTestHelper
   private static final String[] ENV_NAMES = { "theEnv1", "theEnv2" };
   private static final String APP_SCHEME = "https";
   private static final String[] VM_HOSTNAMES = { "target-vm-1.com", "target-vm-2.com" };
+  private static final String[] VM_IPADDRS = { "10.111.222.111", "10.111.222.222" };
   private static final String[] APP_HOSTNAMES = { "target-hostname-1.com", "target-hostname-2.com" };
   private static final int APP_PORT = 8080;
   private static final String APP_URL_PATH = "/some/resource/path";
@@ -71,6 +72,7 @@ public class EnvironmentTestHelper
     ApplicationVm applicationVm = new ApplicationVm();
     applicationVm.setEnvironment(environment);
     applicationVm.setHostname(VM_HOSTNAMES[index]);
+    applicationVm.setIpAddress(VM_IPADDRS[index]);
     environment.setApplicationVms(Arrays.asList(applicationVm));
     return applicationVm;
   }

@@ -26,4 +26,12 @@
     <property name="maxNumWaits" value="${bluegreen.waiter.transitionTask.maxNumWaits}"/>
   </bean>
 
+  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+    <qualifier value="fixedELBFlipEC2Task"/>
+    <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.fixedELBFlipEC2Task.initialWaitDelayMilliseconds}"/>
+    <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.fixedELBFlipEC2Task.followupWaitDelayMilliseconds}"/>
+    <property name="waitReportInterval" value="${bluegreen.waiter.fixedELBFlipEC2Task.waitReportInterval}"/>
+    <property name="maxNumWaits" value="${bluegreen.waiter.fixedELBFlipEC2Task.maxNumWaits}"/>
+  </bean>
+
 </beans>

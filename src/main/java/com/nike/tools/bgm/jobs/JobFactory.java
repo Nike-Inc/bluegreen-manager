@@ -36,6 +36,7 @@ public class JobFactory
   public static final String PARAMNAME_PACKAGES = "packages";
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
+  public static final String PARAMNAME_FIXED_LB = "fixedLB";
   public static final String PARAMNAME_NOOP = "noop";
   public static final String PARAMNAME_FORCE = "force";
 
@@ -83,10 +84,14 @@ public class JobFactory
     sb.append("\t\t\tUse full package names as they will be recognized by your package repository.\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_GO_LIVE + "'\n");
-    sb.append("Description: Reassigns liveness from the old env to the new env.  When done, the old env is frozen.\n");
+    sb.append("Description: Reassigns liveness from the old env to the new env.  When done, the old env is frozen and removed\n");
+    sb.append("             from the live load balancer's vm pool.");
     sb.append("Required Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_LIVE_ENV + " <envName>\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NEW_LIVE_ENV + " <envName>\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_FIXED_LB + " <loadBalancerName>\n");
+    sb.append("\t\t\tName of a fixed live load-balancer currently hosting the old live application.  We keep the LB fixed in place,\n");
+    sb.append("\t\t\tregister the new live application vm with this LB, and deregister the old live application vm\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_TEARDOWN + "'\n");
     sb.append("Description: Spins down and destroys the old live env, and the test database left in the new live env.\n");
@@ -146,7 +151,8 @@ public class JobFactory
    */
   private Job makeGoLiveJob(List<List<String>> parameters, String commandLine)
   {
-    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true);
+    String fixedLbName = getParameter(PARAMNAME_FIXED_LB, parameters, 1).get(1);
+    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true, fixedLbName);
   }
 
   /**
