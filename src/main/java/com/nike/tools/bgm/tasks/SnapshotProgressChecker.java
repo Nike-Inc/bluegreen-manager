@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.RDSClient;
+import com.nike.tools.bgm.client.aws.RdszClient;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
@@ -18,18 +18,18 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
 
   private String snapshotId;
   private String logContext;
-  private RDSClient rdsClient;
+  private RdszClient rdszClient;
   private DBSnapshot initialSnapshot;
   private boolean done;
   private DBSnapshot result;
 
   public SnapshotProgressChecker(String snapshotId,
                                  String logContext,
-                                 RDSClient rdsClient, DBSnapshot initialSnapshot)
+                                 RdszClient rdszClient, DBSnapshot initialSnapshot)
   {
     this.snapshotId = snapshotId;
     this.logContext = logContext;
-    this.rdsClient = rdsClient;
+    this.rdszClient = rdszClient;
     this.initialSnapshot = initialSnapshot;
   }
 
@@ -57,7 +57,7 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   @Override
   public void followupCheck(int waitNum)
   {
-    DBSnapshot dbSnapshot = rdsClient.describeSnapshot(snapshotId);
+    DBSnapshot dbSnapshot = rdszClient.describeSnapshot(snapshotId);
     checkSnapshotId(dbSnapshot);
     LOGGER.debug(logContext + "RDS snapshot status after wait#" + waitNum + ": " + dbSnapshot.getStatus());
     checkSnapshotStatus(dbSnapshot);

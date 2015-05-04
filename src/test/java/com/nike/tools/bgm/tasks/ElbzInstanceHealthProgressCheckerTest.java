@@ -8,11 +8,11 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.elasticloadbalancing.model.InstanceState;
-import com.nike.tools.bgm.client.aws.ELBClient;
-import com.nike.tools.bgm.client.aws.ELBInstanceState;
+import com.nike.tools.bgm.client.aws.ElbzClient;
+import com.nike.tools.bgm.client.aws.ElbzInstanceState;
 
-import static com.nike.tools.bgm.client.aws.ELBInstanceState.IN_SERVICE;
-import static com.nike.tools.bgm.client.aws.ELBInstanceState.OUT_OF_SERVICE;
+import static com.nike.tools.bgm.client.aws.ElbzInstanceState.IN_SERVICE;
+import static com.nike.tools.bgm.client.aws.ElbzInstanceState.OUT_OF_SERVICE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ELBInstanceHealthProgressCheckerTest
+public class ElbzInstanceHealthProgressCheckerTest
 {
   private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
@@ -29,14 +29,14 @@ public class ELBInstanceHealthProgressCheckerTest
   private static final String ANOTHER_EC2_INSTANCE_ID = "i-234567";
 
   @Mock
-  private ELBClient mockElbClient;
+  private ElbzClient mockElbzClient;
 
-  private ELBInstanceHealthProgressChecker progressChecker;
+  private ElbzInstanceHealthProgressChecker progressChecker;
 
   @Before
   public void makeProgressChecker()
   {
-    progressChecker = new ELBInstanceHealthProgressChecker(ELB_NAME, EC2_INSTANCE_ID, LOG_CONTEXT, mockElbClient);
+    progressChecker = new ElbzInstanceHealthProgressChecker(ELB_NAME, EC2_INSTANCE_ID, LOG_CONTEXT, mockElbzClient);
   }
 
   @Test
@@ -45,17 +45,17 @@ public class ELBInstanceHealthProgressCheckerTest
     assertTrue(StringUtils.isNotBlank(progressChecker.getDescription()));
   }
 
-  private InstanceState makeInstanceState(String instanceId, ELBInstanceState elbInstanceState)
+  private InstanceState makeInstanceState(String instanceId, ElbzInstanceState elbzInstanceState)
   {
     InstanceState instanceState = new InstanceState();
     instanceState.setInstanceId(instanceId);
-    instanceState.setState(elbInstanceState.toString());
+    instanceState.setState(elbzInstanceState.toString());
     return instanceState;
   }
 
   private void setupMock(InstanceState fakeInstanceState)
   {
-    when(mockElbClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID)).thenReturn(fakeInstanceState);
+    when(mockElbzClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID)).thenReturn(fakeInstanceState);
   }
 
   /**

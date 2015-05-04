@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
  * <p/>
  * There are three possible values, according to http://docs.aws.amazon.com/ElasticLoadBalancing/latest/APIReference/API_InstanceState.html.
  */
-public enum ELBInstanceState
+public enum ElbzInstanceState
 {
   IN_SERVICE("InService"),
   OUT_OF_SERVICE("OutOfService"),
@@ -15,7 +15,7 @@ public enum ELBInstanceState
 
   private String name;
 
-  ELBInstanceState(String name)
+  ElbzInstanceState(String name)
   {
     this.name = name;
   }

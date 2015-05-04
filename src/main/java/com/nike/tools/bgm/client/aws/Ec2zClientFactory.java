@@ -4,18 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Simple factory class that simply constructs an ELBClient.
+ * Simple factory class that simply constructs an EC2Client.
  * <p/>
  * Pulling this into its own class makes the client classes more testable.
  */
 @Component
-public class ELBClientFactory
+public class Ec2zClientFactory
 {
   @Autowired
-  private AWSClientFactory awsClientFactory;
+  private AwszClientFactory awszClientFactory;
 
-  public ELBClient create()
+  public Ec2zClient create()
   {
-    return new ELBClient(awsClientFactory.makeRegionalELBClient());
+    return new Ec2zClient(awszClientFactory.makeRegionalEC2Client());
   }
 }

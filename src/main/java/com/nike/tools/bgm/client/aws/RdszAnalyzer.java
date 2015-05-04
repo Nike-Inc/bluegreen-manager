@@ -20,9 +20,9 @@ import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
  * Does NOT communicate with Amazon.
  */
 @Component
-public class RDSAnalyzer
+public class RdszAnalyzer
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RDSAnalyzer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RdszAnalyzer.class);
 
   /**
    * Finds the name of the instance's paramgroup whose name embeds the instname.  If not found, then simply returns

@@ -17,7 +17,7 @@ import com.amazonaws.services.rds.AmazonRDSClient;
  * Makes client objects for communicating with AWS.
  */
 @Component
-public class AWSClientFactory
+public class AwszClientFactory
 {
   @Value("${bluegreen.aws.access.key.id}")
   private String awsAccessKeyId;

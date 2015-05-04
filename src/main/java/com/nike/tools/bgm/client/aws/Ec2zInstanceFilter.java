@@ -6,7 +6,7 @@ package com.nike.tools.bgm.client.aws;
  * <p/>
  * Since the full list of names is quite long, this only includes the ones we're using so far.
  */
-public enum EC2InstanceFilter
+public enum Ec2zInstanceFilter
 {
   PRIVATE_IP_ADDRESS;
 

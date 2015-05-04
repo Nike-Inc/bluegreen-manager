@@ -4,18 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Simple factory class that simply constructs an RDSCopier.
+ * Simple factory class that simply constructs an ELBClient.
  * <p/>
  * Pulling this into its own class makes the client classes more testable.
  */
 @Component
-public class RDSCopierFactory
+public class ElbzClientFactory
 {
   @Autowired
-  private AWSClientFactory awsClientFactory;
+  private AwszClientFactory awszClientFactory;
 
-  public RDSClient create()
+  public ElbzClient create()
   {
-    return new RDSClient(awsClientFactory.makeRegionalRDSClient());
+    return new ElbzClient(awszClientFactory.makeRegionalELBClient());
   }
 }

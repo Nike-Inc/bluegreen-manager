@@ -6,7 +6,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
-import com.nike.tools.bgm.client.aws.RDSClient;
+import com.nike.tools.bgm.client.aws.RdszClient;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 
 import static org.junit.Assert.assertEquals;
@@ -27,11 +27,11 @@ public class SnapshotProgressCheckerTest
   private static final String STATUS_UNKNOWN = "unknown";
 
   @Mock
-  private RDSClient mockRdsClient;
+  private RdszClient mockRdszClient;
 
   private SnapshotProgressChecker makeProgressChecker(DBSnapshot initialSnapshot)
   {
-    return new SnapshotProgressChecker(SNAPSHOT_ID, LOG_CONTEXT, mockRdsClient, initialSnapshot);
+    return new SnapshotProgressChecker(SNAPSHOT_ID, LOG_CONTEXT, mockRdszClient, initialSnapshot);
   }
 
   /**
@@ -104,7 +104,7 @@ public class SnapshotProgressCheckerTest
    */
   private void whenDescribeSnapshot(DBSnapshot dbSnapshot)
   {
-    when(mockRdsClient.describeSnapshot(SNAPSHOT_ID)).thenReturn(dbSnapshot);
+    when(mockRdszClient.describeSnapshot(SNAPSHOT_ID)).thenReturn(dbSnapshot);
   }
 
   /**
@@ -112,7 +112,7 @@ public class SnapshotProgressCheckerTest
    */
   private void verifyDescribeSnapshot()
   {
-    verify(mockRdsClient).describeSnapshot(SNAPSHOT_ID);
+    verify(mockRdszClient).describeSnapshot(SNAPSHOT_ID);
   }
 
   /**

@@ -13,7 +13,7 @@ import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
 
 import static org.junit.Assert.assertEquals;
 
-public class RDSAnalyzerTest
+public class RdszAnalyzerTest
 {
   private static final String INSTANCE_NAME = "my-rds-instance";
   private static final String PARAM_GROUP_PREFIX = "mysql-params:";
@@ -21,7 +21,7 @@ public class RDSAnalyzerTest
   private static final String PARAM_GROUP_INSTANCE_SPECIFIC = PARAM_GROUP_PREFIX + INSTANCE_NAME;
   private static final String SECURITY_GROUP_MYSQL = "rds-mysql";
 
-  private RDSAnalyzer rdsAnalyzer = new RDSAnalyzer();
+  private RdszAnalyzer rdszAnalyzer = new RdszAnalyzer();
 
   /**
    * Tests the self-named case.
@@ -30,7 +30,7 @@ public class RDSAnalyzerTest
   public void testFindSelfNamedOrDefaultParamGroupName_SelfNamed()
   {
     DBInstance dbInstance = makeDBInstanceWithParamGroups(PARAM_GROUP_DEFAULT, PARAM_GROUP_INSTANCE_SPECIFIC);
-    assertEquals(PARAM_GROUP_INSTANCE_SPECIFIC, rdsAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
+    assertEquals(PARAM_GROUP_INSTANCE_SPECIFIC, rdszAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
   }
 
   /**
@@ -40,7 +40,7 @@ public class RDSAnalyzerTest
   public void testFindSelfNamedOrDefaultParamGroupName_Default()
   {
     DBInstance dbInstance = makeDBInstanceWithParamGroups(PARAM_GROUP_DEFAULT);
-    assertEquals(PARAM_GROUP_DEFAULT, rdsAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
+    assertEquals(PARAM_GROUP_DEFAULT, rdszAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
   }
 
   /**
@@ -50,7 +50,7 @@ public class RDSAnalyzerTest
   public void testFindSelfNamedOrDefaultParamGroupName_NoParamGroups()
   {
     DBInstance dbInstance = makeDBInstanceWithParamGroups();
-    assertEquals(null, rdsAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
+    assertEquals(null, rdszAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
   }
 
   /**
@@ -86,7 +86,7 @@ public class RDSAnalyzerTest
   public void testExtractVpcSecurityGroupIds()
   {
     DBInstance dbInstance = makeDBInstanceWithSecurityGroups(SECURITY_GROUP_MYSQL);
-    Collection<String> securityGroupIds = rdsAnalyzer.extractVpcSecurityGroupIds(dbInstance);
+    Collection<String> securityGroupIds = rdszAnalyzer.extractVpcSecurityGroupIds(dbInstance);
     assertEquals(1, securityGroupIds.size());
     assertEquals(SECURITY_GROUP_MYSQL, securityGroupIds.iterator().next());
   }

@@ -12,7 +12,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.nike.tools.bgm.client.aws.ELBClient;
+import com.nike.tools.bgm.client.aws.ElbzClient;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ELBInstanceGoneProgressCheckerTest
+public class ElbzInstanceGoneProgressCheckerTest
 {
   private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
@@ -30,14 +30,14 @@ public class ELBInstanceGoneProgressCheckerTest
   private static final String EC2_INSTANCE_ID_STAYING = "i-234567"; //Staying in the ELB
 
   @Mock
-  private ELBClient mockElbClient;
+  private ElbzClient mockElbzClient;
 
-  private ELBInstanceGoneProgressChecker progressChecker;
+  private ElbzInstanceGoneProgressChecker progressChecker;
 
   @Before
   public void makeProgressChecker()
   {
-    progressChecker = new ELBInstanceGoneProgressChecker(ELB_NAME, EC2_INSTANCE_ID_LEAVING, LOG_CONTEXT, mockElbClient);
+    progressChecker = new ElbzInstanceGoneProgressChecker(ELB_NAME, EC2_INSTANCE_ID_LEAVING, LOG_CONTEXT, mockElbzClient);
   }
 
   @Test
@@ -69,7 +69,7 @@ public class ELBInstanceGoneProgressCheckerTest
 
   private void setupMock(LoadBalancerDescription fakeLoadBalancerDescription)
   {
-    when(mockElbClient.describeLoadBalancer(ELB_NAME)).thenReturn(fakeLoadBalancerDescription);
+    when(mockElbzClient.describeLoadBalancer(ELB_NAME)).thenReturn(fakeLoadBalancerDescription);
   }
 
   /**

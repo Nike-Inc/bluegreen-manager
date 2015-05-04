@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.nike.tools.bgm.client.aws.ELBClient;
+import com.nike.tools.bgm.client.aws.ElbzClient;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
@@ -21,26 +21,26 @@ import com.nike.tools.bgm.utils.ProgressChecker;
  * <p/>
  * Result is "true" when the deregistered instance is gone from the ELB.
  */
-public class ELBInstanceGoneProgressChecker implements ProgressChecker<Boolean>
+public class ElbzInstanceGoneProgressChecker implements ProgressChecker<Boolean>
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ELBInstanceGoneProgressChecker.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ElbzInstanceGoneProgressChecker.class);
 
   private String elbName;
   private String ec2InstanceId;
   private String logContext;
-  private ELBClient elbClient;
+  private ElbzClient elbzClient;
   private boolean done;
   private Boolean result;
 
-  public ELBInstanceGoneProgressChecker(String elbName,
-                                        String ec2InstanceId,
-                                        String logContext,
-                                        ELBClient elbClient)
+  public ElbzInstanceGoneProgressChecker(String elbName,
+                                         String ec2InstanceId,
+                                         String logContext,
+                                         ElbzClient elbzClient)
   {
     this.elbName = elbName;
     this.ec2InstanceId = ec2InstanceId;
     this.logContext = logContext;
-    this.elbClient = elbClient;
+    this.elbzClient = elbzClient;
   }
 
   @Override
@@ -56,7 +56,7 @@ public class ELBInstanceGoneProgressChecker implements ProgressChecker<Boolean>
   @Override
   public void initialCheck()
   {
-    LoadBalancerDescription loadBalancerDescription = elbClient.describeLoadBalancer(elbName);
+    LoadBalancerDescription loadBalancerDescription = elbzClient.describeLoadBalancer(elbName);
     checkInstanceRemoval(loadBalancerDescription);
     LOGGER.debug(logContext + "Initial ELB instance list: " + summarizeInstances(loadBalancerDescription.getInstances()));
   }
@@ -64,7 +64,7 @@ public class ELBInstanceGoneProgressChecker implements ProgressChecker<Boolean>
   @Override
   public void followupCheck(int waitNum)
   {
-    LoadBalancerDescription loadBalancerDescription = elbClient.describeLoadBalancer(elbName);
+    LoadBalancerDescription loadBalancerDescription = elbzClient.describeLoadBalancer(elbName);
     checkInstanceRemoval(loadBalancerDescription);
     LOGGER.debug(logContext + "ELB instance list after wait#" + waitNum + ": " + summarizeInstances(loadBalancerDescription.getInstances()));
   }

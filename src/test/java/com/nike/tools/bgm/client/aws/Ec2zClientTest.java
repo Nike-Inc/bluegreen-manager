@@ -20,14 +20,14 @@ import static org.mockito.Mockito.when;
 /**
  * Tests error-handling capabilities when mock aws returns unexpected results.
  */
-public class EC2ClientTest
+public class Ec2zClientTest
 {
   private static final String PRIVATE_IP_ADDRESS = "10.111.222.111";
   private static final String INSTANCE_ID = "i-123456";
   private static final String ANOTHER_INSTANCE_ID = "i-234567";
 
   private AmazonEC2Client mockEC2Client = mock(AmazonEC2Client.class);
-  private EC2Client ec2Client = new EC2Client(mockEC2Client);
+  private Ec2zClient ec2Client = new Ec2zClient(mockEC2Client);
 
   /**
    * Fail case: describe request gets result with empty list of reservations.
