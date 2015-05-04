@@ -20,7 +20,7 @@ import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.Endpoint;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
-import com.nike.tools.bgm.client.aws.RDSCopier;
+import com.nike.tools.bgm.client.aws.RDSClient;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.env.EnvironmentTx;
@@ -85,7 +85,7 @@ public class RDSSnapshotRestoreTaskTest
   private RDSAnalyzer mockRdsAnalyzer;
 
   @Mock
-  private RDSCopier mockRdsCopier;
+  private RDSClient mockRdsClient;
 
   /**
    * Initializes the object-under-test for the "normal" case where live/stage envs meet preconditions.
@@ -94,7 +94,7 @@ public class RDSSnapshotRestoreTaskTest
   {
     when(mockEnvironmentTx.findNamedEnv(LIVE_ENV_NAME)).thenReturn(FAKE_PHYSICAL_DATABASE.getLogicalDatabase().getEnvironment());
     when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(null);
-    when(mockRdsCopierFactory.create()).thenReturn(mockRdsCopier);
+    when(mockRdsCopierFactory.create()).thenReturn(mockRdsClient);
     rdsSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
     rdsSnapshotRestoreTask.loadDataModel();
   }
@@ -136,7 +136,7 @@ public class RDSSnapshotRestoreTaskTest
     normalSetup();
     DBSnapshot dbSnapshot = new DBSnapshot();
     dbSnapshot.setDBSnapshotIdentifier("The Wrong ID");
-    when(mockRdsCopier.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
+    when(mockRdsClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
     rdsSnapshotRestoreTask.snapshotLive(false/*noop*/);
   }
@@ -151,7 +151,7 @@ public class RDSSnapshotRestoreTaskTest
     DBSnapshot dbSnapshot = new DBSnapshot();
     dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
     dbSnapshot.setStatus(SnapshotStatus.AVAILABLE.toString());
-    when(mockRdsCopier.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
+    when(mockRdsClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
     assertEquals(dbSnapshot, rdsSnapshotRestoreTask.snapshotLive(false/*noop*/));
   }
@@ -267,10 +267,10 @@ public class RDSSnapshotRestoreTaskTest
                                             String snapshotId)
   {
     RestoreStageFakeData data = new RestoreStageFakeData(stageRestoreStatus, stageModifyStatus, stageParamGroupName, snapshotId);
-    when(mockRdsCopier.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId, SUBNET_GROUP))
+    when(mockRdsClient.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId, SUBNET_GROUP))
         .thenReturn(data.getStageRestoreInstance());
     when(mockRdsAnalyzer.extractVpcSecurityGroupIds(data.getLiveInstance())).thenReturn(data.getSecurityGroups());
-    when(mockRdsCopier.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
+    when(mockRdsClient.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
         .thenReturn(data.getStageModifyInstance());
     return data;
   }
@@ -312,8 +312,8 @@ public class RDSSnapshotRestoreTaskTest
 
     assertEquals(results.getResultInstance(), data.getStageModifyInstance());
     assertNull(results.getException());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -327,8 +327,8 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdsCopier, times(0)).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient, times(0)).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -342,8 +342,8 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdsCopier).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -448,10 +448,10 @@ public class RDSSnapshotRestoreTaskTest
     normalSetup();
     String snapshotId = rdsSnapshotRestoreTask.makeSnapshotId();
     RestoreStageFakeData data = restoreSetup(stageRestoreStatus, stageModifyStatus, UGLY_STAGE_PARAM_GROUP_NAME, snapshotId);
-    when(mockRdsCopier.describeInstance(LIVE_PHYSICAL_NAME)).thenReturn(data.getLiveInstance());
-    when(mockRdsCopier.createSnapshot(snapshotId, LIVE_PHYSICAL_NAME)).thenReturn(data.getDbSnapshot());
+    when(mockRdsClient.describeInstance(LIVE_PHYSICAL_NAME)).thenReturn(data.getLiveInstance());
+    when(mockRdsClient.createSnapshot(snapshotId, LIVE_PHYSICAL_NAME)).thenReturn(data.getDbSnapshot());
     when(mockRdsAnalyzer.findSelfNamedOrDefaultParamGroupName(data.getLiveInstance())).thenReturn(LIVE_PARAM_GROUP_NAME);
-    when(mockRdsCopier.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
+    when(mockRdsClient.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
     TaskStatus taskStatus = null;
     Throwable exception = null;
     try
@@ -484,12 +484,12 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNoException(results.getException());
     assertEquals(TaskStatus.DONE, results.getTaskStatus());
-    InOrder inOrder = inOrder(mockRdsCopier);
-    inOrder.verify(mockRdsCopier).describeInstance(LIVE_PHYSICAL_NAME);
-    inOrder.verify(mockRdsCopier).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
-    inOrder.verify(mockRdsCopier).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
-    inOrder.verify(mockRdsCopier).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
-    inOrder.verify(mockRdsCopier).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
+    InOrder inOrder = inOrder(mockRdsClient);
+    inOrder.verify(mockRdsClient).describeInstance(LIVE_PHYSICAL_NAME);
+    inOrder.verify(mockRdsClient).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
+    inOrder.verify(mockRdsClient).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
+    inOrder.verify(mockRdsClient).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
+    inOrder.verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -502,7 +502,7 @@ public class RDSSnapshotRestoreTaskTest
 
     assertNoException(results.getException());
     assertEquals(TaskStatus.NOOP, results.getTaskStatus());
-    verify(mockRdsCopier).describeInstance(LIVE_PHYSICAL_NAME);
-    verifyNoMoreInteractions(mockRdsCopier);
+    verify(mockRdsClient).describeInstance(LIVE_PHYSICAL_NAME);
+    verifyNoMoreInteractions(mockRdsClient);
   }
 }

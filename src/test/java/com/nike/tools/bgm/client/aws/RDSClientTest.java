@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Or for the solely declarative methods, simply tests that the aws client is invoked and returns a result (not much
  * of a test, really).
  */
-public class RDSCopierTest
+public class RDSClientTest
 {
   private static final String INSTANCE_NAME = "my-rds-instance";
   private static final String ANOTHER_INSTANCE_NAME = "another-rds-instance";
@@ -42,7 +42,7 @@ public class RDSCopierTest
   private static final String SUBNET_GROUP = "vpcsubnet";
 
   private AmazonRDSClient mockRdsClient = mock(AmazonRDSClient.class);
-  private RDSCopier rdsCopier = new RDSCopier(mockRdsClient);
+  private RDSClient rdsClient = new RDSClient(mockRdsClient);
 
   /**
    * Fail case: describe request gets result with empty list of instances.
@@ -51,7 +51,7 @@ public class RDSCopierTest
   public void testDescribeInstance_CantFind()
   {
     setupMock(makeDescribeDBInstancesResult(null));
-    rdsCopier.describeInstance(INSTANCE_NAME);
+    rdsClient.describeInstance(INSTANCE_NAME);
   }
 
   /**
@@ -62,7 +62,7 @@ public class RDSCopierTest
   {
     setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME, ANOTHER_INSTANCE_NAME));
 
-    DBInstance dbInstance = rdsCopier.describeInstance(INSTANCE_NAME);
+    DBInstance dbInstance = rdsClient.describeInstance(INSTANCE_NAME);
 
     assertEquals(INSTANCE_NAME, dbInstance.getDBInstanceIdentifier());
   }
@@ -75,7 +75,7 @@ public class RDSCopierTest
   {
     setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME));
 
-    DBInstance dbInstance = rdsCopier.describeInstance(INSTANCE_NAME);
+    DBInstance dbInstance = rdsClient.describeInstance(INSTANCE_NAME);
 
     assertEquals(INSTANCE_NAME, dbInstance.getDBInstanceIdentifier());
   }
@@ -115,7 +115,7 @@ public class RDSCopierTest
   public void testDescribeSnapshot_CantFind()
   {
     setupMock(makeDescribeDBSnapshotsResult(null));
-    rdsCopier.describeSnapshot(SNAPSHOT_ID);
+    rdsClient.describeSnapshot(SNAPSHOT_ID);
   }
 
   /**
@@ -126,7 +126,7 @@ public class RDSCopierTest
   {
     setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID, ANOTHER_SNAPSHOT_ID));
 
-    DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
+    DBSnapshot dbSnapshot = rdsClient.describeSnapshot(SNAPSHOT_ID);
 
     assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
   }
@@ -139,7 +139,7 @@ public class RDSCopierTest
   {
     setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID));
 
-    DBSnapshot dbSnapshot = rdsCopier.describeSnapshot(SNAPSHOT_ID);
+    DBSnapshot dbSnapshot = rdsClient.describeSnapshot(SNAPSHOT_ID);
 
     assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
   }
@@ -181,7 +181,7 @@ public class RDSCopierTest
     DBSnapshot mockSnapshot = mock(DBSnapshot.class);
     when(mockRdsClient.createDBSnapshot(any(CreateDBSnapshotRequest.class))).thenReturn(mockSnapshot);
 
-    assertEquals(mockSnapshot, rdsCopier.createSnapshot(SNAPSHOT_ID, INSTANCE_NAME));
+    assertEquals(mockSnapshot, rdsClient.createSnapshot(SNAPSHOT_ID, INSTANCE_NAME));
   }
 
   /**
@@ -193,7 +193,7 @@ public class RDSCopierTest
     DBParameterGroup mockParamGroup = mock(DBParameterGroup.class);
     when(mockRdsClient.copyDBParameterGroup(any(CopyDBParameterGroupRequest.class))).thenReturn(mockParamGroup);
 
-    assertEquals(mockParamGroup, rdsCopier.copyParameterGroup("paramGroup1", "paramGroup2"));
+    assertEquals(mockParamGroup, rdsClient.copyParameterGroup("paramGroup1", "paramGroup2"));
   }
 
   /**
@@ -206,7 +206,7 @@ public class RDSCopierTest
     when(mockRdsClient.restoreDBInstanceFromDBSnapshot(any(RestoreDBInstanceFromDBSnapshotRequest.class)))
         .thenReturn(mockInstance);
 
-    assertEquals(mockInstance, rdsCopier.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID, SUBNET_GROUP));
+    assertEquals(mockInstance, rdsClient.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID, SUBNET_GROUP));
   }
 
   /**
@@ -220,6 +220,6 @@ public class RDSCopierTest
     Collection<String> securityGroups = new ArrayList<String>();
     securityGroups.add(SECURITY_GROUP);
 
-    assertEquals(mockInstance, rdsCopier.modifyInstanceWithSecgrpParamgrp(INSTANCE_NAME, securityGroups, PARAM_GROUP));
+    assertEquals(mockInstance, rdsClient.modifyInstanceWithSecgrpParamgrp(INSTANCE_NAME, securityGroups, PARAM_GROUP));
   }
 }

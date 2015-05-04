@@ -7,7 +7,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBInstance;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
-import com.nike.tools.bgm.client.aws.RDSCopier;
+import com.nike.tools.bgm.client.aws.RDSClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -26,11 +26,11 @@ public class InstanceProgressCheckerTest
   private static final String STATUS_UNKNOWN = "unknown";
 
   @Mock
-  private RDSCopier mockRdsCopier;
+  private RDSClient mockRdsClient;
 
   private InstanceProgressChecker makeProgressChecker(DBInstance initialInstance, boolean create)
   {
-    return new InstanceProgressChecker(INSTANCE_ID, LOG_CONTEXT, mockRdsCopier, initialInstance, create);
+    return new InstanceProgressChecker(INSTANCE_ID, LOG_CONTEXT, mockRdsClient, initialInstance, create);
   }
 
   /**
@@ -148,7 +148,7 @@ public class InstanceProgressCheckerTest
    */
   private void whenDescribeInstance(DBInstance dbInstance)
   {
-    when(mockRdsCopier.describeInstance(INSTANCE_ID)).thenReturn(dbInstance);
+    when(mockRdsClient.describeInstance(INSTANCE_ID)).thenReturn(dbInstance);
   }
 
   /**
@@ -156,7 +156,7 @@ public class InstanceProgressCheckerTest
    */
   private void verifyDescribeInstance()
   {
-    verify(mockRdsCopier).describeInstance(INSTANCE_ID);
+    verify(mockRdsClient).describeInstance(INSTANCE_ID);
   }
 
 

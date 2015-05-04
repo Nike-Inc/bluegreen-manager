@@ -20,7 +20,7 @@ import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RDSAnalyzer;
-import com.nike.tools.bgm.client.aws.RDSCopier;
+import com.nike.tools.bgm.client.aws.RDSClient;
 import com.nike.tools.bgm.client.aws.RDSCopierFactory;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.DatabaseType;
@@ -83,7 +83,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private Environment stageEnv;
   private LogicalDatabase stageLogicalDatabase;
   private PhysicalDatabase stagePhysicalDatabase;
-  private RDSCopier rdsCopier;
+  private RDSClient rdsClient;
 
   /**
    * @param dbMap Maps live logical dbname to new stage physical dbname.
@@ -312,7 +312,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   public TaskStatus process(boolean noop)
   {
     loadDataModel();
-    rdsCopier = rdsCopierFactory.create();
+    rdsClient = rdsCopierFactory.create();
     DBInstance liveInstance = describeLiveInstance();
     DBSnapshot dbSnapshot = snapshotLive(noop);
     DBParameterGroup stageParamGroup = copyParameterGroup(liveInstance, noop);
@@ -329,7 +329,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private DBInstance describeLiveInstance()
   {
     LOGGER.info(liveContext() + "Requesting description of live RDS instance");
-    return rdsCopier.describeInstance(livePhysicalDatabase.getInstanceName());
+    return rdsClient.describeInstance(livePhysicalDatabase.getInstanceName());
   }
 
   /**
@@ -343,7 +343,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
     if (!noop)
     {
       String snapshotId = makeSnapshotId();
-      dbSnapshot = rdsCopier.createSnapshot(snapshotId, livePhysicalDatabase.getInstanceName());
+      dbSnapshot = rdsClient.createSnapshot(snapshotId, livePhysicalDatabase.getInstanceName());
       dbSnapshot = waitTilSnapshotIsAvailable(snapshotId, dbSnapshot);
     }
     return dbSnapshot;
@@ -374,7 +374,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId, DBSnapshot initialSnapshot)
   {
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
-    SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(snapshotId, liveContext(), rdsCopier,
+    SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(snapshotId, liveContext(), rdsClient,
         initialSnapshot);
     Waiter<DBSnapshot> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBSnapshot dbSnapshot = waiter.waitTilDone();
@@ -398,7 +398,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
         + "' to stage parameter group '" + stageParamGroupName + "'" + noopRemark(noop));
     if (!noop)
     {
-      return rdsCopier.copyParameterGroup(liveParamGroupName, stageParamGroupName);
+      return rdsClient.copyParameterGroup(liveParamGroupName, stageParamGroupName);
     }
     else
     {
@@ -443,7 +443,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
       String stagePhysicalInstanceName = dbMap.get(liveLogicalDatabase.getLogicalName());
       initModel(stagePhysicalInstanceName);
       String subnetGroupName = getSubnetGroupName(liveInstance);
-      DBInstance stageInstance = rdsCopier.restoreInstanceFromSnapshot(stagePhysicalInstanceName,
+      DBInstance stageInstance = rdsClient.restoreInstanceFromSnapshot(stagePhysicalInstanceName,
           dbSnapshot.getDBSnapshotIdentifier(), subnetGroupName);
       stageInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, stageInstance, true/*create*/);
       DBInstance modifiedInstance = modifyInstance(stageInstance, stageParamGroup, liveInstance);
@@ -474,7 +474,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance, boolean create)
   {
     LOGGER.info(liveContext() + "Waiting for instance to become available");
-    InstanceProgressChecker progressChecker = new InstanceProgressChecker(instanceId, liveContext(), rdsCopier,
+    InstanceProgressChecker progressChecker = new InstanceProgressChecker(instanceId, liveContext(), rdsClient,
         initialInstance, create);
     Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBInstance dbInstance = waiter.waitTilDone();
@@ -491,7 +491,7 @@ public class RDSSnapshotRestoreTask extends TaskImpl
   private DBInstance modifyInstance(DBInstance stageInstance, DBParameterGroup stageParamGroup, DBInstance liveInstance)
   {
     Collection<String> vpcSecurityGroupIds = rdsAnalyzer.extractVpcSecurityGroupIds(liveInstance);
-    return rdsCopier.modifyInstanceWithSecgrpParamgrp(
+    return rdsClient.modifyInstanceWithSecgrpParamgrp(
         stageInstance.getDBInstanceIdentifier(),
         vpcSecurityGroupIds,
         stageParamGroup.getDBParameterGroupName());

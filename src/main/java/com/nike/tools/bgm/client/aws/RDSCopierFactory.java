@@ -14,8 +14,8 @@ public class RDSCopierFactory
   @Autowired
   private AWSClientFactory awsClientFactory;
 
-  public RDSCopier create()
+  public RDSClient create()
   {
-    return new RDSCopier(awsClientFactory.makeRegionalRDSClient());
+    return new RDSClient(awsClientFactory.makeRegionalRDSClient());
   }
 }
