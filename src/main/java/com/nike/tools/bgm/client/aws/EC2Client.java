@@ -31,11 +31,11 @@ public class EC2Client
   /**
    * Synchronous client, requests will block til done.
    */
-  private AmazonEC2Client ec2Client;
+  private AmazonEC2Client awsEc2Client;
 
-  public EC2Client(AmazonEC2Client ec2Client)
+  public EC2Client(AmazonEC2Client awsEc2Client)
   {
-    this.ec2Client = ec2Client;
+    this.awsEc2Client = awsEc2Client;
   }
 
   /**
@@ -56,7 +56,7 @@ public class EC2Client
       filters.add(new Filter(PRIVATE_IP_ADDRESS.toString(), Arrays.asList(privateIpAddress)));
       DescribeInstancesRequest request = new DescribeInstancesRequest();
       request.setFilters(filters);
-      DescribeInstancesResult result = ec2Client.describeInstances(request);
+      DescribeInstancesResult result = awsEc2Client.describeInstances(request);
       final String context = "privateIpAddress " + privateIpAddress;
       if (result == null || CollectionUtils.isEmpty(result.getReservations()))
       {

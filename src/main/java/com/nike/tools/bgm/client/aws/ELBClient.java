@@ -31,11 +31,11 @@ public class ELBClient
   /**
    * Synchronous client, requests will block til done.
    */
-  private AmazonElasticLoadBalancingClient elbClient;
+  private AmazonElasticLoadBalancingClient awsElbClient;
 
-  public ELBClient(AmazonElasticLoadBalancingClient elbClient)
+  public ELBClient(AmazonElasticLoadBalancingClient awsElbClient)
   {
-    this.elbClient = elbClient;
+    this.awsElbClient = awsElbClient;
   }
 
   /**
@@ -55,7 +55,7 @@ public class ELBClient
       RegisterInstancesWithLoadBalancerRequest request = new RegisterInstancesWithLoadBalancerRequest();
       request.setLoadBalancerName(elbName);
       request.setInstances(Arrays.asList(new Instance(ec2InstanceId)));
-      elbClient.registerInstancesWithLoadBalancer(request);
+      awsElbClient.registerInstancesWithLoadBalancer(request);
       //Currently not doing anything with the RegisterInstancesWithLoadBalancerResult
     }
     finally
@@ -81,7 +81,7 @@ public class ELBClient
       DeregisterInstancesFromLoadBalancerRequest request = new DeregisterInstancesFromLoadBalancerRequest();
       request.setLoadBalancerName(elbName);
       request.setInstances(Arrays.asList(new Instance(ec2InstanceId)));
-      elbClient.deregisterInstancesFromLoadBalancer(request);
+      awsElbClient.deregisterInstancesFromLoadBalancer(request);
       //Currently not doing anything with the DeregisterInstancesFromLoadBalancerResult
     }
     finally
@@ -105,7 +105,7 @@ public class ELBClient
       DescribeInstanceHealthRequest request = new DescribeInstanceHealthRequest();
       request.setLoadBalancerName(elbName);
       request.setInstances(Arrays.asList(new Instance(ec2InstanceId)));
-      DescribeInstanceHealthResult result = elbClient.describeInstanceHealth(request);
+      DescribeInstanceHealthResult result = awsElbClient.describeInstanceHealth(request);
       if (result == null || CollectionUtils.isEmpty(result.getInstanceStates()))
       {
         throw new RuntimeException("ELB '" + elbName + "' didn't match instance id '" + ec2InstanceId + "'");
@@ -140,7 +140,7 @@ public class ELBClient
       stopWatch.start();
       DescribeLoadBalancersRequest request = new DescribeLoadBalancersRequest();
       request.setLoadBalancerNames(Arrays.asList(elbName));
-      DescribeLoadBalancersResult result = elbClient.describeLoadBalancers(request);
+      DescribeLoadBalancersResult result = awsElbClient.describeLoadBalancers(request);
       if (result == null || CollectionUtils.isEmpty(result.getLoadBalancerDescriptions()))
       {
         throw new RuntimeException("ELB '" + elbName + "' was not found");

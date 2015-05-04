@@ -34,11 +34,11 @@ public class RDSClient
   /**
    * Synchronous client, requests will block til done.
    */
-  private AmazonRDSClient rdsClient;
+  private AmazonRDSClient awsRdsClient;
 
-  public RDSClient(AmazonRDSClient rdsClient)
+  public RDSClient(AmazonRDSClient awsRdsClient)
   {
-    this.rdsClient = rdsClient;
+    this.awsRdsClient = awsRdsClient;
   }
 
   /**
@@ -53,7 +53,7 @@ public class RDSClient
       stopWatch.start();
       DescribeDBInstancesRequest request = new DescribeDBInstancesRequest();
       request.setDBInstanceIdentifier(instanceName);
-      DescribeDBInstancesResult result = rdsClient.describeDBInstances(request);
+      DescribeDBInstancesResult result = awsRdsClient.describeDBInstances(request);
       if (result == null || CollectionUtils.isEmpty(result.getDBInstances()))
       {
         throw new RuntimeException("RDS cannot find instance '" + instanceName + "'");
@@ -83,7 +83,7 @@ public class RDSClient
       stopWatch.start();
       DescribeDBSnapshotsRequest request = new DescribeDBSnapshotsRequest();
       request.setDBSnapshotIdentifier(snapshotId);
-      DescribeDBSnapshotsResult result = rdsClient.describeDBSnapshots(request);
+      DescribeDBSnapshotsResult result = awsRdsClient.describeDBSnapshots(request);
       if (result == null || CollectionUtils.isEmpty(result.getDBSnapshots()))
       {
         throw new RuntimeException("RDS cannot find snapshot '" + snapshotId + "'");
@@ -112,7 +112,7 @@ public class RDSClient
     {
       stopWatch.start();
       CreateDBSnapshotRequest request = new CreateDBSnapshotRequest(snapshotId, instanceName);
-      return rdsClient.createDBSnapshot(request);
+      return awsRdsClient.createDBSnapshot(request);
     }
     finally
     {
@@ -136,7 +136,7 @@ public class RDSClient
       request.setSourceDBParameterGroupIdentifier(sourceParamGroupName);
       request.setTargetDBParameterGroupIdentifier(destParamGroupName);
       request.setTargetDBParameterGroupDescription(PARAM_GROUP_DESCRIPTION);
-      return rdsClient.copyDBParameterGroup(request);
+      return awsRdsClient.copyDBParameterGroup(request);
     }
     finally
     {
@@ -161,7 +161,7 @@ public class RDSClient
       RestoreDBInstanceFromDBSnapshotRequest request = new RestoreDBInstanceFromDBSnapshotRequest(
           instanceName, snapshotId);
       request.setDBSubnetGroupName(subnetGroupName);
-      return rdsClient.restoreDBInstanceFromDBSnapshot(request);
+      return awsRdsClient.restoreDBInstanceFromDBSnapshot(request);
     }
     finally
     {
@@ -186,7 +186,7 @@ public class RDSClient
       ModifyDBInstanceRequest request = new ModifyDBInstanceRequest(instanceName);
       request.setVpcSecurityGroupIds(vpcSecurityGroupIds);
       request.setDBParameterGroupName(paramGroupName);
-      return rdsClient.modifyDBInstance(request);
+      return awsRdsClient.modifyDBInstance(request);
     }
     finally
     {
