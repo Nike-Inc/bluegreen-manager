@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Or for the solely declarative methods, simply tests that the aws client is invoked and returns a result (not much
  * of a test, really).
  */
-public class RdszClientTest
+public class RdsClientTest
 {
   private static final String INSTANCE_NAME = "my-rds-instance";
   private static final String ANOTHER_INSTANCE_NAME = "another-rds-instance";
@@ -42,7 +42,7 @@ public class RdszClientTest
   private static final String SUBNET_GROUP = "vpcsubnet";
 
   private AmazonRDSClient mockRdsClient = mock(AmazonRDSClient.class);
-  private RdszClient rdszClient = new RdszClient(mockRdsClient);
+  private RdsClient rdsClient = new RdsClient(mockRdsClient);
 
   /**
    * Fail case: describe request gets result with empty list of instances.
@@ -51,7 +51,7 @@ public class RdszClientTest
   public void testDescribeInstance_CantFind()
   {
     setupMock(makeDescribeDBInstancesResult(null));
-    rdszClient.describeInstance(INSTANCE_NAME);
+    rdsClient.describeInstance(INSTANCE_NAME);
   }
 
   /**
@@ -62,7 +62,7 @@ public class RdszClientTest
   {
     setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME, ANOTHER_INSTANCE_NAME));
 
-    DBInstance dbInstance = rdszClient.describeInstance(INSTANCE_NAME);
+    DBInstance dbInstance = rdsClient.describeInstance(INSTANCE_NAME);
 
     assertEquals(INSTANCE_NAME, dbInstance.getDBInstanceIdentifier());
   }
@@ -75,7 +75,7 @@ public class RdszClientTest
   {
     setupMock(makeDescribeDBInstancesResult(INSTANCE_NAME));
 
-    DBInstance dbInstance = rdszClient.describeInstance(INSTANCE_NAME);
+    DBInstance dbInstance = rdsClient.describeInstance(INSTANCE_NAME);
 
     assertEquals(INSTANCE_NAME, dbInstance.getDBInstanceIdentifier());
   }
@@ -115,7 +115,7 @@ public class RdszClientTest
   public void testDescribeSnapshot_CantFind()
   {
     setupMock(makeDescribeDBSnapshotsResult(null));
-    rdszClient.describeSnapshot(SNAPSHOT_ID);
+    rdsClient.describeSnapshot(SNAPSHOT_ID);
   }
 
   /**
@@ -126,7 +126,7 @@ public class RdszClientTest
   {
     setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID, ANOTHER_SNAPSHOT_ID));
 
-    DBSnapshot dbSnapshot = rdszClient.describeSnapshot(SNAPSHOT_ID);
+    DBSnapshot dbSnapshot = rdsClient.describeSnapshot(SNAPSHOT_ID);
 
     assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
   }
@@ -139,7 +139,7 @@ public class RdszClientTest
   {
     setupMock(makeDescribeDBSnapshotsResult(SNAPSHOT_ID));
 
-    DBSnapshot dbSnapshot = rdszClient.describeSnapshot(SNAPSHOT_ID);
+    DBSnapshot dbSnapshot = rdsClient.describeSnapshot(SNAPSHOT_ID);
 
     assertEquals(SNAPSHOT_ID, dbSnapshot.getDBSnapshotIdentifier());
   }
@@ -181,7 +181,7 @@ public class RdszClientTest
     DBSnapshot mockSnapshot = mock(DBSnapshot.class);
     when(mockRdsClient.createDBSnapshot(any(CreateDBSnapshotRequest.class))).thenReturn(mockSnapshot);
 
-    assertEquals(mockSnapshot, rdszClient.createSnapshot(SNAPSHOT_ID, INSTANCE_NAME));
+    assertEquals(mockSnapshot, rdsClient.createSnapshot(SNAPSHOT_ID, INSTANCE_NAME));
   }
 
   /**
@@ -193,7 +193,7 @@ public class RdszClientTest
     DBParameterGroup mockParamGroup = mock(DBParameterGroup.class);
     when(mockRdsClient.copyDBParameterGroup(any(CopyDBParameterGroupRequest.class))).thenReturn(mockParamGroup);
 
-    assertEquals(mockParamGroup, rdszClient.copyParameterGroup("paramGroup1", "paramGroup2"));
+    assertEquals(mockParamGroup, rdsClient.copyParameterGroup("paramGroup1", "paramGroup2"));
   }
 
   /**
@@ -206,7 +206,7 @@ public class RdszClientTest
     when(mockRdsClient.restoreDBInstanceFromDBSnapshot(any(RestoreDBInstanceFromDBSnapshotRequest.class)))
         .thenReturn(mockInstance);
 
-    assertEquals(mockInstance, rdszClient.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID, SUBNET_GROUP));
+    assertEquals(mockInstance, rdsClient.restoreInstanceFromSnapshot(INSTANCE_NAME, SNAPSHOT_ID, SUBNET_GROUP));
   }
 
   /**
@@ -220,6 +220,6 @@ public class RdszClientTest
     Collection<String> securityGroups = new ArrayList<String>();
     securityGroups.add(SECURITY_GROUP);
 
-    assertEquals(mockInstance, rdszClient.modifyInstanceWithSecgrpParamgrp(INSTANCE_NAME, securityGroups, PARAM_GROUP));
+    assertEquals(mockInstance, rdsClient.modifyInstanceWithSecgrpParamgrp(INSTANCE_NAME, securityGroups, PARAM_GROUP));
   }
 }

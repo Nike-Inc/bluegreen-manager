@@ -19,9 +19,9 @@ import com.amazonaws.services.rds.model.DBSnapshot;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.Endpoint;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
-import com.nike.tools.bgm.client.aws.RdszAnalyzer;
-import com.nike.tools.bgm.client.aws.RdszClient;
-import com.nike.tools.bgm.client.aws.RdszCopierFactory;
+import com.nike.tools.bgm.client.aws.RdsAnalyzer;
+import com.nike.tools.bgm.client.aws.RdsClient;
+import com.nike.tools.bgm.client.aws.RdsCopierFactory;
 import com.nike.tools.bgm.client.aws.SnapshotStatus;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.DatabaseTestHelper;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
  * TODO - The high level restoreStage tests are too complicated...would help to modularize RDSSnapshotRestoreTask better, then tests would become simpler
  */
 @RunWith(MockitoJUnitRunner.class)
-public class RdszSnapshotRestoreTaskTest
+public class RdsSnapshotRestoreTaskTest
 {
   private static final PhysicalDatabase FAKE_PHYSICAL_DATABASE = DatabaseTestHelper.makeFakeLiveDatabase();
   private static final String STAGE_ENV_NAME = "stageEnv";
@@ -70,7 +70,7 @@ public class RdszSnapshotRestoreTaskTest
     }};
 
   @InjectMocks
-  private RdszSnapshotRestoreTask rdszSnapshotRestoreTask;
+  private RdsSnapshotRestoreTask rdsSnapshotRestoreTask;
 
   @Spy
   protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);
@@ -79,13 +79,13 @@ public class RdszSnapshotRestoreTaskTest
   private EnvironmentTx mockEnvironmentTx;
 
   @Mock
-  private RdszCopierFactory mockRdszCopierFactory;
+  private RdsCopierFactory mockRdsCopierFactory;
 
   @Mock
-  private RdszAnalyzer mockRdszAnalyzer;
+  private RdsAnalyzer mockRdsAnalyzer;
 
   @Mock
-  private RdszClient mockRdszClient;
+  private RdsClient mockRdsClient;
 
   /**
    * Initializes the object-under-test for the "normal" case where live/stage envs meet preconditions.
@@ -94,9 +94,9 @@ public class RdszSnapshotRestoreTaskTest
   {
     when(mockEnvironmentTx.findNamedEnv(LIVE_ENV_NAME)).thenReturn(FAKE_PHYSICAL_DATABASE.getLogicalDatabase().getEnvironment());
     when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(null);
-    when(mockRdszCopierFactory.create()).thenReturn(mockRdszClient);
-    rdszSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
-    rdszSnapshotRestoreTask.loadDataModel();
+    when(mockRdsCopierFactory.create()).thenReturn(mockRdsClient);
+    rdsSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
+    rdsSnapshotRestoreTask.loadDataModel();
   }
 
   //TODO - test loadDataModel() WITHOUT normalSetup() ...i.e. error cases
@@ -108,7 +108,7 @@ public class RdszSnapshotRestoreTaskTest
   public void testLiveContext()
   {
     normalSetup();
-    String context = rdszSnapshotRestoreTask.liveContext();
+    String context = rdsSnapshotRestoreTask.liveContext();
     assertTrue(context.contains(LIVE_ENV_NAME));
     assertTrue(context.contains(LIVE_LOGICAL_NAME));
     assertTrue(context.contains(LIVE_PHYSICAL_NAME));
@@ -121,7 +121,7 @@ public class RdszSnapshotRestoreTaskTest
   public void testStageContext()
   {
     normalSetup();
-    String context = rdszSnapshotRestoreTask.stageContext();
+    String context = rdsSnapshotRestoreTask.stageContext();
     assertTrue(context.contains(STAGE_ENV_NAME));
     assertTrue(context.contains(LIVE_LOGICAL_NAME)); //Stage logical is taken from live logical name.
     assertTrue(context.contains(STAGE_PHYSICAL_NAME));
@@ -136,9 +136,9 @@ public class RdszSnapshotRestoreTaskTest
     normalSetup();
     DBSnapshot dbSnapshot = new DBSnapshot();
     dbSnapshot.setDBSnapshotIdentifier("The Wrong ID");
-    when(mockRdszClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
+    when(mockRdsClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
-    rdszSnapshotRestoreTask.snapshotLive(false/*noop*/);
+    rdsSnapshotRestoreTask.snapshotLive(false/*noop*/);
   }
 
   /**
@@ -149,11 +149,11 @@ public class RdszSnapshotRestoreTaskTest
   {
     normalSetup();
     DBSnapshot dbSnapshot = new DBSnapshot();
-    dbSnapshot.setDBSnapshotIdentifier(rdszSnapshotRestoreTask.makeSnapshotId());
+    dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
     dbSnapshot.setStatus(SnapshotStatus.AVAILABLE.toString());
-    when(mockRdszClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
+    when(mockRdsClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
-    assertEquals(dbSnapshot, rdszSnapshotRestoreTask.snapshotLive(false/*noop*/));
+    assertEquals(dbSnapshot, rdsSnapshotRestoreTask.snapshotLive(false/*noop*/));
   }
 
   /**
@@ -267,10 +267,10 @@ public class RdszSnapshotRestoreTaskTest
                                             String snapshotId)
   {
     RestoreStageFakeData data = new RestoreStageFakeData(stageRestoreStatus, stageModifyStatus, stageParamGroupName, snapshotId);
-    when(mockRdszClient.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId, SUBNET_GROUP))
+    when(mockRdsClient.restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, snapshotId, SUBNET_GROUP))
         .thenReturn(data.getStageRestoreInstance());
-    when(mockRdszAnalyzer.extractVpcSecurityGroupIds(data.getLiveInstance())).thenReturn(data.getSecurityGroups());
-    when(mockRdszClient.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
+    when(mockRdsAnalyzer.extractVpcSecurityGroupIds(data.getLiveInstance())).thenReturn(data.getSecurityGroups());
+    when(mockRdsClient.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
         .thenReturn(data.getStageModifyInstance());
     return data;
   }
@@ -291,7 +291,7 @@ public class RdszSnapshotRestoreTaskTest
     Throwable exception = null;
     try
     {
-      resultInstance = rdszSnapshotRestoreTask.restoreStage(data.getDbSnapshot(), data.getStageParamGroup(),
+      resultInstance = rdsSnapshotRestoreTask.restoreStage(data.getDbSnapshot(), data.getStageParamGroup(),
           data.getLiveInstance(), false/*noop*/);
     }
     catch (Throwable e)
@@ -312,8 +312,8 @@ public class RdszSnapshotRestoreTaskTest
 
     assertEquals(results.getResultInstance(), data.getStageModifyInstance());
     assertNull(results.getException());
-    verify(mockRdszClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdszClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -327,8 +327,8 @@ public class RdszSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdszClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdszClient, times(0)).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient, times(0)).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -342,8 +342,8 @@ public class RdszSnapshotRestoreTaskTest
 
     assertNull(results.getResultInstance());
     assertEquals(RuntimeException.class, results.getException().getClass());
-    verify(mockRdszClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
-    verify(mockRdszClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
+    verify(mockRdsClient).restoreInstanceFromSnapshot(STAGE_PHYSICAL_NAME, FAKE_SNAPSHOT_ID, SUBNET_GROUP);
+    verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), SIMPLE_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -355,9 +355,9 @@ public class RdszSnapshotRestoreTaskTest
   public void testInitModel()
   {
     normalSetup();
-    rdszSnapshotRestoreTask.initModel(STAGE_PHYSICAL_NAME);
-    LogicalDatabase stageLogicalDatabase = rdszSnapshotRestoreTask.getStageLogicalDatabase();
-    PhysicalDatabase stagePhysicalDatabase = rdszSnapshotRestoreTask.getStagePhysicalDatabase();
+    rdsSnapshotRestoreTask.initModel(STAGE_PHYSICAL_NAME);
+    LogicalDatabase stageLogicalDatabase = rdsSnapshotRestoreTask.getStageLogicalDatabase();
+    PhysicalDatabase stagePhysicalDatabase = rdsSnapshotRestoreTask.getStagePhysicalDatabase();
     assertEquals(FAKE_STAGE_ENV, stageLogicalDatabase.getEnvironment());
     assertEquals(LIVE_LOGICAL_NAME, stageLogicalDatabase.getLogicalName());
     assertEquals(STAGE_PHYSICAL_NAME, stagePhysicalDatabase.getInstanceName());
@@ -369,7 +369,7 @@ public class RdszSnapshotRestoreTaskTest
   @Test(expected = RuntimeException.class)
   public void testMakeStagePhysicalUrl_NoLivePhysicalUrl()
   {
-    rdszSnapshotRestoreTask.makeStagePhysicalUrl("", "stage.hello.com");
+    rdsSnapshotRestoreTask.makeStagePhysicalUrl("", "stage.hello.com");
   }
 
   /**
@@ -378,7 +378,7 @@ public class RdszSnapshotRestoreTaskTest
   @Test(expected = RuntimeException.class)
   public void testMakeStagePhysicalUrl_NoStagePhysicalAddress()
   {
-    rdszSnapshotRestoreTask.makeStagePhysicalUrl(FAKE_PHYSICAL_DATABASE.getUrl(), null);
+    rdsSnapshotRestoreTask.makeStagePhysicalUrl(FAKE_PHYSICAL_DATABASE.getUrl(), null);
   }
 
   /**
@@ -389,7 +389,7 @@ public class RdszSnapshotRestoreTaskTest
   {
     final String jdbcUrl = "live.hello.com:3306"; //should have 'jdbc:mysql://' prefix and dbname suffix
     final String address = "stage.hello.com";
-    rdszSnapshotRestoreTask.makeStagePhysicalUrl(jdbcUrl, address);
+    rdsSnapshotRestoreTask.makeStagePhysicalUrl(jdbcUrl, address);
   }
 
   /**
@@ -399,7 +399,7 @@ public class RdszSnapshotRestoreTaskTest
   public void testMakeStagePhysicalUrl_Pass()
   {
     final String address = "stage.hello.com";
-    String stagePhysicalUrl = rdszSnapshotRestoreTask.makeStagePhysicalUrl(FAKE_PHYSICAL_DATABASE.getUrl(), address);
+    String stagePhysicalUrl = rdsSnapshotRestoreTask.makeStagePhysicalUrl(FAKE_PHYSICAL_DATABASE.getUrl(), address);
     assertEquals("jdbc:mysql://stage.hello.com:3306/hellodb?zeroDateTimeBehavior=convertToNull", stagePhysicalUrl);
   }
 
@@ -446,17 +446,17 @@ public class RdszSnapshotRestoreTaskTest
                                      boolean noop)
   {
     normalSetup();
-    String snapshotId = rdszSnapshotRestoreTask.makeSnapshotId();
+    String snapshotId = rdsSnapshotRestoreTask.makeSnapshotId();
     RestoreStageFakeData data = restoreSetup(stageRestoreStatus, stageModifyStatus, UGLY_STAGE_PARAM_GROUP_NAME, snapshotId);
-    when(mockRdszClient.describeInstance(LIVE_PHYSICAL_NAME)).thenReturn(data.getLiveInstance());
-    when(mockRdszClient.createSnapshot(snapshotId, LIVE_PHYSICAL_NAME)).thenReturn(data.getDbSnapshot());
-    when(mockRdszAnalyzer.findSelfNamedOrDefaultParamGroupName(data.getLiveInstance())).thenReturn(LIVE_PARAM_GROUP_NAME);
-    when(mockRdszClient.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
+    when(mockRdsClient.describeInstance(LIVE_PHYSICAL_NAME)).thenReturn(data.getLiveInstance());
+    when(mockRdsClient.createSnapshot(snapshotId, LIVE_PHYSICAL_NAME)).thenReturn(data.getDbSnapshot());
+    when(mockRdsAnalyzer.findSelfNamedOrDefaultParamGroupName(data.getLiveInstance())).thenReturn(LIVE_PARAM_GROUP_NAME);
+    when(mockRdsClient.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
     TaskStatus taskStatus = null;
     Throwable exception = null;
     try
     {
-      taskStatus = rdszSnapshotRestoreTask.process(noop);
+      taskStatus = rdsSnapshotRestoreTask.process(noop);
     }
     catch (Throwable e)
     {
@@ -484,12 +484,12 @@ public class RdszSnapshotRestoreTaskTest
 
     assertNoException(results.getException());
     assertEquals(TaskStatus.DONE, results.getTaskStatus());
-    InOrder inOrder = inOrder(mockRdszClient);
-    inOrder.verify(mockRdszClient).describeInstance(LIVE_PHYSICAL_NAME);
-    inOrder.verify(mockRdszClient).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
-    inOrder.verify(mockRdszClient).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
-    inOrder.verify(mockRdszClient).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
-    inOrder.verify(mockRdszClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
+    InOrder inOrder = inOrder(mockRdsClient);
+    inOrder.verify(mockRdsClient).describeInstance(LIVE_PHYSICAL_NAME);
+    inOrder.verify(mockRdsClient).createSnapshot(anyString(), eq(LIVE_PHYSICAL_NAME));
+    inOrder.verify(mockRdsClient).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
+    inOrder.verify(mockRdsClient).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
+    inOrder.verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
   }
 
   /**
@@ -502,7 +502,7 @@ public class RdszSnapshotRestoreTaskTest
 
     assertNoException(results.getException());
     assertEquals(TaskStatus.NOOP, results.getTaskStatus());
-    verify(mockRdszClient).describeInstance(LIVE_PHYSICAL_NAME);
-    verifyNoMoreInteractions(mockRdszClient);
+    verify(mockRdsClient).describeInstance(LIVE_PHYSICAL_NAME);
+    verifyNoMoreInteractions(mockRdsClient);
   }
 }

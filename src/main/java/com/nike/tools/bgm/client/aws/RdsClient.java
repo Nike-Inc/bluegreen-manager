@@ -26,9 +26,9 @@ import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
  * <p/>
  * All operations communicate with Amazon and use a StopWatch.
  */
-public class RdszClient
+public class RdsClient
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RdszClient.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RdsClient.class);
   private static final String PARAM_GROUP_DESCRIPTION = "Nonshared so we can toggle read_only param.";
 
   /**
@@ -36,7 +36,7 @@ public class RdszClient
    */
   private AmazonRDSClient awsRdsClient;
 
-  public RdszClient(AmazonRDSClient awsRdsClient)
+  public RdsClient(AmazonRDSClient awsRdsClient)
   {
     this.awsRdsClient = awsRdsClient;
   }

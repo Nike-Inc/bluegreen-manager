@@ -15,11 +15,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.InstanceState;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.nike.tools.bgm.client.aws.Ec2zClient;
-import com.nike.tools.bgm.client.aws.Ec2zClientFactory;
-import com.nike.tools.bgm.client.aws.ElbzClient;
-import com.nike.tools.bgm.client.aws.ElbzClientFactory;
-import com.nike.tools.bgm.client.aws.ElbzInstanceState;
+import com.nike.tools.bgm.client.aws.Ec2Client;
+import com.nike.tools.bgm.client.aws.Ec2ClientFactory;
+import com.nike.tools.bgm.client.aws.ElbClient;
+import com.nike.tools.bgm.client.aws.ElbClientFactory;
+import com.nike.tools.bgm.client.aws.ElbInstanceState;
 import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
@@ -27,9 +27,9 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
-import static com.nike.tools.bgm.client.aws.ElbzInstanceState.IN_SERVICE;
-import static com.nike.tools.bgm.client.aws.ElbzInstanceState.OUT_OF_SERVICE;
-import static com.nike.tools.bgm.client.aws.ElbzInstanceState.UNKNOWN;
+import static com.nike.tools.bgm.client.aws.ElbInstanceState.IN_SERVICE;
+import static com.nike.tools.bgm.client.aws.ElbInstanceState.OUT_OF_SERVICE;
+import static com.nike.tools.bgm.client.aws.ElbInstanceState.UNKNOWN;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class FixedElbzFlipEc2zTaskTest
+public class FixedElbFlipEc2TaskTest
 {
   private static final Environment FAKE_LIVE_ENV = EnvironmentTestHelper.makeFakeFullEnvironment(0);
   private static final Environment FAKE_STAGE_ENV = EnvironmentTestHelper.makeFakeFullEnvironment(1);
@@ -46,7 +46,7 @@ public class FixedElbzFlipEc2zTaskTest
   private static final String EC2_INSTANCE_ID_STAYING = "i-234567"; //Staying in the ELB
 
   @InjectMocks
-  private FixedElbzFlipEc2zTask fixedElbzFlipEc2zTask;
+  private FixedElbFlipEc2Task fixedElbFlipEc2Task;
 
   @Spy
   protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 3/*short timeout*/);
@@ -55,16 +55,16 @@ public class FixedElbzFlipEc2zTaskTest
   private ThreadSleeper mockThreadSleeper;
 
   @Mock
-  private Ec2zClientFactory mockEc2ClientFactory;
+  private Ec2ClientFactory mockEc2ClientFactory;
 
   @Mock
-  private ElbzClientFactory mockElbzClientFactory;
+  private ElbClientFactory mockElbClientFactory;
 
   @Mock
-  private Ec2zClient mockEc2Client;
+  private Ec2Client mockEc2Client;
 
   @Mock
-  private ElbzClient mockElbzClient;
+  private ElbClient mockElbClient;
 
   @Mock
   private EnvironmentTx mockEnvironmentTx;
@@ -77,10 +77,10 @@ public class FixedElbzFlipEc2zTaskTest
   {
     when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
     when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
-    fixedElbzFlipEc2zTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), ELB_NAME);
+    fixedElbFlipEc2Task.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), ELB_NAME);
 
     when(mockEc2ClientFactory.create()).thenReturn(mockEc2Client);
-    when(mockElbzClientFactory.create()).thenReturn(mockElbzClient);
+    when(mockElbClientFactory.create()).thenReturn(mockElbClient);
     when(mockEc2Client.describeInstanceByPrivateIPAddress(anyString())).thenReturn(mockEc2Instance);
     when(mockEc2Instance.getInstanceId())
         .thenReturn(EC2_INSTANCE_ID_LEAVING) //First call from findLiveEc2InstanceId
@@ -92,24 +92,24 @@ public class FixedElbzFlipEc2zTaskTest
    */
   private void setupMockHealth(InstanceState[] fakeInstanceStates)
   {
-    when(mockElbzClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING))
+    when(mockElbClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING))
         .thenReturn(fakeInstanceStates[0], ArrayUtils.subarray(fakeInstanceStates, 1, fakeInstanceStates.length));
   }
 
-  private InstanceState makeInstanceState(String instanceId, ElbzInstanceState elbzInstanceState)
+  private InstanceState makeInstanceState(String instanceId, ElbInstanceState elbInstanceState)
   {
     InstanceState instanceState = new InstanceState();
     instanceState.setInstanceId(instanceId);
-    instanceState.setState(elbzInstanceState.toString());
+    instanceState.setState(elbInstanceState.toString());
     return instanceState;
   }
 
-  private InstanceState[] makeInstanceStates(String instanceId, ElbzInstanceState... elbzInstanceStates)
+  private InstanceState[] makeInstanceStates(String instanceId, ElbInstanceState... elbInstanceStates)
   {
-    InstanceState[] array = new InstanceState[elbzInstanceStates.length];
-    for (int idx = 0; idx < elbzInstanceStates.length; ++idx)
+    InstanceState[] array = new InstanceState[elbInstanceStates.length];
+    for (int idx = 0; idx < elbInstanceStates.length; ++idx)
     {
-      array[idx] = makeInstanceState(instanceId, elbzInstanceStates[idx]);
+      array[idx] = makeInstanceState(instanceId, elbInstanceStates[idx]);
     }
     return array;
   }
@@ -121,9 +121,9 @@ public class FixedElbzFlipEc2zTaskTest
   public void testWaitTilEC2InstanceIsInService_Pass()
   {
     setupMockHealth(makeInstanceStates(EC2_INSTANCE_ID_STAYING, OUT_OF_SERVICE, OUT_OF_SERVICE, IN_SERVICE));
-    fixedElbzFlipEc2zTask.loadDataModel();
-    fixedElbzFlipEc2zTask.waitTilEC2InstanceIsInService(EC2_INSTANCE_ID_STAYING);
-    verify(mockElbzClient, times(3)).describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING);
+    fixedElbFlipEc2Task.loadDataModel();
+    fixedElbFlipEc2Task.waitTilEC2InstanceIsInService(EC2_INSTANCE_ID_STAYING);
+    verify(mockElbClient, times(3)).describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING);
   }
 
   /**
@@ -133,8 +133,8 @@ public class FixedElbzFlipEc2zTaskTest
   public void testWaitTilEC2InstanceIsInService_Timeout()
   {
     setupMockHealth(makeInstanceStates(EC2_INSTANCE_ID_STAYING, OUT_OF_SERVICE, OUT_OF_SERVICE, OUT_OF_SERVICE));
-    fixedElbzFlipEc2zTask.loadDataModel();
-    fixedElbzFlipEc2zTask.waitTilEC2InstanceIsInService(EC2_INSTANCE_ID_STAYING);
+    fixedElbFlipEc2Task.loadDataModel();
+    fixedElbFlipEc2Task.waitTilEC2InstanceIsInService(EC2_INSTANCE_ID_STAYING);
   }
 
   /**
@@ -142,7 +142,7 @@ public class FixedElbzFlipEc2zTaskTest
    */
   private void setupMockDescription(LoadBalancerDescription[] fakeDescriptions)
   {
-    when(mockElbzClient.describeLoadBalancer(ELB_NAME))
+    when(mockElbClient.describeLoadBalancer(ELB_NAME))
         .thenReturn(fakeDescriptions[0], ArrayUtils.subarray(fakeDescriptions, 1, fakeDescriptions.length));
   }
 
@@ -184,9 +184,9 @@ public class FixedElbzFlipEc2zTaskTest
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING },
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING },
         new String[] { EC2_INSTANCE_ID_STAYING }));
-    fixedElbzFlipEc2zTask.loadDataModel();
-    fixedElbzFlipEc2zTask.waitTilEC2InstanceIsDeregistered(EC2_INSTANCE_ID_LEAVING);
-    verify(mockElbzClient, times(3)).describeLoadBalancer(ELB_NAME);
+    fixedElbFlipEc2Task.loadDataModel();
+    fixedElbFlipEc2Task.waitTilEC2InstanceIsDeregistered(EC2_INSTANCE_ID_LEAVING);
+    verify(mockElbClient, times(3)).describeLoadBalancer(ELB_NAME);
   }
 
   /**
@@ -199,14 +199,14 @@ public class FixedElbzFlipEc2zTaskTest
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING },
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING },
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING }));
-    fixedElbzFlipEc2zTask.loadDataModel();
-    fixedElbzFlipEc2zTask.waitTilEC2InstanceIsDeregistered(EC2_INSTANCE_ID_LEAVING);
+    fixedElbFlipEc2Task.loadDataModel();
+    fixedElbFlipEc2Task.waitTilEC2InstanceIsDeregistered(EC2_INSTANCE_ID_LEAVING);
   }
 
   @Test
   public void testProcess_Noop()
   {
-    assertEquals(TaskStatus.NOOP, fixedElbzFlipEc2zTask.process(true));
+    assertEquals(TaskStatus.NOOP, fixedElbFlipEc2Task.process(true));
   }
 
   /**
@@ -221,11 +221,11 @@ public class FixedElbzFlipEc2zTaskTest
         new String[] { EC2_INSTANCE_ID_LEAVING, EC2_INSTANCE_ID_STAYING },
         new String[] { EC2_INSTANCE_ID_STAYING }));
 
-    assertEquals(TaskStatus.DONE, fixedElbzFlipEc2zTask.process(false));
+    assertEquals(TaskStatus.DONE, fixedElbFlipEc2Task.process(false));
 
     verify(mockEc2Client, times(2)).describeInstanceByPrivateIPAddress(anyString());
-    verify(mockElbzClient).registerInstance(ELB_NAME, EC2_INSTANCE_ID_STAYING);
-    verify(mockElbzClient, times(3)).describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING);
-    verify(mockElbzClient, times(2)).describeLoadBalancer(ELB_NAME);
+    verify(mockElbClient).registerInstance(ELB_NAME, EC2_INSTANCE_ID_STAYING);
+    verify(mockElbClient, times(3)).describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID_STAYING);
+    verify(mockElbClient, times(2)).describeLoadBalancer(ELB_NAME);
   }
 }

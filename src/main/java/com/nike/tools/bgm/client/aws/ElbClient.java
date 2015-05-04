@@ -24,16 +24,16 @@ import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLo
  * <p/>
  * All methods here communicate with Amazon and use a StopWatch.
  */
-public class ElbzClient
+public class ElbClient
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ElbzClient.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ElbClient.class);
 
   /**
    * Synchronous client, requests will block til done.
    */
   private AmazonElasticLoadBalancingClient awsElbClient;
 
-  public ElbzClient(AmazonElasticLoadBalancingClient awsElbClient)
+  public ElbClient(AmazonElasticLoadBalancingClient awsElbClient)
   {
     this.awsElbClient = awsElbClient;
   }

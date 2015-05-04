@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component;
  * Pulling this into its own class makes the client classes more testable.
  */
 @Component
-public class ElbzClientFactory
+public class ElbClientFactory
 {
   @Autowired
-  private AwszClientFactory awszClientFactory;
+  private AwsClientFactory awsClientFactory;
 
-  public ElbzClient create()
+  public ElbClient create()
   {
-    return new ElbzClient(awszClientFactory.makeRegionalELBClient());
+    return new ElbClient(awsClientFactory.makeRegionalELBClient());
   }
 }

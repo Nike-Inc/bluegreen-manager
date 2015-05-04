@@ -5,33 +5,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.elasticloadbalancing.model.InstanceState;
-import com.nike.tools.bgm.client.aws.ElbzClient;
-import com.nike.tools.bgm.client.aws.ElbzInstanceState;
+import com.nike.tools.bgm.client.aws.ElbClient;
+import com.nike.tools.bgm.client.aws.ElbInstanceState;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
  * Knows how to check progress of an EC2 instance registering with an ELB and heading towards the 'InService' state.
  */
-public class ElbzInstanceHealthProgressChecker implements ProgressChecker<InstanceState>
+public class ElbInstanceHealthProgressChecker implements ProgressChecker<InstanceState>
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ElbzInstanceHealthProgressChecker.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ElbInstanceHealthProgressChecker.class);
 
   private String elbName;
   private String ec2InstanceId;
   private String logContext;
-  private ElbzClient elbzClient;
+  private ElbClient elbClient;
   private boolean done;
   private InstanceState result;
 
-  public ElbzInstanceHealthProgressChecker(String elbName,
-                                           String ec2InstanceId,
-                                           String logContext,
-                                           ElbzClient elbzClient)
+  public ElbInstanceHealthProgressChecker(String elbName,
+                                          String ec2InstanceId,
+                                          String logContext,
+                                          ElbClient elbClient)
   {
     this.elbName = elbName;
     this.ec2InstanceId = ec2InstanceId;
     this.logContext = logContext;
-    this.elbzClient = elbzClient;
+    this.elbClient = elbClient;
   }
 
   @Override
@@ -47,7 +47,7 @@ public class ElbzInstanceHealthProgressChecker implements ProgressChecker<Instan
   @Override
   public void initialCheck()
   {
-    InstanceState instanceState = elbzClient.describeInstanceHealth(elbName, ec2InstanceId);
+    InstanceState instanceState = elbClient.describeInstanceHealth(elbName, ec2InstanceId);
     checkInstanceState(instanceState);
     LOGGER.debug(logContext + "Initial ELB instance health: " + instanceState.getState());
   }
@@ -55,7 +55,7 @@ public class ElbzInstanceHealthProgressChecker implements ProgressChecker<Instan
   @Override
   public void followupCheck(int waitNum)
   {
-    InstanceState instanceState = elbzClient.describeInstanceHealth(elbName, ec2InstanceId);
+    InstanceState instanceState = elbClient.describeInstanceHealth(elbName, ec2InstanceId);
     checkInstanceState(instanceState);
     LOGGER.debug(logContext + "ELB instance health after wait#" + waitNum + ": " + instanceState.getState());
   }
@@ -70,7 +70,7 @@ public class ElbzInstanceHealthProgressChecker implements ProgressChecker<Instan
       throw new IllegalStateException(logContext + "We requested health of ec2 instance id '" + ec2InstanceId
           + "' but ELB replied with id '" + instanceState.getInstanceId() + "'");
     }
-    if (ElbzInstanceState.IN_SERVICE.equalsString(instanceState.getState()))
+    if (ElbInstanceState.IN_SERVICE.equalsString(instanceState.getState()))
     {
       LOGGER.info("ELB '" + elbName + "' says ec2 instance id '" + ec2InstanceId + "' is now in service");
       done = true;
@@ -96,7 +96,7 @@ public class ElbzInstanceHealthProgressChecker implements ProgressChecker<Instan
   @Override
   public InstanceState timeout()
   {
-    LOGGER.error("ELB Instance Health failed to reach state '" + ElbzInstanceState.IN_SERVICE + "' prior to timeout");
+    LOGGER.error("ELB Instance Health failed to reach state '" + ElbInstanceState.IN_SERVICE + "' prior to timeout");
     return null;
   }
 }

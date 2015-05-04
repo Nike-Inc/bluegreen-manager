@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBInstance;
 import com.nike.tools.bgm.client.aws.InstanceStatus;
-import com.nike.tools.bgm.client.aws.RdszClient;
+import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
@@ -24,7 +24,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
 
   private String instanceId;
   private String logContext;
-  private RdszClient rdszClient;
+  private RdsClient rdsClient;
   private DBInstance initialInstance;
   private boolean create; //False: modify
   private InstanceStatus[] intermediateStates;
@@ -33,11 +33,11 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
 
   public InstanceProgressChecker(String instanceId,
                                  String logContext,
-                                 RdszClient rdszClient, DBInstance initialInstance, boolean create)
+                                 RdsClient rdsClient, DBInstance initialInstance, boolean create)
   {
     this.instanceId = instanceId;
     this.logContext = logContext;
-    this.rdszClient = rdszClient;
+    this.rdsClient = rdsClient;
     this.initialInstance = initialInstance;
     this.create = create;
     this.intermediateStates = create ? CREATE_INTERMEDIATE_STATES : MODIFY_INTERMEDIATE_STATES;
@@ -67,7 +67,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   @Override
   public void followupCheck(int waitNum)
   {
-    DBInstance dbInstance = rdszClient.describeInstance(instanceId);
+    DBInstance dbInstance = rdsClient.describeInstance(instanceId);
     checkInstanceId(dbInstance);
     LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
     checkInstanceStatus(dbInstance);

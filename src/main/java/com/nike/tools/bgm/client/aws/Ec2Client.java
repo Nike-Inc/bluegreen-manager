@@ -17,23 +17,23 @@ import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Reservation;
 
-import static com.nike.tools.bgm.client.aws.Ec2zInstanceFilter.PRIVATE_IP_ADDRESS;
+import static com.nike.tools.bgm.client.aws.Ec2InstanceFilter.PRIVATE_IP_ADDRESS;
 
 /**
  * Sends commands to Amazon EC2.
  * <p/>
  * All methods here communicate with Amazon and use a StopWatch.
  */
-public class Ec2zClient
+public class Ec2Client
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Ec2zClient.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Ec2Client.class);
 
   /**
    * Synchronous client, requests will block til done.
    */
   private AmazonEC2Client awsEc2Client;
 
-  public Ec2zClient(AmazonEC2Client awsEc2Client)
+  public Ec2Client(AmazonEC2Client awsEc2Client)
   {
     this.awsEc2Client = awsEc2Client;
   }

@@ -4,18 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Simple factory class that simply constructs an RDSCopier.
+ * Simple factory class that simply constructs an EC2Client.
  * <p/>
  * Pulling this into its own class makes the client classes more testable.
  */
 @Component
-public class RdszCopierFactory
+public class Ec2ClientFactory
 {
   @Autowired
-  private AwszClientFactory awszClientFactory;
+  private AwsClientFactory awsClientFactory;
 
-  public RdszClient create()
+  public Ec2Client create()
   {
-    return new RdszClient(awszClientFactory.makeRegionalRDSClient());
+    return new Ec2Client(awsClientFactory.makeRegionalEC2Client());
   }
 }

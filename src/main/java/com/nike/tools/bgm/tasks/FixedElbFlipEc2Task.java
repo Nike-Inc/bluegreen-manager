@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.InstanceState;
-import com.nike.tools.bgm.client.aws.Ec2zClient;
-import com.nike.tools.bgm.client.aws.Ec2zClientFactory;
-import com.nike.tools.bgm.client.aws.ElbzClient;
-import com.nike.tools.bgm.client.aws.ElbzClientFactory;
+import com.nike.tools.bgm.client.aws.Ec2Client;
+import com.nike.tools.bgm.client.aws.Ec2ClientFactory;
+import com.nike.tools.bgm.client.aws.ElbClient;
+import com.nike.tools.bgm.client.aws.ElbClientFactory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
@@ -31,15 +31,15 @@ import com.nike.tools.bgm.utils.WaiterParameters;
  */
 @Lazy
 @Component
-public class FixedElbzFlipEc2zTask extends TwoEnvTask
+public class FixedElbFlipEc2Task extends TwoEnvTask
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(FixedElbzFlipEc2zTask.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(FixedElbFlipEc2Task.class);
 
   @Autowired
-  private Ec2zClientFactory ec2ClientFactory;
+  private Ec2ClientFactory ec2ClientFactory;
 
   @Autowired
-  private ElbzClientFactory elbzClientFactory;
+  private ElbClientFactory elbClientFactory;
 
   @Autowired
   @Qualifier("fixedELBFlipEC2Task")
@@ -48,8 +48,8 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
   @Autowired
   private ThreadSleeper threadSleeper;
 
-  private Ec2zClient ec2Client;
-  private ElbzClient elbzClient;
+  private Ec2Client ec2Client;
+  private ElbClient elbClient;
 
   private String fixedLbName;
 
@@ -70,7 +70,7 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
   {
     loadDataModel();
     ec2Client = ec2ClientFactory.create();
-    elbzClient = elbzClientFactory.create();
+    elbClient = elbClientFactory.create();
     String oldLiveEc2InstanceId = findLiveEc2InstanceId();
     String newLiveEc2InstanceId = findStageEc2InstanceId();
     registerNewLiveEC2(newLiveEc2InstanceId, noop);
@@ -102,7 +102,7 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
     LOGGER.info(context(liveEnv) + "Register new live EC2 instance with fixed ELB" + noopRemark(noop));
     if (!noop)
     {
-      elbzClient.registerInstance(fixedLbName, newLiveEc2InstanceId);
+      elbClient.registerInstance(fixedLbName, newLiveEc2InstanceId);
       waitTilEC2InstanceIsInService(newLiveEc2InstanceId);
     }
   }
@@ -116,8 +116,8 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
   void waitTilEC2InstanceIsInService(String newLiveEc2InstanceId)
   {
     LOGGER.info(context(liveEnv) + "Waiting for new live EC2 instance to be declared in service");
-    ElbzInstanceHealthProgressChecker progressChecker = new ElbzInstanceHealthProgressChecker(fixedLbName,
-        newLiveEc2InstanceId, context(stageEnv), elbzClient);
+    ElbInstanceHealthProgressChecker progressChecker = new ElbInstanceHealthProgressChecker(fixedLbName,
+        newLiveEc2InstanceId, context(stageEnv), elbClient);
     Waiter<InstanceState> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     InstanceState instanceState = waiter.waitTilDone();
     if (instanceState == null)
@@ -134,7 +134,7 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
     LOGGER.info(context(liveEnv) + "Deregister old live EC2 instance from fixed ELB" + noopRemark(noop));
     if (!noop)
     {
-      elbzClient.deregisterInstance(fixedLbName, oldLiveEc2InstanceId);
+      elbClient.deregisterInstance(fixedLbName, oldLiveEc2InstanceId);
       waitTilEC2InstanceIsDeregistered(oldLiveEc2InstanceId);
     }
   }
@@ -148,8 +148,8 @@ public class FixedElbzFlipEc2zTask extends TwoEnvTask
   void waitTilEC2InstanceIsDeregistered(String oldLiveEc2InstanceId)
   {
     LOGGER.info(context(liveEnv) + "Waiting for old live EC2 instance to be removed from service");
-    ElbzInstanceGoneProgressChecker progressChecker = new ElbzInstanceGoneProgressChecker(fixedLbName,
-        oldLiveEc2InstanceId, context(liveEnv), elbzClient);
+    ElbInstanceGoneProgressChecker progressChecker = new ElbInstanceGoneProgressChecker(fixedLbName,
+        oldLiveEc2InstanceId, context(liveEnv), elbClient);
     Waiter<Boolean> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     Boolean gone = waiter.waitTilDone();
     if (gone == null || !gone)

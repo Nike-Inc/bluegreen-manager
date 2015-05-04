@@ -11,21 +11,21 @@ import com.amazonaws.services.rds.AmazonRDSClient;
 
 import static org.junit.Assert.assertEquals;
 
-public class AwszClientFactoryTest
+public class AwsClientFactoryTest
 {
   private static final String KEY_ID = "my-access-key-id";
   private static final String SECRET_KEY = "123456789";
   private static final String REGION_NAME = Regions.US_WEST_2.toString();
 
-  private AwszClientFactory awszClientFactory = new AwszClientFactory();
+  private AwsClientFactory awsClientFactory = new AwsClientFactory();
 
   @Before
   public void setUp()
   {
-    awszClientFactory.setAwsAccessKeyId(KEY_ID);
-    awszClientFactory.setAwsSecretAccessKey(SECRET_KEY);
-    awszClientFactory.setAwsRegionName(REGION_NAME);
-    awszClientFactory.getRegionConstant();
+    awsClientFactory.setAwsAccessKeyId(KEY_ID);
+    awsClientFactory.setAwsSecretAccessKey(SECRET_KEY);
+    awsClientFactory.setAwsRegionName(REGION_NAME);
+    awsClientFactory.getRegionConstant();
   }
 
   /**
@@ -34,7 +34,7 @@ public class AwszClientFactoryTest
   @Test
   public void testMakeRegionalEC2Client()
   {
-    AmazonEC2Client ec2 = awszClientFactory.makeRegionalEC2Client();
+    AmazonEC2Client ec2 = awsClientFactory.makeRegionalEC2Client();
     assertEquals(ServiceAbbreviations.EC2, ec2.getServiceName());
   }
 
@@ -44,7 +44,7 @@ public class AwszClientFactoryTest
   @Test
   public void testMakeRegionalELBClient()
   {
-    AmazonElasticLoadBalancingClient elb = awszClientFactory.makeRegionalELBClient();
+    AmazonElasticLoadBalancingClient elb = awsClientFactory.makeRegionalELBClient();
     assertEquals(ServiceAbbreviations.ElasticLoadbalancing, elb.getServiceName());
   }
 
@@ -54,7 +54,7 @@ public class AwszClientFactoryTest
   @Test
   public void testMakeRegionalRDSClient()
   {
-    AmazonRDSClient rds = awszClientFactory.makeRegionalRDSClient();
+    AmazonRDSClient rds = awsClientFactory.makeRegionalRDSClient();
     assertEquals(ServiceAbbreviations.RDS, rds.getServiceName());
   }
 }

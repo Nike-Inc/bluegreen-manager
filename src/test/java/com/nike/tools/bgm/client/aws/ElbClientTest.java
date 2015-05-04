@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * <p/>
  * Or for the solely declarative methods, simply tests that the aws client is invoked (not much of a test, really).
  */
-public class ElbzClientTest
+public class ElbClientTest
 {
   private static final String ELB_NAME = "my-load-balancer";
   private static final String ANOTHER_ELB_NAME = "another-load-balancer";
@@ -34,7 +34,7 @@ public class ElbzClientTest
   private static final String ANOTHER_EC2_INSTANCE_ID = "i-234567";
 
   private AmazonElasticLoadBalancingClient mockELBClient = mock(AmazonElasticLoadBalancingClient.class);
-  private ElbzClient elbzClient = new ElbzClient(mockELBClient);
+  private ElbClient elbClient = new ElbClient(mockELBClient);
 
   /**
    * Proves the client method is called.
@@ -42,7 +42,7 @@ public class ElbzClientTest
   @Test
   public void testRegisterInstance()
   {
-    elbzClient.registerInstance(ELB_NAME, EC2_INSTANCE_ID);
+    elbClient.registerInstance(ELB_NAME, EC2_INSTANCE_ID);
     verify(mockELBClient).registerInstancesWithLoadBalancer(any(RegisterInstancesWithLoadBalancerRequest.class));
   }
 
@@ -52,7 +52,7 @@ public class ElbzClientTest
   @Test
   public void testDeregisterInstance()
   {
-    elbzClient.deregisterInstance(ELB_NAME, EC2_INSTANCE_ID);
+    elbClient.deregisterInstance(ELB_NAME, EC2_INSTANCE_ID);
     verify(mockELBClient).deregisterInstancesFromLoadBalancer(any(DeregisterInstancesFromLoadBalancerRequest.class));
   }
 
@@ -63,7 +63,7 @@ public class ElbzClientTest
   public void testDescribeInstanceHealth_CantFind()
   {
     setupMock(makeDescribeInstanceHealthResult(null));
-    elbzClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
+    elbClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
   }
 
   /**
@@ -73,7 +73,7 @@ public class ElbzClientTest
   public void testDescribeInstanceHealth_FoundTooMany()
   {
     setupMock(makeDescribeInstanceHealthResult(EC2_INSTANCE_ID, ANOTHER_EC2_INSTANCE_ID));
-    elbzClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
+    elbClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
   }
 
   /**
@@ -83,7 +83,7 @@ public class ElbzClientTest
   public void testDescribeInstanceHealth_Pass()
   {
     setupMock(makeDescribeInstanceHealthResult(EC2_INSTANCE_ID));
-    elbzClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
+    elbClient.describeInstanceHealth(ELB_NAME, EC2_INSTANCE_ID);
   }
 
   /**
@@ -121,7 +121,7 @@ public class ElbzClientTest
   public void testDescribeLoadBalancer_CantFind()
   {
     setupMock(makeDescribeLoadBalancersResult(null));
-    elbzClient.describeLoadBalancer(ELB_NAME);
+    elbClient.describeLoadBalancer(ELB_NAME);
   }
 
   /**
@@ -131,7 +131,7 @@ public class ElbzClientTest
   public void testDescribeLoadBalancer_FoundTooMany()
   {
     setupMock(makeDescribeLoadBalancersResult(ELB_NAME, ANOTHER_ELB_NAME));
-    elbzClient.describeLoadBalancer(ELB_NAME);
+    elbClient.describeLoadBalancer(ELB_NAME);
   }
 
   /**
@@ -141,7 +141,7 @@ public class ElbzClientTest
   public void testDescribeLoadBalancer_Pass()
   {
     setupMock(makeDescribeLoadBalancersResult(ELB_NAME));
-    elbzClient.describeLoadBalancer(ELB_NAME);
+    elbClient.describeLoadBalancer(ELB_NAME);
   }
 
   private void setupMock(DescribeLoadBalancersResult fakeResult)
