@@ -1,8 +1,10 @@
 Manifest-Version: 1.0
 Class-Path:  dependency/antlr-2.7.7.jar
   dependency/aopalliance-1.0.jar
-  dependency/aws-java-sdk-core-1.9.17.jar
-  dependency/aws-java-sdk-rds-1.9.17.jar
+  dependency/aws-java-sdk-core-1.9.33.jar
+  dependency/aws-java-sdk-ec2-1.9.33.jar
+  dependency/aws-java-sdk-elasticloadbalancing-1.9.33.jar
+  dependency/aws-java-sdk-rds-1.9.33.jar
   dependency/classmate-1.0.0.jar
   dependency/commons-codec-1.6.jar
   dependency/commons-collections4-4.0.jar
