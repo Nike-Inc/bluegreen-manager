@@ -7,7 +7,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsClient;
-import com.nike.tools.bgm.client.aws.SnapshotStatus;
+import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class SnapshotProgressCheckerTest
+public class RdsSnapshotProgressCheckerTest
 {
   private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
@@ -29,15 +29,15 @@ public class SnapshotProgressCheckerTest
   @Mock
   private RdsClient mockRdsClient;
 
-  private SnapshotProgressChecker makeProgressChecker(DBSnapshot initialSnapshot)
+  private RdsSnapshotProgressChecker makeProgressChecker(DBSnapshot initialSnapshot)
   {
-    return new SnapshotProgressChecker(SNAPSHOT_ID, LOG_CONTEXT, mockRdsClient, initialSnapshot);
+    return new RdsSnapshotProgressChecker(SNAPSHOT_ID, LOG_CONTEXT, mockRdsClient, initialSnapshot);
   }
 
   /**
    * Test helper - makes a DBSnapshot
    */
-  private DBSnapshot fakeSnapshot(String snapshotId, SnapshotStatus status)
+  private DBSnapshot fakeSnapshot(String snapshotId, RdsSnapshotStatus status)
   {
     DBSnapshot dbSnapshot = new DBSnapshot();
     dbSnapshot.setDBSnapshotIdentifier(snapshotId);
@@ -49,7 +49,7 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testGetDescription()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.AVAILABLE));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.AVAILABLE));
     assertTrue(progressChecker.getDescription().contains(SNAPSHOT_ID));
   }
 
@@ -59,7 +59,7 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testInitialCheck_Creating()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
     progressChecker.initialCheck();
     assertFalse(progressChecker.isDone());
   }
@@ -70,7 +70,7 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testInitialCheck_Deleting()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.DELETING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETING));
     progressChecker.initialCheck();
     assertTrue(progressChecker.isDone());
     assertNull(progressChecker.getResult());
@@ -82,7 +82,7 @@ public class SnapshotProgressCheckerTest
   @Test(expected = IllegalStateException.class)
   public void testInitialCheck_WrongId()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(ANOTHER_SNAPSHOT_ID, SnapshotStatus.CREATING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(ANOTHER_SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
     progressChecker.initialCheck();
   }
 
@@ -92,8 +92,8 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testInitialCheck_Available()
   {
-    DBSnapshot initialSnapshot = fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.AVAILABLE);
-    SnapshotProgressChecker progressChecker = makeProgressChecker(initialSnapshot);
+    DBSnapshot initialSnapshot = fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.AVAILABLE);
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(initialSnapshot);
     progressChecker.initialCheck();
     assertTrue(progressChecker.isDone());
     assertEquals(initialSnapshot, progressChecker.getResult());
@@ -121,8 +121,8 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testFollowupCheck_Creating()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
-    whenDescribeSnapshot(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
+    whenDescribeSnapshot(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
     progressChecker.followupCheck(WAIT_NUM);
     assertFalse(progressChecker.isDone());
     verifyDescribeSnapshot();
@@ -134,8 +134,8 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testFollowupCheck_Deleting()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
-    whenDescribeSnapshot(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.DELETING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
+    whenDescribeSnapshot(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETING));
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());
     assertNull(progressChecker.getResult());
@@ -148,8 +148,8 @@ public class SnapshotProgressCheckerTest
   @Test(expected = IllegalStateException.class)
   public void testFollowupCheck_WrongId()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
-    whenDescribeSnapshot(fakeSnapshot(ANOTHER_SNAPSHOT_ID, SnapshotStatus.CREATING));
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
+    whenDescribeSnapshot(fakeSnapshot(ANOTHER_SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
     progressChecker.followupCheck(WAIT_NUM);
   }
 
@@ -159,8 +159,8 @@ public class SnapshotProgressCheckerTest
   @Test
   public void testFollowupCheck_Available()
   {
-    SnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.CREATING));
-    DBSnapshot followupSnapshot = fakeSnapshot(SNAPSHOT_ID, SnapshotStatus.AVAILABLE);
+    RdsSnapshotProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.CREATING));
+    DBSnapshot followupSnapshot = fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.AVAILABLE);
     whenDescribeSnapshot(followupSnapshot);
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());

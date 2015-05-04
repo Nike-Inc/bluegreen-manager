@@ -6,15 +6,15 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsClient;
-import com.nike.tools.bgm.client.aws.SnapshotStatus;
+import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
  * Knows how to check progress of an RDS snapshot going from 'creating' to 'available'.
  */
-public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
+public class RdsSnapshotProgressChecker implements ProgressChecker<DBSnapshot>
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotProgressChecker.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RdsSnapshotProgressChecker.class);
 
   private String snapshotId;
   private String logContext;
@@ -23,9 +23,9 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   private boolean done;
   private DBSnapshot result;
 
-  public SnapshotProgressChecker(String snapshotId,
-                                 String logContext,
-                                 RdsClient rdsClient, DBSnapshot initialSnapshot)
+  public RdsSnapshotProgressChecker(String snapshotId,
+                                    String logContext,
+                                    RdsClient rdsClient, DBSnapshot initialSnapshot)
   {
     this.snapshotId = snapshotId;
     this.logContext = logContext;
@@ -83,13 +83,13 @@ public class SnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   {
     final String status = dbSnapshot.getStatus();
     final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (SnapshotStatus.AVAILABLE.equalsString(status))
+    if (RdsSnapshotStatus.AVAILABLE.equalsString(status))
     {
       LOGGER.info("RDS Snapshot '" + snapshotId + "' is done");
       done = true;
       result = dbSnapshot;
     }
-    else if (SnapshotStatus.CREATING.equalsString(status))
+    else if (RdsSnapshotStatus.CREATING.equalsString(status))
     {
       //Keep waiting.
     }

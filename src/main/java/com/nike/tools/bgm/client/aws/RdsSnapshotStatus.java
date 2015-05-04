@@ -3,7 +3,7 @@ package com.nike.tools.bgm.client.aws;
 /**
  * Represents the possible string values of {@link com.amazonaws.services.rds.model.DBSnapshot#getStatus}.
  */
-public enum SnapshotStatus
+public enum RdsSnapshotStatus
 {
   CREATING,
   AVAILABLE,

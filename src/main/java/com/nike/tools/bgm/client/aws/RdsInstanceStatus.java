@@ -3,7 +3,7 @@ package com.nike.tools.bgm.client.aws;
 /**
  * Represents the possible string values of {@link com.amazonaws.services.rds.model.DBInstance#getDBInstanceStatus}.
  */
-public enum InstanceStatus
+public enum RdsInstanceStatus
 {
   AVAILABLE,
   BACKING_UP,

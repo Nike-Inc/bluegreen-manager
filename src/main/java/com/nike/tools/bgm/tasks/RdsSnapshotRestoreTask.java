@@ -374,7 +374,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId, DBSnapshot initialSnapshot)
   {
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
-    SnapshotProgressChecker progressChecker = new SnapshotProgressChecker(snapshotId, liveContext(), rdsClient,
+    RdsSnapshotProgressChecker progressChecker = new RdsSnapshotProgressChecker(snapshotId, liveContext(), rdsClient,
         initialSnapshot);
     Waiter<DBSnapshot> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBSnapshot dbSnapshot = waiter.waitTilDone();
@@ -474,7 +474,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance, boolean create)
   {
     LOGGER.info(liveContext() + "Waiting for instance to become available");
-    InstanceProgressChecker progressChecker = new InstanceProgressChecker(instanceId, liveContext(), rdsClient,
+    RdsInstanceProgressChecker progressChecker = new RdsInstanceProgressChecker(instanceId, liveContext(), rdsClient,
         initialInstance, create);
     Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBInstance dbInstance = waiter.waitTilDone();

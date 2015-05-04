@@ -6,8 +6,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.amazonaws.services.rds.model.DBInstance;
-import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RdsClient;
+import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstanceProgressCheckerTest
+public class RdsInstanceProgressCheckerTest
 {
   private static final String LOG_CONTEXT = "(Log Context) ";
   private static final int WAIT_NUM = 1;
@@ -28,15 +28,15 @@ public class InstanceProgressCheckerTest
   @Mock
   private RdsClient mockRdsClient;
 
-  private InstanceProgressChecker makeProgressChecker(DBInstance initialInstance, boolean create)
+  private RdsInstanceProgressChecker makeProgressChecker(DBInstance initialInstance, boolean create)
   {
-    return new InstanceProgressChecker(INSTANCE_ID, LOG_CONTEXT, mockRdsClient, initialInstance, create);
+    return new RdsInstanceProgressChecker(INSTANCE_ID, LOG_CONTEXT, mockRdsClient, initialInstance, create);
   }
 
   /**
    * Test helper - makes a DBInstance
    */
-  private DBInstance fakeInstance(String instanceId, InstanceStatus status)
+  private DBInstance fakeInstance(String instanceId, RdsInstanceStatus status)
   {
     DBInstance dbInstance = new DBInstance();
     dbInstance.setDBInstanceIdentifier(instanceId);
@@ -46,7 +46,7 @@ public class InstanceProgressCheckerTest
 
   private void testGetDescription(String expectedSubstring, boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.AVAILABLE), create);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.AVAILABLE), create);
     assertTrue(progressChecker.getDescription().contains(expectedSubstring));
   }
 
@@ -60,9 +60,9 @@ public class InstanceProgressCheckerTest
   /**
    * Initial instance with the given acceptable initial status = not done.
    */
-  private void testInitialCheck_Acceptable(InstanceStatus acceptableInitialStatus, boolean create)
+  private void testInitialCheck_Acceptable(RdsInstanceStatus acceptableInitialStatus, boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, acceptableInitialStatus), create);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, acceptableInitialStatus), create);
     progressChecker.initialCheck();
     assertFalse(progressChecker.isDone());
   }
@@ -73,7 +73,7 @@ public class InstanceProgressCheckerTest
   @Test
   public void testInitialCheckCreate_Creating()
   {
-    testInitialCheck_Acceptable(InstanceStatus.CREATING, true);
+    testInitialCheck_Acceptable(RdsInstanceStatus.CREATING, true);
   }
 
   /**
@@ -82,7 +82,7 @@ public class InstanceProgressCheckerTest
   @Test
   public void testInitialCheckModify_Modifying()
   {
-    testInitialCheck_Acceptable(InstanceStatus.MODIFYING, false);
+    testInitialCheck_Acceptable(RdsInstanceStatus.MODIFYING, false);
   }
 
   /**
@@ -90,7 +90,7 @@ public class InstanceProgressCheckerTest
    */
   private void testInitialCheck_Deleting(boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.DELETING), create);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.DELETING), create);
     progressChecker.initialCheck();
     assertTrue(progressChecker.isDone());
     assertNull(progressChecker.getResult());
@@ -106,22 +106,22 @@ public class InstanceProgressCheckerTest
   /**
    * Initially wrong instance id = throw.
    */
-  private void testInitialCheck_WrongId(InstanceStatus acceptableInitialStatus, boolean create)
+  private void testInitialCheck_WrongId(RdsInstanceStatus acceptableInitialStatus, boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(ANOTHER_INSTANCE_ID, acceptableInitialStatus), true);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(ANOTHER_INSTANCE_ID, acceptableInitialStatus), true);
     progressChecker.initialCheck();
   }
 
   @Test(expected = IllegalStateException.class)
   public void testInitialCheckCreate_WrongId()
   {
-    testInitialCheck_WrongId(InstanceStatus.CREATING, true);
+    testInitialCheck_WrongId(RdsInstanceStatus.CREATING, true);
   }
 
   @Test(expected = IllegalStateException.class)
   public void testInitialCheckModify_WrongId()
   {
-    testInitialCheck_WrongId(InstanceStatus.MODIFYING, false);
+    testInitialCheck_WrongId(RdsInstanceStatus.MODIFYING, false);
   }
 
   /**
@@ -129,8 +129,8 @@ public class InstanceProgressCheckerTest
    */
   private void testInitialCheck_Available(boolean create)
   {
-    DBInstance initialInstance = fakeInstance(INSTANCE_ID, InstanceStatus.AVAILABLE);
-    InstanceProgressChecker progressChecker = makeProgressChecker(initialInstance, create);
+    DBInstance initialInstance = fakeInstance(INSTANCE_ID, RdsInstanceStatus.AVAILABLE);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(initialInstance, create);
     progressChecker.initialCheck();
     assertTrue(progressChecker.isDone());
     assertEquals(initialInstance, progressChecker.getResult());
@@ -163,9 +163,9 @@ public class InstanceProgressCheckerTest
   /**
    * Followup with the given acceptable continuing state = not done.
    */
-  private void testFollowupCheck_Acceptable(InstanceStatus acceptableFollowupStatus, boolean create)
+  private void testFollowupCheck_Acceptable(RdsInstanceStatus acceptableFollowupStatus, boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.CREATING), create);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.CREATING), create);
     whenDescribeInstance(fakeInstance(INSTANCE_ID, acceptableFollowupStatus));
     progressChecker.followupCheck(WAIT_NUM);
     assertFalse(progressChecker.isDone());
@@ -175,13 +175,13 @@ public class InstanceProgressCheckerTest
   @Test
   public void testFollowupCheckCreate_Creating()
   {
-    testFollowupCheck_Acceptable(InstanceStatus.CREATING, true);
+    testFollowupCheck_Acceptable(RdsInstanceStatus.CREATING, true);
   }
 
   @Test
   public void testFollowupCheckModify_Creating()
   {
-    testFollowupCheck_Acceptable(InstanceStatus.MODIFYING, false);
+    testFollowupCheck_Acceptable(RdsInstanceStatus.MODIFYING, false);
   }
 
   /**
@@ -189,8 +189,8 @@ public class InstanceProgressCheckerTest
    */
   private void testFollowupCheck_Deleting(boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.CREATING), create);
-    whenDescribeInstance(fakeInstance(INSTANCE_ID, InstanceStatus.DELETING));
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.CREATING), create);
+    whenDescribeInstance(fakeInstance(INSTANCE_ID, RdsInstanceStatus.DELETING));
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());
     assertNull(progressChecker.getResult());
@@ -212,9 +212,9 @@ public class InstanceProgressCheckerTest
   /**
    * Followup shows wrong snapshot id = throw.
    */
-  private void testFollowupCheck_WrongId(InstanceStatus acceptableFollowupStatus, boolean create)
+  private void testFollowupCheck_WrongId(RdsInstanceStatus acceptableFollowupStatus, boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.CREATING), create);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.CREATING), create);
     whenDescribeInstance(fakeInstance(ANOTHER_INSTANCE_ID, acceptableFollowupStatus));
     progressChecker.followupCheck(WAIT_NUM);
   }
@@ -222,13 +222,13 @@ public class InstanceProgressCheckerTest
   @Test(expected = IllegalStateException.class)
   public void testFollowupCheckCreate_WrongId()
   {
-    testFollowupCheck_WrongId(InstanceStatus.CREATING, true);
+    testFollowupCheck_WrongId(RdsInstanceStatus.CREATING, true);
   }
 
   @Test(expected = IllegalStateException.class)
   public void testFollowupCheckModify_WrongId()
   {
-    testFollowupCheck_WrongId(InstanceStatus.MODIFYING, false);
+    testFollowupCheck_WrongId(RdsInstanceStatus.MODIFYING, false);
   }
 
   /**
@@ -236,8 +236,8 @@ public class InstanceProgressCheckerTest
    */
   private void testFollowupCheck_Available(boolean create)
   {
-    InstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, InstanceStatus.CREATING), create);
-    DBInstance followupInstance = fakeInstance(INSTANCE_ID, InstanceStatus.AVAILABLE);
+    RdsInstanceProgressChecker progressChecker = makeProgressChecker(fakeInstance(INSTANCE_ID, RdsInstanceStatus.CREATING), create);
+    DBInstance followupInstance = fakeInstance(INSTANCE_ID, RdsInstanceStatus.AVAILABLE);
     whenDescribeInstance(followupInstance);
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());

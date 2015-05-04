@@ -5,21 +5,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBInstance;
-import com.nike.tools.bgm.client.aws.InstanceStatus;
 import com.nike.tools.bgm.client.aws.RdsClient;
+import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
  * Knows how to check progress of an RDS instance going from 'creating' to 'available'.
  */
-public class InstanceProgressChecker implements ProgressChecker<DBInstance>
+public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(InstanceProgressChecker.class);
-  private static final InstanceStatus[] CREATE_INTERMEDIATE_STATES = new InstanceStatus[] {
-      InstanceStatus.CREATING, InstanceStatus.BACKING_UP, InstanceStatus.MODIFYING
+  private static final Logger LOGGER = LoggerFactory.getLogger(RdsInstanceProgressChecker.class);
+  private static final RdsInstanceStatus[] CREATE_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
+      RdsInstanceStatus.CREATING, RdsInstanceStatus.BACKING_UP, RdsInstanceStatus.MODIFYING
   };
-  private static final InstanceStatus[] MODIFY_INTERMEDIATE_STATES = new InstanceStatus[] {
-      InstanceStatus.MODIFYING
+  private static final RdsInstanceStatus[] MODIFY_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
+      RdsInstanceStatus.MODIFYING
   };
 
   private String instanceId;
@@ -27,13 +27,13 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   private RdsClient rdsClient;
   private DBInstance initialInstance;
   private boolean create; //False: modify
-  private InstanceStatus[] intermediateStates;
+  private RdsInstanceStatus[] intermediateStates;
   private boolean done;
   private DBInstance result;
 
-  public InstanceProgressChecker(String instanceId,
-                                 String logContext,
-                                 RdsClient rdsClient, DBInstance initialInstance, boolean create)
+  public RdsInstanceProgressChecker(String instanceId,
+                                    String logContext,
+                                    RdsClient rdsClient, DBInstance initialInstance, boolean create)
   {
     this.instanceId = instanceId;
     this.logContext = logContext;
@@ -93,7 +93,7 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   {
     final String status = dbInstance.getDBInstanceStatus();
     final String instanceId = dbInstance.getDBInstanceIdentifier();
-    if (InstanceStatus.AVAILABLE.equalsString(status))
+    if (RdsInstanceStatus.AVAILABLE.equalsString(status))
     {
       LOGGER.info("RDS " + getDescription() + " '" + instanceId + "' is done");
       done = true;
@@ -113,11 +113,11 @@ public class InstanceProgressChecker implements ProgressChecker<DBInstance>
   /**
    * True if the status is in the array of intermediateStates.
    */
-  private boolean isOneOfTheseStates(InstanceStatus[] intermediateStates, String status)
+  private boolean isOneOfTheseStates(RdsInstanceStatus[] intermediateStates, String status)
   {
     if (StringUtils.isNotBlank(status))
     {
-      for (InstanceStatus intermediateState : intermediateStates)
+      for (RdsInstanceStatus intermediateState : intermediateStates)
       {
         if (intermediateState.equalsString(status))
         {
