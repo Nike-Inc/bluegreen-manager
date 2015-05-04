@@ -31,6 +31,7 @@ public class LinkLiveDatabaseTask extends TwoEnvTask
   public TaskStatus process(boolean noop)
   {
     loadDataModel();
+    assertPhysicalDatabaseLiveness();
     linkOldToNew();
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
@@ -48,6 +49,24 @@ public class LinkLiveDatabaseTask extends TwoEnvTask
   }
 
   /**
+   * Precondition before this task makes any changes.
+   * Checks that the old env's physicaldb is live and the new env's physicaldb is stage (non-live).
+   */
+  private void assertPhysicalDatabaseLiveness()
+  {
+    if (!oldLivePhysicalDatabase.isLive())
+    {
+      throw new IllegalStateException(context(liveEnv) + oldLivePhysicalDatabase + ": Expected physicaldb "
+          + "to be initially live since it is in the current (old) live environment");
+    }
+    if (newLivePhysicalDatabase.isLive())
+    {
+      throw new IllegalStateException(context(stageEnv) + newLivePhysicalDatabase + ": Expected physicaldb "
+          + "to be initially non-live since it is in the new live (i.e. stage) environment");
+    }
+  }
+
+  /**
    * Changes the newLive physicaldb entity to be the same as oldLive physicaldb.
    * (Everything except the id and logicaldb parent.)
    */
@@ -55,6 +74,7 @@ public class LinkLiveDatabaseTask extends TwoEnvTask
   {
     newLivePhysicalDatabase.setDatabaseType(oldLivePhysicalDatabase.getDatabaseType());
     newLivePhysicalDatabase.setInstanceName(oldLivePhysicalDatabase.getInstanceName());
+    newLivePhysicalDatabase.setLive(oldLivePhysicalDatabase.isLive());
     newLivePhysicalDatabase.setDriverClassName(oldLivePhysicalDatabase.getDriverClassName());
     newLivePhysicalDatabase.setUrl(oldLivePhysicalDatabase.getUrl());
     newLivePhysicalDatabase.setUsername(oldLivePhysicalDatabase.getUsername());

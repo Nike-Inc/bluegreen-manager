@@ -26,21 +26,24 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class LinkLiveDatabaseTaskTest
 {
-  private static final Environment FAKE_LIVE_ENV = EnvironmentTestHelper.makeFakeFullEnvironment(0);
-  private static final Environment FAKE_STAGE_ENV = EnvironmentTestHelper.makeFakeFullEnvironment(1);
-
   @InjectMocks
   private LinkLiveDatabaseTask linkLiveDatabaseTask;
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
+  private EnvironmentTx mockEnvironmentTx;
+
+  /*
+  Note: linkLiveDatabaseTask.process(false) modifies the contents of the env objects.
+   */
+  private final Environment fakeLiveEnv = EnvironmentTestHelper.makeFakeFullEnvironment(0);
+  private final Environment fakeStageEnv = EnvironmentTestHelper.makeFakeFullEnvironment(1);
 
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
-    when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
-    linkLiveDatabaseTask.assign(1, FAKE_LIVE_ENV.getEnvName() /*old*/, FAKE_STAGE_ENV.getEnvName() /*new*/);
+    when(mockEnvironmentTx.findNamedEnv(fakeLiveEnv.getEnvName())).thenReturn(fakeLiveEnv);
+    when(mockEnvironmentTx.findNamedEnv(fakeStageEnv.getEnvName())).thenReturn(fakeStageEnv);
+    linkLiveDatabaseTask.assign(1, fakeLiveEnv.getEnvName() /*old*/, fakeStageEnv.getEnvName() /*new*/);
   }
 
   /**
@@ -58,14 +61,14 @@ public class LinkLiveDatabaseTaskTest
   @Test
   public void testProcess_Done()
   {
-    assertNotEquals(getPhysicalDatabaseFromEnvironment(FAKE_LIVE_ENV).getInstanceName(),
-        getPhysicalDatabaseFromEnvironment(FAKE_STAGE_ENV).getInstanceName());
+    assertNotEquals(getPhysicalDatabaseFromEnvironment(fakeLiveEnv).getInstanceName(),
+        getPhysicalDatabaseFromEnvironment(fakeStageEnv).getInstanceName());
 
     assertEquals(TaskStatus.DONE, linkLiveDatabaseTask.process(false));
 
-    verify(mockEnvironmentTx).updateEnvironment(FAKE_STAGE_ENV);
-    assertEquals(getPhysicalDatabaseFromEnvironment(FAKE_LIVE_ENV).getInstanceName(),
-        getPhysicalDatabaseFromEnvironment(FAKE_STAGE_ENV).getInstanceName());
+    verify(mockEnvironmentTx).updateEnvironment(fakeStageEnv);
+    assertEquals(getPhysicalDatabaseFromEnvironment(fakeLiveEnv).getInstanceName(),
+        getPhysicalDatabaseFromEnvironment(fakeStageEnv).getInstanceName());
   }
 
   /**
