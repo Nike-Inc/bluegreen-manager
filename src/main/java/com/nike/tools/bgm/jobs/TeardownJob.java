@@ -11,21 +11,27 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
- * Tears down the old environment, and the test database remaining in the new live env.
+ * Tears down a target environment, and the test database used by the former stage env.
+ * <p/>
+ * "commit" case: In the case of successful stagingDeploy and goLive, the deletion env is the old live env.
+ * "rollback" case: In case of failed post-stagingDeploy test, the delete env is the stage env ("new live env").
  */
 @Lazy
 @Component
 public class TeardownJob extends TaskSequenceJob
 {
-  private String oldLiveEnv;
-  private String newLiveEnv;
+  private String deleteEnvName;
+  private String deleteDbPhysicalInstanceName;
+  private boolean commit; //false=rollback
 
   public TeardownJob(String commandLine, boolean noop, boolean force,
-                     JobHistory oldJobHistory, String oldLiveEnv, String newLiveEnv)
+                     JobHistory oldJobHistory, String deleteEnvName,
+                     String deleteDbPhysicalInstanceName, boolean commit)
   {
     super(commandLine, noop, force, oldJobHistory);
-    this.oldLiveEnv = oldLiveEnv;
-    this.newLiveEnv = newLiveEnv;
+    this.deleteEnvName = deleteEnvName;
+    this.deleteDbPhysicalInstanceName = deleteDbPhysicalInstanceName;
+    this.commit = commit;
   }
 
   /**
@@ -45,12 +51,12 @@ public class TeardownJob extends TaskSequenceJob
   @Override
   public String getEnv1()
   {
-    return oldLiveEnv;
+    return deleteEnvName;
   }
 
   @Override
   public String getEnv2()
   {
-    return newLiveEnv;
+    return null;
   }
 }

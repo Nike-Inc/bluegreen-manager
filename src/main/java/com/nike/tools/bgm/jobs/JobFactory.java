@@ -37,6 +37,10 @@ public class JobFactory
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
   public static final String PARAMNAME_FIXED_LB = "fixedLB";
+  public static final String PARAMNAME_DELETE_ENV = "deleteEnv";
+  public static final String PARAMNAME_DELETE_DB = "deleteDb";
+  public static final String PARAMNAME_COMMIT = "commit";
+  public static final String PARAMNAME_ROLLBACK = "rollback";
   public static final String PARAMNAME_NOOP = "noop";
   public static final String PARAMNAME_FORCE = "force";
 
@@ -94,10 +98,17 @@ public class JobFactory
     sb.append("\t\t\tregister the new live application vm with this LB, and deregister the old live application vm.\n");
     sb.append("\n");
     sb.append("Job '" + JOBNAME_TEARDOWN + "'\n");
-    sb.append("Description: Spins down and destroys the old live env, and the test database left in the new live env.\n");
+    sb.append("Description: Spins down and destroys the requested env, and the stage database formerly used by the new live env.\n");
     sb.append("Required Parameters:\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_OLD_LIVE_ENV + " <envName>\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NEW_LIVE_ENV + " <envName>\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_ENV + " <envName>\n");
+    sb.append("\t\t\tIn the 'commit' case, specify the old live env for deletion.\n");
+    sb.append("\t\t\tIn the 'rollback' case, specify the stage env for deletion.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_DB + " <stagePhysicalInstName>\n");
+    sb.append("\t\t\tSpecify the stage test database.  Whether or not stagingDeploy and goLive passed, teardown must remove the stage db.\n");
+    sb.append("\t[" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT + " | " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK + " ]\n");
+    sb.append("\t\t\tSpecify 'commit' if goLive is done and you are ready to teardown the old live env.\n");
+    sb.append("\t\t\tSpecify 'rollback' if stagingDeploy is done but followup tests showed you should teardown the stage env\n");
+    sb.append("\t\t\tand NOT do goLive.\n");
     sb.append("\n");
     sb.append("Common Optional Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NOOP + "\n");
@@ -160,7 +171,15 @@ public class JobFactory
    */
   private Job makeTeardownJob(List<List<String>> parameters, String commandLine)
   {
-    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true);
+    String deleteDbPhysicalInstanceName = getParameter(PARAMNAME_DELETE_DB, parameters, 1).get(1);
+    boolean isCommit = hasParameter(PARAMNAME_COMMIT, parameters);
+    boolean isRollback = hasParameter(PARAMNAME_ROLLBACK, parameters);
+    if (!isCommit && !isRollback)
+    {
+      throw new CmdlineException("Teardown job must specify either " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT
+          + " or " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK);
+    }
+    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_DELETE_ENV, null, false, deleteDbPhysicalInstanceName, isCommit);
   }
 
   /**
@@ -180,7 +199,7 @@ public class JobFactory
     boolean noop = hasParameter(PARAMNAME_NOOP, parameters);
     boolean force = hasParameter(PARAMNAME_FORCE, parameters);
     String env1 = getParameter(env1ParamName, parameters, 1).get(1);
-    String env2 = getParameter(env2ParamName, parameters, 1).get(1);
+    String env2 = env2ParamName == null ? null : getParameter(env2ParamName, parameters, 1).get(1);
     verifyOneOrTwoEnvNames(env1, env2, verifyBothEnvs);
     JobHistory oldJobHistory = jobHistoryTx.findLastRelevantJobHistory(
         jobClass.getSimpleName(), env1, env2, commandLine, noop, MAX_AGE_RELEVANT_PRIOR_JOB);
@@ -200,14 +219,18 @@ public class JobFactory
                                                  String env2,
                                                  Object... otherArgs)
   {
-    Object[] allArgs = new Object[6 + otherArgs.length];
+    final int numCommonArgs = env2 == null ? 5 : 6;
+    Object[] allArgs = new Object[numCommonArgs + otherArgs.length];
     allArgs[0] = commandLine;
     allArgs[1] = noop;
     allArgs[2] = force;
     allArgs[3] = oldJobHistory;
     allArgs[4] = env1;
-    allArgs[5] = env2;
-    System.arraycopy(otherArgs, 0, allArgs, 6, otherArgs.length);
+    if (env2 != null)
+    {
+      allArgs[5] = env2;
+    }
+    System.arraycopy(otherArgs, 0, allArgs, numCommonArgs, otherArgs.length);
     return allArgs;
   }
 

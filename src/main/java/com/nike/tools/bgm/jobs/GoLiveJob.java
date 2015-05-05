@@ -26,16 +26,16 @@ import com.nike.tools.bgm.tasks.ThawTask;
 @Component
 public class GoLiveJob extends TaskSequenceJob
 {
-  private String oldLiveEnv;
-  private String newLiveEnv;
+  private String oldLiveEnvName;
+  private String newLiveEnvName;
   private String fixedLbName;
 
   public GoLiveJob(String commandLine, boolean noop, boolean force,
-                   JobHistory oldJobHistory, String oldLiveEnv, String newLiveEnv, String fixedLbName)
+                   JobHistory oldJobHistory, String oldLiveEnvName, String newLiveEnvName, String fixedLbName)
   {
     super(commandLine, noop, force, oldJobHistory);
-    this.oldLiveEnv = oldLiveEnv;
-    this.newLiveEnv = newLiveEnv;
+    this.oldLiveEnvName = oldLiveEnvName;
+    this.newLiveEnvName = newLiveEnvName;
     this.fixedLbName = fixedLbName;
   }
 
@@ -49,30 +49,30 @@ public class GoLiveJob extends TaskSequenceJob
   {
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnv));
-    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnv));
-    tasks.add(applicationContext.getBean(LinkLiveDatabaseTask.class).assign(position++, oldLiveEnv, newLiveEnv));
-    tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnv));
-    tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnv));
+    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnvName));
+    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnvName));
+    tasks.add(applicationContext.getBean(LinkLiveDatabaseTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
+    tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnvName));
+    tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnvName));
     /*
       Note regarding decision to flip first, then thaw: It achieves the most consistent user experience at the cost of
       waiting longer for live thaw.  If you thaw first, the ELB would send some users to a thawed instance and others to
       the frozen oldLive instance until flip is done.  Your choice depends on how the nature of your app and its users.
      */
-    tasks.add(applicationContext.getBean(FixedElbFlipEc2Task.class).assign(position++, oldLiveEnv, newLiveEnv, fixedLbName));
-    tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, newLiveEnv));
+    tasks.add(applicationContext.getBean(FixedElbFlipEc2Task.class).assign(position++, oldLiveEnvName, newLiveEnvName, fixedLbName));
+    tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, newLiveEnvName));
     this.tasks = tasks;
   }
 
   @Override
   public String getEnv1()
   {
-    return oldLiveEnv;
+    return oldLiveEnvName;
   }
 
   @Override
   public String getEnv2()
   {
-    return newLiveEnv;
+    return newLiveEnvName;
   }
 }

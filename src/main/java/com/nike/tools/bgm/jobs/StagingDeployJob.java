@@ -44,18 +44,18 @@ public class StagingDeployJob extends TaskSequenceJob
   @Qualifier("deployPackages")
   private LocalShellConfig deployPackagesConfig;
 
-  private String liveEnv;
-  private String stageEnv;
+  private String liveEnvName;
+  private String stageEnvName;
   private Map<String, String> dbMap;
   private List<String> packages;
 
   public StagingDeployJob(String commandLine, boolean noop, boolean force,
-                          JobHistory oldJobHistory, String liveEnv, String stageEnv,
+                          JobHistory oldJobHistory, String liveEnvName, String stageEnvName,
                           Map<String, String> dbMap, List<String> packages)
   {
     super(commandLine, noop, force, oldJobHistory);
-    this.liveEnv = liveEnv;
-    this.stageEnv = stageEnv;
+    this.liveEnvName = liveEnvName;
+    this.stageEnvName = stageEnvName;
     this.dbMap = dbMap;
     this.packages = packages;
   }
@@ -71,14 +71,14 @@ public class StagingDeployJob extends TaskSequenceJob
     defineSubstitutionsForDeployPackages();
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, liveEnv));
-    tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnv, stageEnv, dbMap));
-    tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnv));
-    tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnv));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnv, stageEnv, createStageEnvConfig));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnv, stageEnv, deployPackagesConfig));
-    tasks.add(applicationContext.getBean(RegisterApplicationTask.class).assign(position++, liveEnv, stageEnv));
-    tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, stageEnv));
+    tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, liveEnvName));
+    tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnvName, stageEnvName, dbMap));
+    tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnvName));
+    tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnvName));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, createStageEnvConfig));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, deployPackagesConfig));
+    tasks.add(applicationContext.getBean(RegisterApplicationTask.class).assign(position++, liveEnvName, stageEnvName));
+    tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, stageEnvName));
     this.tasks = tasks;
   }
 
@@ -92,13 +92,13 @@ public class StagingDeployJob extends TaskSequenceJob
   @Override
   public String getEnv1()
   {
-    return liveEnv;
+    return liveEnvName;
   }
 
   @Override
   public String getEnv2()
   {
-    return stageEnv;
+    return stageEnvName;
   }
 
 }
