@@ -13,6 +13,7 @@ import com.nike.tools.bgm.jobs.SkipRemarkHelper;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.TaskHistoryTx;
 
 /**
  * Processes tasks, writes their task history, and considers the context of prior tasks in old job history.

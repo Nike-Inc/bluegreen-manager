@@ -1,4 +1,4 @@
-package com.nike.tools.bgm.tasks;
+package com.nike.tools.bgm.model.tx;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,6 +12,8 @@ import com.nike.tools.bgm.model.dao.TaskHistoryDAO;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.tasks.Task;
+import com.nike.tools.bgm.tasks.TaskFakery;
 import com.nike.tools.bgm.utils.NowFactory;
 
 import static com.nike.tools.bgm.utils.TimeFakery.START_TIME;

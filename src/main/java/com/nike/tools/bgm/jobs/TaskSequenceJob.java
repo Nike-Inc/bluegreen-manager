@@ -12,6 +12,7 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.JobStatus;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.JobHistoryTx;
 import com.nike.tools.bgm.tasks.Task;
 import com.nike.tools.bgm.tasks.TaskRun;
 import com.nike.tools.bgm.tasks.TaskRunProcessor;

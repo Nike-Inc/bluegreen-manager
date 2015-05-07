@@ -23,12 +23,12 @@ import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsCopierFactory;
 import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.DatabaseTestHelper;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static com.nike.tools.bgm.model.domain.DatabaseTestHelper.LIVE_ENV_NAME;

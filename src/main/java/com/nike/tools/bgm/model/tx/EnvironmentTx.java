@@ -1,4 +1,4 @@
-package com.nike.tools.bgm.env;
+package com.nike.tools.bgm.model.tx;
 
 import java.util.List;
 import javax.transaction.Transactional;

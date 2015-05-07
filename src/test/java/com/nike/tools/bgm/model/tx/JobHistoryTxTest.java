@@ -1,4 +1,4 @@
-package com.nike.tools.bgm.jobs;
+package com.nike.tools.bgm.model.tx;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -7,6 +7,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.nike.tools.bgm.jobs.Job;
+import com.nike.tools.bgm.jobs.JobFakery;
 import com.nike.tools.bgm.model.dao.JobHistoryDAO;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.JobStatus;

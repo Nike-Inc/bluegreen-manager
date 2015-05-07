@@ -12,9 +12,10 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.main.ArgumentParser;
 import com.nike.tools.bgm.main.CmdlineException;
+import com.nike.tools.bgm.model.tx.EnvironmentTx;
+import com.nike.tools.bgm.model.tx.JobHistoryTx;
 
 import static com.nike.tools.bgm.jobs.JobFactory.UNLIMITED_NUM_VALUES;
 import static org.junit.Assert.assertEquals;

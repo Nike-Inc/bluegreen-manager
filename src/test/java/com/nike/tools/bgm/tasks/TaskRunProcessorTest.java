@@ -12,6 +12,7 @@ import com.nike.tools.bgm.jobs.SkipRemarkHelper;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.TaskHistoryTx;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

@@ -1,4 +1,4 @@
-package com.nike.tools.bgm.jobs;
+package com.nike.tools.bgm.model.tx;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -7,6 +7,7 @@ import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.nike.tools.bgm.jobs.Job;
 import com.nike.tools.bgm.model.dao.JobHistoryDAO;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.JobStatus;

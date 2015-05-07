@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
 import com.nike.tools.bgm.client.ssh.SshTarget;
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
 import com.nike.tools.bgm.utils.WaiterParameters;

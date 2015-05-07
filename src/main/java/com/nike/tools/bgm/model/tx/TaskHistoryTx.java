@@ -1,4 +1,4 @@
-package com.nike.tools.bgm.tasks;
+package com.nike.tools.bgm.model.tx;
 
 import java.sql.Timestamp;
 import javax.transaction.Transactional;
@@ -10,6 +10,7 @@ import com.nike.tools.bgm.model.dao.TaskHistoryDAO;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.model.domain.TaskHistory;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.tasks.Task;
 import com.nike.tools.bgm.utils.NowFactory;
 
 /**

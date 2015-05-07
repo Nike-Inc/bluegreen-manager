@@ -13,10 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.main.ArgumentParser;
 import com.nike.tools.bgm.main.CmdlineException;
 import com.nike.tools.bgm.model.domain.JobHistory;
+import com.nike.tools.bgm.model.tx.EnvironmentTx;
+import com.nike.tools.bgm.model.tx.JobHistoryTx;
 
 /**
  * Given a job name and parameters, returns a Job for processing.
