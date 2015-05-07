@@ -1,13 +1,11 @@
 package com.nike.tools.bgm.tasks;
 
-import java.util.List;
-
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
 /**
  * A task that communicates with an applicationVm, in an existing environment.
@@ -15,10 +13,12 @@ import com.nike.tools.bgm.model.domain.Environment;
 public abstract class ApplicationVmTask extends TaskImpl
 {
   @Autowired
-  private EnvironmentTx environmentTx;
+  protected EnvLoaderFactory envLoaderFactory;
 
-  private String envName;
+  protected String envName;
   private boolean createVm;
+
+  protected OneEnvLoader oneEnvLoader;
 
   protected Environment environment;
   protected ApplicationVm applicationVm;
@@ -43,8 +43,10 @@ public abstract class ApplicationVmTask extends TaskImpl
    */
   protected void loadDataModel()
   {
-    this.environment = environmentTx.findNamedEnv(envName);
-    findApplicationVmFromEnvironment(createVm);
+    this.oneEnvLoader = envLoaderFactory.createOne(envName);
+    oneEnvLoader.loadApplicationVm(createVm);
+    this.environment = oneEnvLoader.getEnvironment();
+    this.applicationVm = oneEnvLoader.getApplicationVm();
   }
 
   /**
@@ -52,43 +54,7 @@ public abstract class ApplicationVmTask extends TaskImpl
    */
   String context()
   {
-    StringBuilder sb = new StringBuilder();
-    sb.append("[environment '" + environment.getEnvName() + "'");
-    if (applicationVm != null)
-    {
-      sb.append(", ");
-      sb.append(applicationVm.getHostname());
-    }
-    sb.append("]: ");
-    return sb.toString();
-  }
-
-  /**
-   * Gets the env's persisted application vm record.  (Currently support only 1.)
-   */
-  protected void findApplicationVmFromEnvironment(boolean createVm)
-  {
-    List<ApplicationVm> applicationVms = environment.getApplicationVms();
-    if (CollectionUtils.isEmpty(applicationVms))
-    {
-      if (!createVm)
-      {
-        throw new IllegalStateException(context() + "No application vms");
-      }
-    }
-    else if (createVm)
-    {
-      throw new IllegalStateException("Cannot create applicationVm, since " + applicationVms.size() + " already exist");
-    }
-    else
-    {
-      if (applicationVms.size() > 1)
-      {
-        throw new UnsupportedOperationException(context() + "Currently only support case of 1 applicationVm, but found "
-            + applicationVms.size());
-      }
-      this.applicationVm = applicationVms.get(0);
-    }
+    return oneEnvLoader.context();
   }
 
 }

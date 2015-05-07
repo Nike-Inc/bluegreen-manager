@@ -12,6 +12,8 @@ import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -30,6 +32,12 @@ public class LinkLiveDatabaseTaskTest
   private LinkLiveDatabaseTask linkLiveDatabaseTask;
 
   @Mock
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private TwoEnvLoader mockTwoEnvLoader;
+
+  @Mock
   private EnvironmentTx mockEnvironmentTx;
 
   /*
@@ -41,8 +49,10 @@ public class LinkLiveDatabaseTaskTest
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(fakeLiveEnv.getEnvName())).thenReturn(fakeLiveEnv);
-    when(mockEnvironmentTx.findNamedEnv(fakeStageEnv.getEnvName())).thenReturn(fakeStageEnv);
+    when(mockEnvLoaderFactory.createTwo(fakeLiveEnv.getEnvName(), fakeStageEnv.getEnvName())).thenReturn(mockTwoEnvLoader);
+    when(mockTwoEnvLoader.getLivePhysicalDatabase()).thenReturn(fakeLiveEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
+    when(mockTwoEnvLoader.getStageEnv()).thenReturn(fakeStageEnv);
+    when(mockTwoEnvLoader.getStagePhysicalDatabase()).thenReturn(fakeStageEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
     linkLiveDatabaseTask.assign(1, fakeLiveEnv.getEnvName() /*old*/, fakeStageEnv.getEnvName() /*new*/);
   }
 

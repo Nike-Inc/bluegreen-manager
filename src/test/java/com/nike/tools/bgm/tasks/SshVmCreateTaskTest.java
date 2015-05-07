@@ -14,6 +14,8 @@ import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
@@ -57,6 +59,12 @@ public class SshVmCreateTaskTest
   private ThreadSleeper mockThreadSleeper;
 
   @Mock
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private OneEnvLoader mockOneEnvLoader;
+
+  @Mock
   protected EnvironmentTx mockEnvironmentTx;
 
   @Mock
@@ -72,7 +80,9 @@ public class SshVmCreateTaskTest
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_EMPTY_ENV_NAME)).thenReturn(FAKE_EMPTY_ENVIRONMENT);
+    when(mockEnvLoaderFactory.createOne(FAKE_EMPTY_ENV_NAME)).thenReturn(mockOneEnvLoader);
+    when(mockOneEnvLoader.getEnvironment()).thenReturn(FAKE_EMPTY_ENVIRONMENT);
+    when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     sshVmCreateTask.init(1, FAKE_EMPTY_ENV_NAME);
     sshVmCreateTask.loadDataModel();
   }

@@ -10,10 +10,11 @@ import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DbFreezeMode;
 import com.nike.tools.bgm.client.app.DbFreezeProgress;
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
@@ -43,13 +44,16 @@ public abstract class TransitionTaskBaseTest
   protected WaiterParameters fakeWaiterParameters = new WaiterParameters(10L, 10L, 2, 20);
 
   @Mock
+  protected EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  protected OneEnvLoader mockOneEnvLoader;
+
+  @Mock
   protected ApplicationClient mockApplicationClient;
 
   @Mock
   protected ThreadSleeper mockThreadSleeper;
-
-  @Mock
-  protected EnvironmentTx mockEnvironmentTx;
 
   @Mock
   protected Executor mockExecutor;
@@ -68,7 +72,9 @@ public abstract class TransitionTaskBaseTest
   {
     fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
     String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
-    when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
+    when(mockEnvLoaderFactory.createOne(envName)).thenReturn(mockOneEnvLoader);
+    when(mockOneEnvLoader.getEnvironment()).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
+    when(mockOneEnvLoader.getApplication()).thenReturn(FAKE_APPLICATION);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
     transitionTask.assignTransition(1, envName);
     transitionTask.loadDataModel();

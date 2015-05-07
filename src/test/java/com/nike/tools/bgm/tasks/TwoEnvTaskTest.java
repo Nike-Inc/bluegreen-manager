@@ -7,13 +7,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,13 +36,15 @@ public class TwoEnvTaskTest
   };
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private TwoEnvLoader mockTwoEnvLoader;
 
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
-    when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
+    when(mockEnvLoaderFactory.createTwo(FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName())).thenReturn(mockTwoEnvLoader);
   }
 
   @Test
@@ -51,7 +52,7 @@ public class TwoEnvTaskTest
   {
     twoEnvTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName());
     twoEnvTask.loadDataModel();
-    verify(mockEnvironmentTx, times(2)).findNamedEnv(anyString());
+    verify(mockTwoEnvLoader).loadDataModel();
     //Not much else to assert except that we got here and it didn't throw
   }
 

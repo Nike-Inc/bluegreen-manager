@@ -39,6 +39,7 @@ public class JobFactory
   public static final String PARAMNAME_FIXED_LB = "fixedLB";
   public static final String PARAMNAME_DELETE_ENV = "deleteEnv";
   public static final String PARAMNAME_DELETE_DB = "deleteDb";
+  public static final String PARAMNAME_STOP_SERVICES = "stopServices";
   public static final String PARAMNAME_COMMIT = "commit";
   public static final String PARAMNAME_ROLLBACK = "rollback";
   public static final String PARAMNAME_NOOP = "noop";
@@ -105,6 +106,8 @@ public class JobFactory
     sb.append("\t\t\tIn the 'rollback' case, specify the stage env for deletion.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_DB + " <stagePhysicalInstName>\n");
     sb.append("\t\t\tSpecify the stage test database.  Whether or not stagingDeploy and goLive passed, teardown must remove the stage db.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STOP_SERVICES + " <list of services>\n");
+    sb.append("\t\t\tSpecify services running on the deleteEnv which we should try to shutdown gracefully prior to vm deletion.\n");
     sb.append("\t[" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT + " | " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK + " ]\n");
     sb.append("\t\t\tSpecify 'commit' if goLive is done and you are ready to teardown the old live env.\n");
     sb.append("\t\t\tSpecify 'rollback' if stagingDeploy is done but followup tests showed you should teardown the stage env\n");
@@ -172,6 +175,7 @@ public class JobFactory
   private Job makeTeardownJob(List<List<String>> parameters, String commandLine)
   {
     String deleteDbPhysicalInstanceName = getParameter(PARAMNAME_DELETE_DB, parameters, 1).get(1);
+    List<String> stopServices = getParameterValues(PARAMNAME_STOP_SERVICES, parameters);
     boolean isCommit = hasParameter(PARAMNAME_COMMIT, parameters);
     boolean isRollback = hasParameter(PARAMNAME_ROLLBACK, parameters);
     if (!isCommit && !isRollback)
@@ -179,7 +183,8 @@ public class JobFactory
       throw new CmdlineException("Teardown job must specify either " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT
           + " or " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK);
     }
-    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_DELETE_ENV, null, false, deleteDbPhysicalInstanceName, isCommit);
+    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_DELETE_ENV, null, false,
+        deleteDbPhysicalInstanceName, stopServices, isCommit);
   }
 
   /**

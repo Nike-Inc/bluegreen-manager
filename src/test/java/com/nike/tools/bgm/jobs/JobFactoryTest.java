@@ -117,10 +117,10 @@ public class JobFactoryTest
   public void testMakeJob_Teardown()
   {
     when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
-    String commandLine = "teardown --deleteEnv env5 --deleteDb db1 --commit";
+    String commandLine = "teardown --deleteEnv env5 --deleteDb db1 --stopServices a,b --commit";
     parseAndMakeJob(commandLine);
     verify(mockApplicationContext).getBean(eq(TeardownJob.class), new Object[] {
-        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), eq("db1"), eq(true)
+        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), eq("db1"), anyListOf(String.class), eq(true)
     });
   }
 

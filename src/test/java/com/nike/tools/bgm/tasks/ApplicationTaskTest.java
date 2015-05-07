@@ -1,7 +1,5 @@
 package com.nike.tools.bgm.tasks;
 
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.fluent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,23 +7,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.nike.tools.bgm.client.app.ApplicationClient;
-import com.nike.tools.bgm.client.app.ApplicationSession;
-import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.Application;
-import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
-import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests the ability of ApplicationTask to get environmental info and use the applicationClient.
+ * Not much to test, since OneEnvLoader does 99% of the work now.
+ * <p/>
+ * Only other thing would be to test initApplicationSession, and other unit tests effectively do that.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationTaskTest
 {
-  protected static final Application FAKE_APPLICATION = EnvironmentTestHelper.makeFakeApplication();
+  private static final String FAKE_ENV_NAME = "theEnv";
 
   @InjectMocks
   private ApplicationTask applicationTask = new ApplicationTask()
@@ -38,36 +35,28 @@ public class ApplicationTaskTest
   };
 
   @Mock
-  protected ApplicationClient mockApplicationClient;
+  private EnvLoaderFactory mockEnvLoaderFactory;
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
-
-  @Mock
-  protected Executor mockExecutor;
-
-  @Mock
-  protected CookieStore mockCookieStore;
+  private OneEnvLoader mockOneEnvLoader;
 
   @Before
   public void setUp()
   {
-    ApplicationSession fakeSession = new ApplicationSession(mockExecutor, mockCookieStore);
-    String envName = FAKE_APPLICATION.getApplicationVm().getEnvironment().getEnvName();
-    when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
-    applicationTask.assign(1, envName);
+    when(mockEnvLoaderFactory.createOne(FAKE_ENV_NAME)).thenReturn(mockOneEnvLoader);
+    applicationTask.assign(1, FAKE_ENV_NAME);
     applicationTask.loadDataModel();
+    verify(mockOneEnvLoader).loadApplication();
   }
 
   /**
-   * Tests that we can make a nice env/vm/app context string for logging.
+   * Tests that we use the env loader for describing context.
    */
   @Test
   public void testContext()
   {
     String str = applicationTask.context();
-    assertTrue(str.contains("environment"));
-    assertTrue(str.contains("http"));
+    verify(mockOneEnvLoader).context();
   }
 
 }

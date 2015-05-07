@@ -2,9 +2,11 @@ package com.nike.tools.bgm.tasks;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 
@@ -18,6 +20,9 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 public class LinkLiveDatabaseTask extends TwoEnvTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(LinkLiveDatabaseTask.class);
+
+  @Autowired
+  private EnvironmentTx environmentTx;
 
   private PhysicalDatabase newLivePhysicalDatabase;
   private PhysicalDatabase oldLivePhysicalDatabase;

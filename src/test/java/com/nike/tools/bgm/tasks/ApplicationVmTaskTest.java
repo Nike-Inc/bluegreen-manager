@@ -1,19 +1,17 @@
 package com.nike.tools.bgm.tasks;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.ApplicationVm;
-import com.nike.tools.bgm.model.domain.Environment;
-import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -22,8 +20,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationVmTaskTest
 {
-  protected static final ApplicationVm FAKE_APPLICATION_VM = EnvironmentTestHelper.makeFakeApplicationVm();
-  protected static final Environment FAKE_EMPTY_ENVIRONMENT = EnvironmentTestHelper.makeFakeEnvironment();
+  private static final String FAKE_ENV_NAME = "theEnv";
 
   @InjectMocks
   private ApplicationVmTask applicationVmTask = new ApplicationVmTask()
@@ -36,48 +33,57 @@ public class ApplicationVmTaskTest
   };
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
+  protected EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private OneEnvLoader mockOneEnvLoader;
+
+  @Before
+  public void setUp()
+  {
+    when(mockEnvLoaderFactory.createOne(FAKE_ENV_NAME)).thenReturn(mockOneEnvLoader);
+  }
 
   /**
-   * Calls the initializer for a task that creates a vm -- which should not already exist.
+   * Initialization when we want to create a vm.
    */
   private void initCreateVm()
   {
-    String envName = FAKE_EMPTY_ENVIRONMENT.getEnvName();
-    when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_EMPTY_ENVIRONMENT);
-    applicationVmTask.assign(1, envName, true);
+    applicationVmTask.assign(1, FAKE_ENV_NAME, true);
     applicationVmTask.loadDataModel();
+    verify(mockOneEnvLoader).loadApplicationVm(true);
   }
 
   /**
-   * Calls the initializer for a task that modifies (or deletes) a vm -- which must already exist.
+   * Initialization when we want to modify/delete an existing vm.
    */
   private void initModifyVm()
   {
-    String envName = FAKE_APPLICATION_VM.getEnvironment().getEnvName();
-    when(mockEnvironmentTx.findNamedEnv(envName)).thenReturn(FAKE_APPLICATION_VM.getEnvironment());
-    applicationVmTask.assign(1, envName, false);
+    applicationVmTask.assign(1, FAKE_ENV_NAME, false);
     applicationVmTask.loadDataModel();
+    verify(mockOneEnvLoader).loadApplicationVm(false);
   }
 
   /**
-   * Vm Create task context should not initially include a hostname.
+   * Tests that we use the env loader for describing context.
    */
   @Test
   public void testContext_Create()
   {
     initCreateVm();
-    assertFalse(applicationVmTask.context().contains(", ")); //i.e. no hostname
+    String str = applicationVmTask.context();
+    verify(mockOneEnvLoader).context();
   }
 
   /**
-   * Vm Modify task context should initially include a hostname.
+   * Tests that we use the env loader for describing context.
    */
   @Test
   public void testContext_Modify()
   {
     initModifyVm();
-    assertTrue(applicationVmTask.context().contains(FAKE_APPLICATION_VM.getHostname()));
+    String str = applicationVmTask.context();
+    verify(mockOneEnvLoader).context();
   }
 
 }

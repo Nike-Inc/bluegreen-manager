@@ -15,4 +15,16 @@
     <property name="exitvalueSuccess" value="${bluegreen.localshell.deployPackages.exitvalue.success}"/>
   </bean>
 
+  <bean class="com.nike.tools.bgm.tasks.LocalShellConfig">
+    <qualifier value="shutdownApplications"/>
+    <property name="command" value="${bluegreen.localshell.shutdownApplications.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.localshell.shutdownApplications.exitvalue.success}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.tasks.LocalShellConfig">
+    <qualifier value="deleteEnv"/>
+    <property name="command" value="${bluegreen.localshell.deleteEnv.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.localshell.deleteEnv.exitvalue.success}"/>
+  </bean>
+
 </beans>

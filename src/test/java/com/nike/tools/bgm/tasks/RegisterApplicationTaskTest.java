@@ -12,6 +12,8 @@ import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -38,13 +40,21 @@ public class RegisterApplicationTaskTest
   private RegisterApplicationTask registerApplicationTask;
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private TwoEnvLoader mockTwoEnvLoader;
+
+  @Mock
+  private EnvironmentTx mockEnvironmentTx;
 
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
-    when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
+    when(mockEnvLoaderFactory.createTwo(FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName())).thenReturn(mockTwoEnvLoader);
+    when(mockTwoEnvLoader.getLiveApplication()).thenReturn(FAKE_LIVE_ENV.getApplicationVms().get(0).getApplications().get(0));
+    when(mockTwoEnvLoader.getStageEnv()).thenReturn(FAKE_STAGE_ENV);
+    when(mockTwoEnvLoader.getStageApplicationVm()).thenReturn(FAKE_STAGE_ENV.getApplicationVms().get(0));
     registerApplicationTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName());
   }
 

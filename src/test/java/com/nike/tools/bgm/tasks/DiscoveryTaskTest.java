@@ -11,11 +11,12 @@ import com.nike.tools.bgm.client.app.ApplicationClient;
 import com.nike.tools.bgm.client.app.ApplicationSession;
 import com.nike.tools.bgm.client.app.DiscoveryResult;
 import com.nike.tools.bgm.client.app.PhysicalDatabase;
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
@@ -43,7 +44,10 @@ public class DiscoveryTaskTest
   private DiscoveryTask discoveryTask;
 
   @Mock
-  protected EnvironmentTx mockEnvironmentTx;
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private OneEnvLoader mockOneEnvLoader;
 
   @Mock
   protected ApplicationClient mockApplicationClient;
@@ -55,8 +59,11 @@ public class DiscoveryTaskTest
   public void setUp()
   {
     Environment fakeEnv = FAKE_APPLICATION.getApplicationVm().getEnvironment();
-    when(mockEnvironmentTx.findNamedEnv(fakeEnv.getEnvName())).thenReturn(fakeEnv);
+    when(mockEnvLoaderFactory.createOne(fakeEnv.getEnvName())).thenReturn(mockOneEnvLoader);
+    when(mockOneEnvLoader.getEnvironment()).thenReturn(fakeEnv);
+    when(mockOneEnvLoader.getApplication()).thenReturn(FAKE_APPLICATION);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(mockApplicationSession);
+    when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     discoveryTask.assign(1, fakeEnv.getEnvName());
   }
 

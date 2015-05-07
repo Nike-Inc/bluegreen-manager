@@ -3,7 +3,6 @@ package com.nike.tools.bgm.tasks;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
@@ -17,6 +16,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.substituter.StringSubstituter;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
 
@@ -33,51 +34,54 @@ import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
 @Lazy
 @Component
 @Scope("prototype")
-public class LocalShellTask extends TwoEnvTask
+public class LocalShellTask extends TaskImpl
 {
-  /**
-   * Variable to be substituted with the name of the live environment.
-   */
-  private static final String CMDVAR_LIVE_ENV = "%{liveEnv}";
-
-  /**
-   * Variable to be substituted with the name of the stage environment.
-   */
-  private static final String CMDVAR_STAGE_ENV = "%{stageEnv}";
-
-  /**
-   * Variable to be substituted with a comma-delimited list of four applicationVm properties:
-   * liveHostname,liveIpAddress,stageHostname,stageIpAddress.
-   * <p/>
-   * Currently only supports mapping 1 vm from live to stage.
-   */
-  private static final String CMDVAR_APPLICATION_VM_MAP = "%{applicationVmMap}";
-
-  /**
-   * Variable to be substituted with a comma-delimited list of two physicaldb properties:
-   * livePhysicalInstName,stagePhysicalInstName
-   * <p/>
-   * Currently only supports mapping 1 physicaldb from live to stage.
-   */
-  private static final String CMDVAR_PHYSICAL_DB_MAP = "%{physicalDbMap}";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(LocalShellTask.class);
 
   @Autowired
   private ProcessBuilderAdapterFactory processBuilderAdapterFactory;
 
+  @Autowired
+  private StringSubstituterFactory stringSubstituterFactory;
+
   private LocalShellConfig localShellConfig;
   private Pattern patternError;
+  private StringSubstituter stringSubstituter;
 
+  /**
+   * Two-env shell task.
+   */
   public Task assign(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
   {
-    super.assign(position, liveEnvName, stageEnvName);
+    super.assign(position);
     this.localShellConfig = localShellConfig;
     if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
     {
       this.patternError = Pattern.compile(localShellConfig.getRegexpError());
     }
+    this.stringSubstituter = stringSubstituterFactory.createTwo(liveEnvName, stageEnvName,
+        localShellConfig.getExtraSubstitutions());
     return this;
+  }
+
+  /**
+   * One-env shell task.
+   */
+  public Task assign(int position, String envName, LocalShellConfig localShellConfig)
+  {
+    super.assign(position);
+    this.localShellConfig = localShellConfig;
+    if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
+    {
+      this.patternError = Pattern.compile(localShellConfig.getRegexpError());
+    }
+    this.stringSubstituter = stringSubstituterFactory.createOne(envName, localShellConfig.getExtraSubstitutions());
+    return this;
+  }
+
+  private void loadDataModel()
+  {
+    stringSubstituter.loadDataModel();
   }
 
   /**
@@ -94,7 +98,7 @@ public class LocalShellTask extends TwoEnvTask
     if (!noop)
     {
       checkConfig();
-      String[] commandTokens = substituteVariables(localShellConfig.getCommand()).split("\\s+");
+      String[] commandTokens = stringSubstituter.substituteVariables(localShellConfig.getCommand()).split("\\s+");
       ProcessBuilderAdapter processBuilderAdapter = processBuilderAdapterFactory.create(commandTokens)
           .redirectErrorStream(true);
       LOGGER.info("Executing command '" + StringUtils.join(commandTokens, " ") + "'");
@@ -136,67 +140,6 @@ public class LocalShellTask extends TwoEnvTask
     {
       throw new IllegalArgumentException("Configuration should specify one or both of exitvalueSuccess and regexpError");
     }
-  }
-
-  /**
-   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   * Currently supports only the following variables: liveEnv, stageEnv, applicationVmMap, physicalDbMap.
-   * <p/>
-   * Can't support '${..}' since Spring already substitutes that in properties file.
-   */
-  String substituteVariables(String command)
-  {
-    if (StringUtils.isBlank(command))
-    {
-      throw new IllegalArgumentException("Command is blank");
-    }
-    String substituted = command;
-    substituted = StringUtils.replace(substituted, CMDVAR_LIVE_ENV, liveEnv.getEnvName());
-    substituted = StringUtils.replace(substituted, CMDVAR_STAGE_ENV, stageEnv.getEnvName());
-    substituted = StringUtils.replace(substituted, CMDVAR_APPLICATION_VM_MAP, makeApplicationVmMapString());
-    substituted = StringUtils.replace(substituted, CMDVAR_PHYSICAL_DB_MAP, makePhysicalDbMapString());
-    if (localShellConfig.getExtraSubstitutions() != null)
-    {
-      for (Map.Entry<String, String> entry : localShellConfig.getExtraSubstitutions().entrySet())
-      {
-        substituted = StringUtils.replace(substituted, entry.getKey(), entry.getValue());
-      }
-    }
-    return substituted;
-  }
-
-  /**
-   * Makes a comma-delimited list of four applicationVm properties:
-   * liveHostname,liveIpAddress,stageHostname,stageIpAddress.
-   * <p/>
-   * Currently only supports mapping 1 vm from live to stage.
-   */
-  private String makeApplicationVmMapString()
-  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(liveApplicationVm.getHostname());
-    sb.append(",");
-    sb.append(liveApplicationVm.getIpAddress());
-    sb.append(",");
-    sb.append(stageApplicationVm.getHostname());
-    sb.append(",");
-    sb.append(stageApplicationVm.getIpAddress());
-    return sb.toString();
-  }
-
-  /**
-   * Makes a comma-delimited list of two physicaldb properties:
-   * livePhysicalInstName,stagePhysicalInstName
-   * <p/>
-   * Currently only supports mapping 1 physicaldb from live to stage.
-   */
-  private String makePhysicalDbMapString()
-  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(livePhysicalDatabase.getInstanceName());
-    sb.append(",");
-    sb.append(stagePhysicalDatabase.getInstanceName());
-    return sb.toString();
   }
 
   /**

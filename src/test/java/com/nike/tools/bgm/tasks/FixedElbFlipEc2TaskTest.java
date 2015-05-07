@@ -20,10 +20,11 @@ import com.nike.tools.bgm.client.aws.Ec2ClientFactory;
 import com.nike.tools.bgm.client.aws.ElbClient;
 import com.nike.tools.bgm.client.aws.ElbClientFactory;
 import com.nike.tools.bgm.client.aws.ElbInstanceState;
-import com.nike.tools.bgm.env.EnvironmentTx;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
@@ -67,7 +68,10 @@ public class FixedElbFlipEc2TaskTest
   private ElbClient mockElbClient;
 
   @Mock
-  private EnvironmentTx mockEnvironmentTx;
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
+  private TwoEnvLoader mockTwoEnvLoader;
 
   @Mock
   private com.amazonaws.services.ec2.model.Instance mockEc2Instance;
@@ -75,8 +79,11 @@ public class FixedElbFlipEc2TaskTest
   @Before
   public void setUp()
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
-    when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
+    when(mockEnvLoaderFactory.createTwo(FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName())).thenReturn(mockTwoEnvLoader);
+    when(mockTwoEnvLoader.getLiveEnv()).thenReturn(FAKE_LIVE_ENV);
+    when(mockTwoEnvLoader.getLiveApplicationVm()).thenReturn(FAKE_LIVE_ENV.getApplicationVms().get(0));
+    when(mockTwoEnvLoader.getStageEnv()).thenReturn(FAKE_STAGE_ENV);
+    when(mockTwoEnvLoader.getStageApplicationVm()).thenReturn(FAKE_STAGE_ENV.getApplicationVms().get(0));
     fixedElbFlipEc2Task.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), ELB_NAME);
 
     when(mockEc2ClientFactory.create()).thenReturn(mockEc2Client);

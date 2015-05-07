@@ -1,7 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -11,28 +10,27 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.nike.tools.bgm.env.EnvironmentTx;
-import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
-import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.TwoEnvStringSubstituter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class LocalShellConfigTest
+public class LocalShellTaskTest
 {
   private static final String COMMAND = "run some stuff";
   private static final String REGEXP_ERROR = "(An ERROR happened!|Bad stuff)";
@@ -45,7 +43,13 @@ public class LocalShellConfigTest
   private LocalShellTask localShellTask;
 
   @Mock
-  private EnvironmentTx mockEnvironmentTx;
+  private StringSubstituterFactory mockStringSubstituterFactory;
+
+  @Mock
+  private OneEnvStringSubstituter mockOneEnvStringSubstituter;
+
+  @Mock
+  private TwoEnvStringSubstituter mockTwoEnvStringSubstituter;
 
   @Mock
   private ProcessBuilderAdapterFactory mockProcessBuilderAdapterFactory;
@@ -59,10 +63,11 @@ public class LocalShellConfigTest
   private LocalShellConfig localShellConfig = new LocalShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
 
   @Before
-  public void setUp()
+  public void setUpTwoEnv() //TODO - need to test setUpOneEnv as well
   {
-    when(mockEnvironmentTx.findNamedEnv(FAKE_LIVE_ENV.getEnvName())).thenReturn(FAKE_LIVE_ENV);
-    when(mockEnvironmentTx.findNamedEnv(FAKE_STAGE_ENV.getEnvName())).thenReturn(FAKE_STAGE_ENV);
+    when(mockStringSubstituterFactory.createTwo(anyString(), anyString(), anyMapOf(String.class, String.class)))
+        .thenReturn(mockTwoEnvStringSubstituter);
+    when(mockTwoEnvStringSubstituter.substituteVariables(anyString())).thenReturn(COMMAND);
     localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), localShellConfig);
   }
 
@@ -81,27 +86,6 @@ public class LocalShellConfigTest
     verify(mockProcessBuilderAdapter).start();
     verify(mockProcess, atLeastOnce()).getInputStream();
     verify(mockProcess, atLeastOnce()).exitValue();
-  }
-
-  /**
-   * Substitution should support these %{..} variables: liveEnv, stageEnv, applicationVmMap, physicalDbMap.
-   */
-  @Test
-  public void testSubstituteVariables()
-  {
-    localShellTask.loadDataModel();
-    String command = "run stuff with LIVE_ENV=%{liveEnv}; STAGE_ENV=%{stageEnv}; APPLICATION_VM_MAP=%{applicationVmMap}; PHYSICAL_DB_MAP=%{physicalDbMap}!";
-    String result = localShellTask.substituteVariables(command);
-    assertTrue(result.contains("LIVE_ENV=" + FAKE_LIVE_ENV.getEnvName()));
-    assertTrue(result.contains("STAGE_ENV=" + FAKE_STAGE_ENV.getEnvName()));
-    ApplicationVm liveApplicationVm = FAKE_LIVE_ENV.getApplicationVms().get(0);
-    ApplicationVm stageApplicationVm = FAKE_STAGE_ENV.getApplicationVms().get(0);
-    assertTrue(Pattern.compile("APPLICATION_VM_MAP=" + liveApplicationVm.getHostname() + ".*" + stageApplicationVm.getHostname() + ".*;")
-        .matcher(result).find());
-    PhysicalDatabase livePhysicalDatabase = FAKE_LIVE_ENV.getLogicalDatabases().get(0).getPhysicalDatabase();
-    PhysicalDatabase stagePhysicalDatabase = FAKE_STAGE_ENV.getLogicalDatabases().get(0).getPhysicalDatabase();
-    assertTrue(Pattern.compile("PHYSICAL_DB_MAP=" + livePhysicalDatabase.getInstanceName() + ".*" + stagePhysicalDatabase.getInstanceName() + "!")
-        .matcher(result).find());
   }
 
   /**
@@ -150,13 +134,13 @@ public class LocalShellConfigTest
   }
 
   /**
-   * Noop always returns noop.  Also implicitly tests assign().
+   * Noop always returns noop, and at least invokes loadDataModel.
    */
   @Test
   public void testProcessNoop()
   {
     assertEquals(TaskStatus.NOOP, localShellTask.process(true));
-    verify(mockEnvironmentTx, times(2)).findNamedEnv(anyString());
+    verify(mockTwoEnvStringSubstituter).loadDataModel();
     verifyZeroInteractions(mockProcessBuilderAdapterFactory);
   }
 }
