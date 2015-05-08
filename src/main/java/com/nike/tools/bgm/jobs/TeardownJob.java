@@ -67,9 +67,9 @@ public class TeardownJob extends TaskSequenceJob
     defineSubstitutionsForShutdownApplications();
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, null, shutdownApplicationsConfig));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
     //tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
-    //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, null, deleteEnvConfig));
+    //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, deleteEnvConfig));
     //tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).init(position++, deleteEnvName));
     this.tasks = tasks;
   }

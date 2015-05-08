@@ -12,9 +12,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -30,12 +32,23 @@ public class OneEnvStringSubstituterTest
   private OneEnvStringSubstituter oneEnvStringSubstituter = new OneEnvStringSubstituter(FAKE_ENV.getEnvName(), EXTRA);
 
   @Mock
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
   private OneEnvLoader mockOneEnvLoader;
 
   @Before
   public void setUp()
   {
+    when(mockEnvLoaderFactory.createOne(FAKE_ENV.getEnvName())).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getApplicationVm()).thenReturn(FAKE_ENV.getApplicationVms().get(0));
+  }
+
+  @Test
+  public void testLoadDataModel()
+  {
+    oneEnvStringSubstituter.loadDataModel();
+    verify(mockOneEnvLoader).loadApplication();
   }
 
   /**

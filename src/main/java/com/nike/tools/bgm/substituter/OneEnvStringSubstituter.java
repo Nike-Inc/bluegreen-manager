@@ -4,6 +4,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
@@ -14,8 +17,16 @@ import com.nike.tools.bgm.model.tx.OneEnvLoader;
  * Variables supported: vmHostname.
  * Also any extraSubstitutions.
  */
+@Lazy
+@Component
+@Scope("prototype")
 public class OneEnvStringSubstituter extends StringSubstituterExtraImpl
 {
+  /**
+   * Variable to be substituted with the name of the target environment.
+   */
+  private static final String CMDVAR_ENV = "%{env}";
+
   /**
    * Variable to be substituted with the application vm hostname in this env.
    * (Assumes there is exactly 1 applicationVm.)
@@ -59,6 +70,7 @@ public class OneEnvStringSubstituter extends StringSubstituterExtraImpl
       throw new IllegalArgumentException("Command is blank");
     }
     String substituted = command;
+    substituted = StringUtils.replace(substituted, CMDVAR_ENV, envName);
     substituted = StringUtils.replace(substituted, CMDVAR_VM_HOSTNAME, oneEnvLoader.getApplicationVm().getHostname());
     return substituteExtra(substituted);
   }

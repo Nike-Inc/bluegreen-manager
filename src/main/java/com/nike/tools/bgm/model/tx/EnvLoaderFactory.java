@@ -1,5 +1,7 @@
 package com.nike.tools.bgm.model.tx;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,16 +12,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class EnvLoaderFactory
 {
+  @Autowired
+  protected ApplicationContext applicationContext;
+
   public OneEnvLoader createOne(String envName)
   {
-    OneEnvLoader oneEnvLoader = new OneEnvLoader();
+    OneEnvLoader oneEnvLoader = applicationContext.getBean(OneEnvLoader.class);
     oneEnvLoader.setEnvName(envName);
     return oneEnvLoader;
   }
 
   public TwoEnvLoader createTwo(String liveEnvName, String stageEnvName)
   {
-    TwoEnvLoader twoEnvLoader = new TwoEnvLoader();
+    TwoEnvLoader twoEnvLoader = applicationContext.getBean(TwoEnvLoader.class);
     twoEnvLoader.setLiveEnvName(liveEnvName);
     twoEnvLoader.setStageEnvName(stageEnvName);
     return twoEnvLoader;

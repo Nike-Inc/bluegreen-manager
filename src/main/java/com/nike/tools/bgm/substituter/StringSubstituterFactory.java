@@ -2,6 +2,8 @@ package com.nike.tools.bgm.substituter;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,16 +14,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class StringSubstituterFactory
 {
+  @Autowired
+  protected ApplicationContext applicationContext;
+
   public OneEnvStringSubstituter createOne(String envName, Map<String, String> extraSubstitutions)
   {
-    return new OneEnvStringSubstituter(envName, extraSubstitutions);
+    return applicationContext.getBean(OneEnvStringSubstituter.class, envName, extraSubstitutions);
   }
 
   public TwoEnvStringSubstituter createTwo(String liveEnvName,
                                            String stageEnvName,
                                            Map<String, String> extraSubstitutions)
   {
-    return new TwoEnvStringSubstituter(liveEnvName, stageEnvName, extraSubstitutions);
+    return applicationContext.getBean(TwoEnvStringSubstituter.class, liveEnvName, stageEnvName, extraSubstitutions);
   }
 
 }

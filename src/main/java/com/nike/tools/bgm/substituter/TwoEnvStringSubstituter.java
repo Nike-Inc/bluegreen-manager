@@ -4,6 +4,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.TwoEnvLoader;
@@ -15,6 +18,9 @@ import com.nike.tools.bgm.model.tx.TwoEnvLoader;
  * Variables supported: liveEnv, stageEnv, applicationVmMap, physicalDbMap.
  * Also any extraSubstitutions.
  */
+@Lazy
+@Component
+@Scope("prototype")
 public class TwoEnvStringSubstituter extends StringSubstituterExtraImpl
 {
   /**

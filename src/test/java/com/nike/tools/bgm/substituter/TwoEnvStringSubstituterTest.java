@@ -15,9 +15,11 @@ import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
+import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -35,15 +37,26 @@ public class TwoEnvStringSubstituterTest
       FAKE_STAGE_ENV.getEnvName(), EXTRA);
 
   @Mock
+  private EnvLoaderFactory mockEnvLoaderFactory;
+
+  @Mock
   private TwoEnvLoader mockTwoEnvLoader;
 
   @Before
   public void setUp()
   {
+    when(mockEnvLoaderFactory.createTwo(FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName())).thenReturn(mockTwoEnvLoader);
     when(mockTwoEnvLoader.getLiveApplicationVm()).thenReturn(FAKE_LIVE_ENV.getApplicationVms().get(0));
     when(mockTwoEnvLoader.getStageApplicationVm()).thenReturn(FAKE_STAGE_ENV.getApplicationVms().get(0));
     when(mockTwoEnvLoader.getLivePhysicalDatabase()).thenReturn(FAKE_LIVE_ENV.getLogicalDatabases().get(0).getPhysicalDatabase());
     when(mockTwoEnvLoader.getStagePhysicalDatabase()).thenReturn(FAKE_STAGE_ENV.getLogicalDatabases().get(0).getPhysicalDatabase());
+  }
+
+  @Test
+  public void testLoadDataModel()
+  {
+    twoEnvStringSubstituter.loadDataModel();
+    verify(mockTwoEnvLoader).loadDataModel();
   }
 
   /**
