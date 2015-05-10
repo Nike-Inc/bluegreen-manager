@@ -70,6 +70,7 @@ public class SshVmDeleteTaskTest
   {
     when(mockEnvLoaderFactory.createOne(fullEnv.getEnvName())).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getEnvironment()).thenReturn(fullEnv);
+    when(mockOneEnvLoader.getApplicationVm()).thenReturn(fullEnv.getApplicationVms().get(0));
     when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     when(mockStringSubstituterFactory.createOne(fullEnv.getEnvName(), null)).thenReturn(mockOneEnvStringSubstituter);
     when(mockOneEnvStringSubstituter.substituteVariables(INITIAL_CMD)).thenReturn(INITIAL_CMD);

@@ -1,6 +1,7 @@
 package com.nike.tools.bgm.model.domain;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Makes fake entities related to environment, applicationVm, application, logicalDatabase, physicalDatabase.
@@ -50,8 +51,15 @@ public class EnvironmentTestHelper
     application.setScheme(APP_SCHEME);
     application.setHostname(APP_HOSTNAMES[index]);
     application.setUrlPath(APP_URL_PATH);
-    applicationVm.setApplications(Arrays.asList(application));
+    applicationVm.setApplications(makeListOfOne(application));
     return application;
+  }
+
+  private static List<Application> makeListOfOne(Application application)
+  {
+    List<Application> list = new ArrayList<Application>();
+    list.add(application);
+    return list;
   }
 
   /**
@@ -73,8 +81,15 @@ public class EnvironmentTestHelper
     applicationVm.setEnvironment(environment);
     applicationVm.setHostname(VM_HOSTNAMES[index]);
     applicationVm.setIpAddress(VM_IPADDRS[index]);
-    environment.setApplicationVms(Arrays.asList(applicationVm));
+    environment.setApplicationVms(makeListOfOne(applicationVm));
     return applicationVm;
+  }
+
+  private static List<ApplicationVm> makeListOfOne(ApplicationVm applicationVm)
+  {
+    List<ApplicationVm> list = new ArrayList<ApplicationVm>();
+    list.add(applicationVm);
+    return list;
   }
 
   /**
