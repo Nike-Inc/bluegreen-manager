@@ -96,6 +96,11 @@ public class Environment
     applicationVms.add(applicationVm);
   }
 
+  public void removeApplicationVm(ApplicationVm applicationVm)
+  {
+    applicationVms.remove(applicationVm);
+  }
+
   /**
    * Equality based solely on database identity.
    */

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
+import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.utils.ProgressChecker;
@@ -164,7 +165,8 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   public void followupCheck(int waitNum)
   {
     String command = substituteFollowupVariables(sshVmCreateConfig.getFollowupCommand());
-    String followupOutput = sshClient.execCommand(command);
+    SshClientResult followupResult = sshClient.execCommand(command);
+    String followupOutput = followupResult.getOutput();
     LOGGER.debug("SSH VM Creation state after wait#" + waitNum + ": " + followupOutput);
     if (matcherFind(followupOutput, followupPatternError))
     {

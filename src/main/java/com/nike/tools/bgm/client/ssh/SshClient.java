@@ -76,7 +76,7 @@ public class SshClient
   /**
    * Executes the command and returns the stdout/stderr as a combined string.
    */
-  public String execCommand(String command)
+  public SshClientResult execCommand(String command)
   {
     String wrappedCommand = "(" + command + ") 2>&1"; //Concats stderr to stdout; assumes bash shell.
     LOGGER.debug(context() + "Executing command '" + wrappedCommand + "'");
@@ -87,7 +87,7 @@ public class SshClient
       stopWatch.start();
       session = connection.openSession();
       session.execCommand(wrappedCommand);
-      return streamToString(session.getStdout());
+      return makeResult(session);
     }
     catch (IOException e)
     {
@@ -107,5 +107,12 @@ public class SshClient
   private String streamToString(InputStream inputStream) throws IOException
   {
     return IOUtils.toString(inputStream);
+  }
+
+  private SshClientResult makeResult(Session session) throws IOException
+  {
+    String output = streamToString(session.getStdout());
+    Integer exitValue = session.getExitStatus();
+    return new SshClientResult(output, exitValue);
   }
 }

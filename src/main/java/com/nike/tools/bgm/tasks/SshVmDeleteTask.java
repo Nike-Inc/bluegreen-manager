@@ -4,40 +4,27 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
 import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
-import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
-import com.nike.tools.bgm.utils.ThreadSleeper;
-import com.nike.tools.bgm.utils.Waiter;
-import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
- * Executes a long-running configurable command over ssh to a third-party system that knows how to
- * create an application vm.
- *
+ * Executes a command over ssh to a third-party system that knows how to delete an application vm.
+ * <p/>
  * TODO - this should be two tasks, one for remote cmd execution and one for model update
  */
 @Lazy
 @Component
-public class SshVmCreateTask extends ApplicationVmTask
+public class SshVmDeleteTask extends ApplicationVmTask
 {
   private static final String CMDVAR_ENVNAME = "%{envName}";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateTask.class);
-
-  @Autowired
-  @Qualifier("sshVmCreateTask")
-  private WaiterParameters waiterParameters;
-
-  @Autowired
-  private ThreadSleeper threadSleeper;
 
   @Autowired
   private EnvironmentTx environmentTx;
@@ -46,18 +33,19 @@ public class SshVmCreateTask extends ApplicationVmTask
   private SshTarget sshTarget;
 
   @Autowired
-  private SshVmCreateConfig sshVmCreateConfig;
+  private SshVmDeleteConfig sshVmDeleteConfig;
 
   @Autowired
   private SshClient sshClient;
 
   public Task init(int position, String envName)
   {
-    super.assign(position, envName, true/*createVm*/);
+    super.assign(position, envName, false/*i.e. modify vm*/);
     return this;
   }
 
-  /**a
+  /**
+   * a
    * Runs a command over ssh on a third-party host that knows how to create an application vm.
    * <p/>
    * Persists the record of this new vm in the current environment.
@@ -67,7 +55,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   {
     loadDataModel();
     initSshClient(noop);
-    execSshVmCreateCommand(noop);
+    execSshVmDeleteCommand(noop);
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
@@ -81,16 +69,16 @@ public class SshVmCreateTask extends ApplicationVmTask
   }
 
   /**
-   * Executes the initial command to create a vm.
+   * Executes the initial command to delete a vm.  No waiting around afterwards.
    */
-  void execSshVmCreateCommand(boolean noop)
+  private void execSshVmDeleteCommand(boolean noop)
   {
-    LOGGER.info(context() + "Executing vm-create command over ssh" + noopRemark(noop));
+    LOGGER.info(context() + "Executing vm-delete command over ssh" + noopRemark(noop));
     if (!noop)
     {
-      String command = substituteInitialVariables(sshVmCreateConfig.getInitialCommand());
+      String command = substituteInitialVariables(sshVmDeleteConfig.getInitialCommand());
       SshClientResult result = sshClient.execCommand(command);
-      applicationVm = waitTilVmIsAvailable(result.getOutput()); //Ignoring exitValue
+      checkDeleted(result);
     }
   }
 
@@ -108,33 +96,28 @@ public class SshVmCreateTask extends ApplicationVmTask
   }
 
   /**
-   * Creates a Waiter using an ssh vm progress checker, and returns a transient ApplicationVm entity when done.
-   * In case of error - never returns null, throws instead.
+   * Checks that there were no errors in the deletion result.
+   * <p/>
+   * Currently checks by exitvalue, and ignores stdout.
    */
-  private ApplicationVm waitTilVmIsAvailable(String initialOutput)
+  private void checkDeleted(SshClientResult result)
   {
-    LOGGER.info(context() + "Waiting for applicationVm to become available");
-    SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialOutput, context(),
-        sshClient, sshTarget, sshVmCreateConfig);
-    Waiter<ApplicationVm> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
-    applicationVm = waiter.waitTilDone();
-    if (applicationVm == null)
+    if (result.getExitValue() != sshVmDeleteConfig.getInitialExitvalueSuccess())
     {
-      throw new RuntimeException(context() + progressChecker.getDescription() + " did not become available");
+      throw new RuntimeException("Expected exitValue " + sshVmDeleteConfig.getInitialExitvalueSuccess()
+          + ", received exitValue " + result.getExitValue());
     }
-    return applicationVm;
   }
 
   /**
-   * Attaches the applicationVm to the environment entity, then opens a transaction and persists them.
+   * Removes the applicationVm from the environment entity, then opens a transaction and persists it as a delete.
    */
   private void persistModel(boolean noop)
   {
     if (!noop)
     {
-      environment.addApplicationVm(applicationVm);
-      applicationVm.setEnvironment(environment);
-      environmentTx.updateEnvironment(environment); //Cascades to new applicationVm.
+      environment.removeApplicationVm(applicationVm);
+      environmentTx.updateEnvironment(environment); //Cascades to delete applicationVm.
     }
   }
 

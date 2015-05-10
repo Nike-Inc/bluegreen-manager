@@ -6,6 +6,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
+import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 
 import static org.junit.Assert.assertEquals;
@@ -36,9 +37,9 @@ public class SshVmCreateProgressCheckerTest
   private static final String INITIAL_CMD = "run stuff";
   private static final String INITIAL_REGEXP_IPADDR = "^IP Address=(.*)";
   private static final String INITIAL_REGEXP_HOST = "^Hostname=(.*)";
-  private static final String DONE_FOLLOWUP_STDOUT = "VM is all done!\nThe End";
-  private static final String ERROR_FOLLOWUP_STDOUT = "Error starting your VM";
-  private static final String NOTDONE_FOLLOWUP_STDOUT = "VM is still starting up";
+  private static final SshClientResult DONE_FOLLOWUP_RESULT = new SshClientResult("VM is all done!\nThe End", 0);
+  private static final SshClientResult ERROR_FOLLOWUP_RESULT = new SshClientResult("Error starting your VM", 1);
+  private static final SshClientResult NOTDONE_FOLLOWUP_RESULT = new SshClientResult("VM is still starting up", 0);
   private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String SUBSTITUTED_FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all done";
@@ -101,9 +102,9 @@ public class SshVmCreateProgressCheckerTest
   /**
    * Run ok through initialCheck, then try a followup which may or may not work.
    */
-  private SshVmCreateProgressChecker testFollowupCheck(String followupStdout)
+  private SshVmCreateProgressChecker testFollowupCheck(SshClientResult followupResult)
   {
-    when(mockSshClient.execCommand(anyString())).thenReturn(followupStdout);
+    when(mockSshClient.execCommand(anyString())).thenReturn(followupResult);
     SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_STDOUT, FAKE_CONFIG);
     progressChecker.initialCheck();
     progressChecker.followupCheck(WAIT_NUM);
@@ -124,7 +125,7 @@ public class SshVmCreateProgressCheckerTest
   @Test
   public void testFollowupCheck_NotDone()
   {
-    SshVmCreateProgressChecker progressChecker = testFollowupCheck(NOTDONE_FOLLOWUP_STDOUT);
+    SshVmCreateProgressChecker progressChecker = testFollowupCheck(NOTDONE_FOLLOWUP_RESULT);
     assertFalse(progressChecker.isDone());
     assertNull(progressChecker.getResult());
     verifyFollowupCommand();
@@ -136,13 +137,13 @@ public class SshVmCreateProgressCheckerTest
   @Test(expected = RuntimeException.class)
   public void testFollowupCheck_Error()
   {
-    testFollowupCheck(ERROR_FOLLOWUP_STDOUT);
+    testFollowupCheck(ERROR_FOLLOWUP_RESULT);
   }
 
   @Test
   public void testFollowupCheck_Done()
   {
-    SshVmCreateProgressChecker progressChecker = testFollowupCheck(DONE_FOLLOWUP_STDOUT);
+    SshVmCreateProgressChecker progressChecker = testFollowupCheck(DONE_FOLLOWUP_RESULT);
     assertTrue(progressChecker.isDone());
     assertEquals(VM_HOSTNAME, progressChecker.getResult().getHostname());
     assertEquals(VM_IPADDRESS, progressChecker.getResult().getIpAddress());

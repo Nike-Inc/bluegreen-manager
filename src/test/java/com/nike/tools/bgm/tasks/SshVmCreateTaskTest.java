@@ -9,6 +9,7 @@ import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
+import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
@@ -39,12 +40,12 @@ public class SshVmCreateTaskTest
   private static final String SUBSTITUTED_INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
-  private static final String INITIAL_STDOUT = "New VM starting: Hostname=" + VM_HOSTNAME + " IP Address=" + VM_IPADDRESS;
+  private static final SshClientResult INITIAL_RESULT = new SshClientResult("New VM starting: Hostname=" + VM_HOSTNAME + " IP Address=" + VM_IPADDRESS, 0);
   private static final String INITIAL_REGEXP_IPADDR = "IP Address=(.*)";
   private static final String INITIAL_REGEXP_HOST = "Hostname=(.*)";
-  private static final String DONE_FOLLOWUP_STDOUT = "New VM is all DONE";
-  private static final String ERROR_FOLLOWUP_STDOUT = "New VM has EXPLODED";
-  private static final String NOTDONE_FOLLOWUP_STDOUT = "New VM is still starting up";
+  private static final SshClientResult DONE_FOLLOWUP_RESULT = new SshClientResult("New VM is all DONE", 0);
+  private static final SshClientResult ERROR_FOLLOWUP_RESULT = new SshClientResult("New VM has EXPLODED", 1);
+  private static final SshClientResult NOTDONE_FOLLOWUP_RESULT = new SshClientResult("New VM is still starting up", 0);
   private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all DONE$";
   private static final String FOLLOWUP_REGEXP_ERROR = "EXPLODED$";
@@ -91,16 +92,16 @@ public class SshVmCreateTaskTest
    * Tests the case where the followup check shows "not done" three times, followed by a fourth progress object that
    * ends the waiting.  (Technically there are five total progress objects because initial state is also "progress.")
    */
-  private void testExecSshVmCreateCommand_ThreeNotDoneThenEnd(String finalStdout,
+  private void testExecSshVmCreateCommand_ThreeNotDoneThenEnd(SshClientResult finalResult,
                                                               Class<? extends Throwable> expectedExceptionType)
       throws InterruptedException
   {
     when(mockSshClient.execCommand(anyString()))
-        .thenReturn(INITIAL_STDOUT)           //progress #0
-        .thenReturn(NOTDONE_FOLLOWUP_STDOUT)  //progress #1, after 1st wait
-        .thenReturn(NOTDONE_FOLLOWUP_STDOUT)  //progress #2, after 2nd wait
-        .thenReturn(NOTDONE_FOLLOWUP_STDOUT)  //progress #3, after 3rd wait
-        .thenReturn(finalStdout);
+        .thenReturn(INITIAL_RESULT)           //progress #0
+        .thenReturn(NOTDONE_FOLLOWUP_RESULT)  //progress #1, after 1st wait
+        .thenReturn(NOTDONE_FOLLOWUP_RESULT)  //progress #2, after 2nd wait
+        .thenReturn(NOTDONE_FOLLOWUP_RESULT)  //progress #3, after 3rd wait
+        .thenReturn(finalResult);
 
     RuntimeException exception = null;
     try
@@ -126,7 +127,7 @@ public class SshVmCreateTaskTest
   @Test
   public void testExecSshVmCreateCommand_ThreeNotDoneThenDone() throws InterruptedException
   {
-    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(DONE_FOLLOWUP_STDOUT, null);
+    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(DONE_FOLLOWUP_RESULT, null);
   }
 
   /**
@@ -135,7 +136,7 @@ public class SshVmCreateTaskTest
   @Test
   public void testExecSshVmCreateCommand_ThreeNotDoneThenError() throws InterruptedException
   {
-    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(ERROR_FOLLOWUP_STDOUT, RuntimeException.class);
+    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(ERROR_FOLLOWUP_RESULT, RuntimeException.class);
   }
 
   /**
@@ -145,7 +146,7 @@ public class SshVmCreateTaskTest
   public void testExecSshVmCreateCommand_FourNotDoneThenTimeout() throws InterruptedException
   {
     fakeWaiterParameters.setMaxNumWaits(4);
-    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(NOTDONE_FOLLOWUP_STDOUT, RuntimeException.class);
+    testExecSshVmCreateCommand_ThreeNotDoneThenEnd(NOTDONE_FOLLOWUP_RESULT, RuntimeException.class);
   }
 
   /**

@@ -35,6 +35,7 @@ public class SshClientTest
   private static final int TIMEOUT_INT = (int) TIMEOUT;
   private static final String COMMAND = "run the big stuff";
   private static final String STDOUT_STRING = "The first line of output.\nThe second line.\nAnd a third line.\n";
+  private static final SshClientResult RESULT = new SshClientResult(STDOUT_STRING, 0);
   private static final InputStream INPUT_STREAM = IOUtils.toInputStream(STDOUT_STRING);
 
   @InjectMocks
@@ -109,9 +110,10 @@ public class SshClientTest
   public void testExecCommand_Pass() throws IOException
   {
     when(mockSession.getStdout()).thenReturn(INPUT_STREAM);
+    when(mockSession.getExitStatus()).thenReturn(0);
     authenticationIsSuccessful(true);
     initWithFakeTarget();
-    assertEquals(STDOUT_STRING, sshClient.execCommand(COMMAND));
+    assertEquals(RESULT, sshClient.execCommand(COMMAND));
     verify(mockSession).close();
   }
 

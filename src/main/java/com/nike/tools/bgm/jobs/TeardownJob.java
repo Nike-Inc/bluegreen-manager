@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.LocalShellConfig;
 import com.nike.tools.bgm.tasks.LocalShellTask;
+import com.nike.tools.bgm.tasks.SshVmDeleteTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
@@ -68,9 +69,10 @@ public class TeardownJob extends TaskSequenceJob
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
-    //tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
+    tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
     //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, deleteEnvConfig));
-    //tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).init(position++, deleteEnvName));
+    //tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).init(position++, deleteEnvName, deleteDbPhysicalInstanceName));
+    //tasks.add(applicationContext.getBean(ForgetEnvironmentTask.class).assign(position++, deleteEnvName));
     this.tasks = tasks;
   }
 
