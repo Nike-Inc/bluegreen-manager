@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.nike.tools.bgm.utils.ShellResult;
+
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.Session;
 
@@ -76,7 +78,7 @@ public class SshClient
   /**
    * Executes the command and returns the stdout/stderr as a combined string.
    */
-  public SshClientResult execCommand(String command)
+  public ShellResult execCommand(String command)
   {
     String wrappedCommand = "(" + command + ") 2>&1"; //Concats stderr to stdout; assumes bash shell.
     LOGGER.debug(context() + "Executing command '" + wrappedCommand + "'");
@@ -109,10 +111,10 @@ public class SshClient
     return IOUtils.toString(inputStream);
   }
 
-  private SshClientResult makeResult(Session session) throws IOException
+  private ShellResult makeResult(Session session) throws IOException
   {
     String output = streamToString(session.getStdout());
     Integer exitValue = session.getExitStatus();
-    return new SshClientResult(output, exitValue);
+    return new ShellResult(output, exitValue);
   }
 }

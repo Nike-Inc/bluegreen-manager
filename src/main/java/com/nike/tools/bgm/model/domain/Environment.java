@@ -35,7 +35,7 @@ public class Environment
   @OneToMany(mappedBy = LogicalDatabase.FIELD_ENVIRONMENT, cascade = CascadeType.ALL)
   private List<LogicalDatabase> logicalDatabases;
 
-  @OneToMany(mappedBy = ApplicationVm.FIELD_ENVIRONMENT, cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = ApplicationVm.FIELD_ENVIRONMENT, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ApplicationVm> applicationVms;
 
   public long getEnvId()
@@ -75,7 +75,19 @@ public class Environment
 
   public void setApplicationVms(List<ApplicationVm> applicationVms)
   {
-    this.applicationVms = applicationVms;
+    if (this.applicationVms == null)
+    {
+      this.applicationVms = applicationVms;
+    }
+    else
+    {
+      // Avoid unintended orphanRemoval
+      this.applicationVms.clear();
+      if (applicationVms != null)
+      {
+        this.applicationVms.addAll(applicationVms);
+      }
+    }
   }
 
   public void addLogicalDatabase(LogicalDatabase logicalDatabase)

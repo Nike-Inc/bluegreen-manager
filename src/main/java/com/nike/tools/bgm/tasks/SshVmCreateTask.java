@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
-import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
+import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
 import com.nike.tools.bgm.utils.WaiterParameters;
@@ -89,8 +89,8 @@ public class SshVmCreateTask extends ApplicationVmTask
     if (!noop)
     {
       String command = substituteInitialVariables(sshVmCreateConfig.getInitialCommand());
-      SshClientResult result = sshClient.execCommand(command);
-      applicationVm = waitTilVmIsAvailable(result.getOutput()); //Ignoring exitValue
+      ShellResult result = sshClient.execCommand(command);
+      applicationVm = waitTilVmIsAvailable(result);
     }
   }
 
@@ -111,10 +111,10 @@ public class SshVmCreateTask extends ApplicationVmTask
    * Creates a Waiter using an ssh vm progress checker, and returns a transient ApplicationVm entity when done.
    * In case of error - never returns null, throws instead.
    */
-  private ApplicationVm waitTilVmIsAvailable(String initialOutput)
+  private ApplicationVm waitTilVmIsAvailable(ShellResult initialResult)
   {
     LOGGER.info(context() + "Waiting for applicationVm to become available");
-    SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialOutput, context(),
+    SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialResult, context(),
         sshClient, sshTarget, sshVmCreateConfig);
     Waiter<ApplicationVm> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     applicationVm = waiter.waitTilDone();
@@ -132,6 +132,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   {
     if (!noop)
     {
+      LOGGER.debug("Persisting new applicationVm " + applicationVm.getHostname() + " in env " + envName);
       environment.addApplicationVm(applicationVm);
       applicationVm.setEnvironment(environment);
       environmentTx.updateEnvironment(environment); //Cascades to new applicationVm.

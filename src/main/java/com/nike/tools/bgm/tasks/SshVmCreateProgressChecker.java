@@ -8,10 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
-import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.utils.ProgressChecker;
+import com.nike.tools.bgm.utils.ShellResult;
 
 /**
  * Knows how to check progress of vm creation initiated by an ssh command.
@@ -19,10 +19,9 @@ import com.nike.tools.bgm.utils.ProgressChecker;
 public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm>
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateProgressChecker.class);
-  private static final String HYPHEN_LINE = "----------------------------------------------------------------------";
   private static final String CMDVAR_HOSTNAME = "%{hostname}";
 
-  private String initialOutput;
+  private ShellResult initialResult;
   private String logContext;
   private SshClient sshClient;
   private SshTarget sshTarget;
@@ -36,11 +35,11 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   private boolean done;
   private ApplicationVm result;
 
-  public SshVmCreateProgressChecker(String initialOutput,
+  public SshVmCreateProgressChecker(ShellResult initialResult,
                                     String logContext, SshClient sshClient,
                                     SshTarget sshTarget, SshVmCreateConfig sshVmCreateConfig)
   {
-    this.initialOutput = initialOutput;
+    this.initialResult = initialResult;
     this.logContext = logContext;
     this.sshClient = sshClient;
     this.sshTarget = sshTarget;
@@ -75,39 +74,21 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   }
 
   /**
-   * Looks at initialOutput to identify the new vm's hostname and ipaddress.
+   * Looks at initialResult to identify the new vm's hostname and ipaddress.
    * <p/>
    * This doesn't tell us if the vm is fully available.
    */
   @Override
   public void initialCheck()
   {
-    if (StringUtils.isBlank(initialOutput))
+    if (StringUtils.isBlank(initialResult.getOutput()))
     {
       throw new RuntimeException("Blank initial output from " + getDescription());
     }
-    LOGGER.debug("Initial output from " + getDescription() + ":\n"
-        + HYPHEN_LINE + "\n" + closeWithNewline(initialOutput) + HYPHEN_LINE);
-    hostname = getRequiredCapture("hostname", initialOutput, initialPatternHostname);
-    ipAddress = getRequiredCapture("ipAddress", initialOutput, initialPatternIpAddress);
+    LOGGER.debug("Initial output from " + getDescription() + ":\n" + initialResult.describe());
+    hostname = getRequiredCapture("hostname", initialResult.getOutput(), initialPatternHostname);
+    ipAddress = getRequiredCapture("ipAddress", initialResult.getOutput(), initialPatternIpAddress);
     LOGGER.info(context() + "STARTED");
-  }
-
-  /**
-   * Returns the input string plus a newline if it does not already end with one.
-   */
-  private String closeWithNewline(String str)
-  {
-    if (str == null)
-    {
-      return str;
-    }
-    if (!str.endsWith("\n"))
-    {
-      return str + "\n";
-      //Incomplete, doesn't solve for case where ssh host is windows ...but this is just for debug assistance anyway
-    }
-    return str;
   }
 
   /**
@@ -165,7 +146,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   public void followupCheck(int waitNum)
   {
     String command = substituteFollowupVariables(sshVmCreateConfig.getFollowupCommand());
-    SshClientResult followupResult = sshClient.execCommand(command);
+    ShellResult followupResult = sshClient.execCommand(command);
     String followupOutput = followupResult.getOutput();
     LOGGER.debug("SSH VM Creation state after wait#" + waitNum + ": " + followupOutput);
     if (matcherFind(followupOutput, followupPatternError))

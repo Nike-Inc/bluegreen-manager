@@ -9,7 +9,6 @@ import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
-import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
@@ -17,6 +16,7 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
+import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
@@ -40,12 +40,12 @@ public class SshVmCreateTaskTest
   private static final String SUBSTITUTED_INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
-  private static final SshClientResult INITIAL_RESULT = new SshClientResult("New VM starting: Hostname=" + VM_HOSTNAME + " IP Address=" + VM_IPADDRESS, 0);
+  private static final ShellResult INITIAL_RESULT = new ShellResult("New VM starting: Hostname=" + VM_HOSTNAME + " IP Address=" + VM_IPADDRESS, 0);
   private static final String INITIAL_REGEXP_IPADDR = "IP Address=(.*)";
   private static final String INITIAL_REGEXP_HOST = "Hostname=(.*)";
-  private static final SshClientResult DONE_FOLLOWUP_RESULT = new SshClientResult("New VM is all DONE", 0);
-  private static final SshClientResult ERROR_FOLLOWUP_RESULT = new SshClientResult("New VM has EXPLODED", 1);
-  private static final SshClientResult NOTDONE_FOLLOWUP_RESULT = new SshClientResult("New VM is still starting up", 0);
+  private static final ShellResult DONE_FOLLOWUP_RESULT = new ShellResult("New VM is all DONE", 0);
+  private static final ShellResult ERROR_FOLLOWUP_RESULT = new ShellResult("New VM has EXPLODED", 1);
+  private static final ShellResult NOTDONE_FOLLOWUP_RESULT = new ShellResult("New VM is still starting up", 0);
   private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all DONE$";
   private static final String FOLLOWUP_REGEXP_ERROR = "EXPLODED$";
@@ -92,7 +92,7 @@ public class SshVmCreateTaskTest
    * Tests the case where the followup check shows "not done" three times, followed by a fourth progress object that
    * ends the waiting.  (Technically there are five total progress objects because initial state is also "progress.")
    */
-  private void testExecSshVmCreateCommand_ThreeNotDoneThenEnd(SshClientResult finalResult,
+  private void testExecSshVmCreateCommand_ThreeNotDoneThenEnd(ShellResult finalResult,
                                                               Class<? extends Throwable> expectedExceptionType)
       throws InterruptedException
   {

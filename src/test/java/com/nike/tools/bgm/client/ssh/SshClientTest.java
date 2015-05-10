@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.nike.tools.bgm.utils.ShellResult;
+
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
 import ch.ethz.ssh2.Session;
@@ -35,7 +37,7 @@ public class SshClientTest
   private static final int TIMEOUT_INT = (int) TIMEOUT;
   private static final String COMMAND = "run the big stuff";
   private static final String STDOUT_STRING = "The first line of output.\nThe second line.\nAnd a third line.\n";
-  private static final SshClientResult RESULT = new SshClientResult(STDOUT_STRING, 0);
+  private static final ShellResult RESULT = new ShellResult(STDOUT_STRING, 0);
   private static final InputStream INPUT_STREAM = IOUtils.toInputStream(STDOUT_STRING);
 
   @InjectMocks

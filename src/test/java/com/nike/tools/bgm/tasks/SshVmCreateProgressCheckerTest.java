@@ -6,8 +6,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
-import com.nike.tools.bgm.client.ssh.SshClientResult;
 import com.nike.tools.bgm.client.ssh.SshTarget;
+import com.nike.tools.bgm.utils.ShellResult;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,14 +32,15 @@ public class SshVmCreateProgressCheckerTest
   private static final SshTarget FAKE_SSH_TARGET = new SshTarget(SSH_HOSTNAME, SSH_USERNAME, SSH_PASSWORD, SSH_TIMEOUT, SSH_TIMEOUT);
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
-  private static final String GOOD_INITIAL_STDOUT = "New VM started:\nHostname=" + VM_HOSTNAME + "\nIP Address=" + VM_IPADDRESS + "\n";
-  private static final String BAD_INITIAL_STDOUT = "New VM started:\nHostname=" + VM_HOSTNAME + "\nNo IP Address\n";
+  private static final ShellResult GOOD_INITIAL_RESULT = new ShellResult("New VM started:\nHostname=" + VM_HOSTNAME + "\nIP Address=" + VM_IPADDRESS + "\n", 0);
+  private static final ShellResult BAD_INITIAL_RESULT = new ShellResult("New VM started:\nHostname=" + VM_HOSTNAME + "\nNo IP Address\n", 1);
+  private static final ShellResult BLANK_INITIAL_RESULT = new ShellResult("", 0);
   private static final String INITIAL_CMD = "run stuff";
   private static final String INITIAL_REGEXP_IPADDR = "^IP Address=(.*)";
   private static final String INITIAL_REGEXP_HOST = "^Hostname=(.*)";
-  private static final SshClientResult DONE_FOLLOWUP_RESULT = new SshClientResult("VM is all done!\nThe End", 0);
-  private static final SshClientResult ERROR_FOLLOWUP_RESULT = new SshClientResult("Error starting your VM", 1);
-  private static final SshClientResult NOTDONE_FOLLOWUP_RESULT = new SshClientResult("VM is still starting up", 0);
+  private static final ShellResult DONE_FOLLOWUP_RESULT = new ShellResult("VM is all done!\nThe End", 0);
+  private static final ShellResult ERROR_FOLLOWUP_RESULT = new ShellResult("Error starting your VM", 1);
+  private static final ShellResult NOTDONE_FOLLOWUP_RESULT = new ShellResult("VM is still starting up", 0);
   private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
   private static final String SUBSTITUTED_FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
   private static final String FOLLOWUP_REGEXP_DONE = "all done";
@@ -50,9 +51,9 @@ public class SshVmCreateProgressCheckerTest
   @Mock
   private SshClient mockSshClient;
 
-  private SshVmCreateProgressChecker makeProgressChecker(String initialOutput, SshVmCreateConfig sshVmCreateConfig)
+  private SshVmCreateProgressChecker makeProgressChecker(ShellResult initialResult, SshVmCreateConfig sshVmCreateConfig)
   {
-    return new SshVmCreateProgressChecker(initialOutput, LOG_CONTEXT, mockSshClient, FAKE_SSH_TARGET, sshVmCreateConfig);
+    return new SshVmCreateProgressChecker(initialResult, LOG_CONTEXT, mockSshClient, FAKE_SSH_TARGET, sshVmCreateConfig);
   }
 
   /**
@@ -61,7 +62,7 @@ public class SshVmCreateProgressCheckerTest
   @Test
   public void testGetDescription()
   {
-    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_STDOUT, FAKE_CONFIG);
+    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_RESULT, FAKE_CONFIG);
     String description = progressChecker.getDescription();
     assertTrue(description.contains(SSH_USERNAME));
     assertTrue(description.contains(SSH_HOSTNAME));
@@ -73,7 +74,7 @@ public class SshVmCreateProgressCheckerTest
   @Test(expected = RuntimeException.class)
   public void testInitialCheck_BlankOutput()
   {
-    SshVmCreateProgressChecker progressChecker = makeProgressChecker("", FAKE_CONFIG);
+    SshVmCreateProgressChecker progressChecker = makeProgressChecker(BLANK_INITIAL_RESULT, FAKE_CONFIG);
     progressChecker.initialCheck();
   }
 
@@ -83,7 +84,7 @@ public class SshVmCreateProgressCheckerTest
   @Test(expected = RuntimeException.class)
   public void testInitialCheck_MissingRequiredCapture()
   {
-    SshVmCreateProgressChecker progressChecker = makeProgressChecker(BAD_INITIAL_STDOUT, FAKE_CONFIG);
+    SshVmCreateProgressChecker progressChecker = makeProgressChecker(BAD_INITIAL_RESULT, FAKE_CONFIG);
     progressChecker.initialCheck();
   }
 
@@ -93,7 +94,7 @@ public class SshVmCreateProgressCheckerTest
   @Test
   public void testInitialCheck_Pass()
   {
-    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_STDOUT, FAKE_CONFIG);
+    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_RESULT, FAKE_CONFIG);
     progressChecker.initialCheck();
     assertEquals(VM_HOSTNAME, progressChecker.getHostname());
     assertEquals(VM_IPADDRESS, progressChecker.getIpAddress());
@@ -102,10 +103,10 @@ public class SshVmCreateProgressCheckerTest
   /**
    * Run ok through initialCheck, then try a followup which may or may not work.
    */
-  private SshVmCreateProgressChecker testFollowupCheck(SshClientResult followupResult)
+  private SshVmCreateProgressChecker testFollowupCheck(ShellResult followupResult)
   {
     when(mockSshClient.execCommand(anyString())).thenReturn(followupResult);
-    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_STDOUT, FAKE_CONFIG);
+    SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_RESULT, FAKE_CONFIG);
     progressChecker.initialCheck();
     progressChecker.followupCheck(WAIT_NUM);
     return progressChecker;
