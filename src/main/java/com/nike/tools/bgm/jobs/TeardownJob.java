@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
+import com.nike.tools.bgm.tasks.ForgetEnvironmentTask;
 import com.nike.tools.bgm.tasks.LocalShellConfig;
-import com.nike.tools.bgm.tasks.RdsInstanceDeleteTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
@@ -65,8 +65,8 @@ public abstract class TeardownJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
     //tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
     //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, deleteEnvConfig));
-    tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName, liveEnvName));
-    //tasks.add(applicationContext.getBean(ForgetEnvironmentTask.class).assign(position++, deleteEnvName));
+    //tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName, liveEnvName));
+    tasks.add(applicationContext.getBean(ForgetEnvironmentTask.class).assign(position++, deleteEnvName));
     this.tasks = tasks;
   }
 

@@ -39,6 +39,14 @@ public abstract class GenericDAO<T>
   }
 
   /**
+   * Removes a managed entity.
+   */
+  public void remove(T entity)
+  {
+    entityManager.remove(entity);
+  }
+
+  /**
    * Refreshes the entity from the database, overwriting any transient change.
    */
   public void refresh(T entity)

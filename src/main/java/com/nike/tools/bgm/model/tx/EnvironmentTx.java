@@ -119,7 +119,7 @@ public class EnvironmentTx
   }
 
   /**
-   * Persists a new environment, and any associated application vms or logical database.
+   * Persists a new environment, including the environment's cascade.
    */
   public void newEnvironment(Environment environment)
   {
@@ -127,10 +127,19 @@ public class EnvironmentTx
   }
 
   /**
-   * Persists changes to the environment, and any associated application vms or logical database.
+   * Persists changes to the detached environment, including the environment's cascade.
    */
   public void updateEnvironment(Environment environment)
   {
     environmentDAO.merge(environment);
+  }
+
+  /**
+   * Persists the deletion of the detached environment, including the environment's cascade.
+   */
+  public void deleteEnvironment(Environment environment)
+  {
+    environmentDAO.refresh(environment);
+    environmentDAO.remove(environment);
   }
 }

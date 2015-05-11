@@ -37,6 +37,17 @@ public class OneEnvLoader
   private PhysicalDatabase physicalDatabase;
 
   /**
+   * Fully loads the environment but asserts no preconditions on what is inside the environment.
+   * <p/>
+   * Does not attempt to call getters on the application vm, application or database.  Those entities may have indeed
+   * been loaded, but the caller will have to invoke the getters separately on the environment object.
+   */
+  public void loadEnvironmentSimple()
+  {
+    this.environment = environmentTx.findNamedEnv(envName);
+  }
+
+  /**
    * Loads the environment on the assumption that there is exactly 1 application vm, or that there are 0 vms.
    * Does not assert the existence of an application or database.
    */
