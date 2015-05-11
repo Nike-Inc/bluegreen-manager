@@ -22,7 +22,7 @@ import com.amazonaws.services.rds.model.ModifyDBInstanceRequest;
 import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
 
 /**
- * Copies and tweaks Amazon RDS instances.
+ * CRUD operations on Amazon RDS instances.
  * <p/>
  * All operations communicate with Amazon and use a StopWatch.
  */

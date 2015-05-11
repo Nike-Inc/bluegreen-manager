@@ -20,7 +20,7 @@ import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.Endpoint;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
 import com.nike.tools.bgm.client.aws.RdsClient;
-import com.nike.tools.bgm.client.aws.RdsCopierFactory;
+import com.nike.tools.bgm.client.aws.RdsClientFactory;
 import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
 import com.nike.tools.bgm.model.domain.DatabaseTestHelper;
@@ -79,7 +79,7 @@ public class RdsSnapshotRestoreTaskTest
   private EnvironmentTx mockEnvironmentTx;
 
   @Mock
-  private RdsCopierFactory mockRdsCopierFactory;
+  private RdsClientFactory mockRdsClientFactory;
 
   @Mock
   private RdsAnalyzer mockRdsAnalyzer;
@@ -94,7 +94,7 @@ public class RdsSnapshotRestoreTaskTest
   {
     when(mockEnvironmentTx.findNamedEnv(LIVE_ENV_NAME)).thenReturn(FAKE_PHYSICAL_DATABASE.getLogicalDatabase().getEnvironment());
     when(mockEnvironmentTx.findNamedEnv(STAGE_ENV_NAME)).thenReturn(null);
-    when(mockRdsCopierFactory.create()).thenReturn(mockRdsClient);
+    when(mockRdsClientFactory.create()).thenReturn(mockRdsClient);
     rdsSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
     rdsSnapshotRestoreTask.loadDataModel();
   }

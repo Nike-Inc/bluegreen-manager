@@ -21,7 +21,7 @@ import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
 import com.nike.tools.bgm.client.aws.RdsClient;
-import com.nike.tools.bgm.client.aws.RdsCopierFactory;
+import com.nike.tools.bgm.client.aws.RdsClientFactory;
 import com.nike.tools.bgm.model.domain.DatabaseType;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
@@ -65,7 +65,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   private EnvironmentTx environmentTx;
 
   @Autowired
-  private RdsCopierFactory rdsCopierFactory;
+  private RdsClientFactory rdsClientFactory;
 
   @Autowired
   private RdsAnalyzer rdsAnalyzer;
@@ -312,7 +312,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   public TaskStatus process(boolean noop)
   {
     loadDataModel();
-    rdsClient = rdsCopierFactory.create();
+    rdsClient = rdsClientFactory.create();
     DBInstance liveInstance = describeLiveInstance();
     DBSnapshot dbSnapshot = snapshotLive(noop);
     DBParameterGroup stageParamGroup = copyParameterGroup(liveInstance, noop);
