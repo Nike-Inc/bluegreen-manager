@@ -14,6 +14,9 @@ import com.amazonaws.services.rds.model.CreateDBSnapshotRequest;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
+import com.amazonaws.services.rds.model.DeleteDBParameterGroupRequest;
+import com.amazonaws.services.rds.model.DeleteDBSnapshotRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 import com.amazonaws.services.rds.model.DescribeDBSnapshotsRequest;
@@ -103,6 +106,8 @@ public class RdsClient
 
   /**
    * Creates an RDS instance snapshot using the specified snapshot id.
+   * <p/>
+   * Caller must wait for status=available afterwards.
    */
   public DBSnapshot createSnapshot(String snapshotId, String instanceName)
   {
@@ -149,6 +154,8 @@ public class RdsClient
    * Restores a snapshot to a brand new instance.
    * <p/>
    * New instance gets the default security group, otherwise should be same as snapshot.
+   * <p/>
+   * Caller must wait for status=available afterwards.
    */
   public DBInstance restoreInstanceFromSnapshot(String instanceName, String snapshotId, String subnetGroupName)
   {
@@ -172,6 +179,8 @@ public class RdsClient
 
   /**
    * Modifies the instance by applying new security groups and new parameter group.
+   * <p/>
+   * Caller must wait for status=available afterwards.
    */
   public DBInstance modifyInstanceWithSecgrpParamgrp(String instanceName,
                                                      Collection<String> vpcSecurityGroupIds,
@@ -192,6 +201,72 @@ public class RdsClient
     {
       stopWatch.stop();
       LOGGER.debug("modifyDBInstance time elapsed: " + stopWatch);
+    }
+  }
+
+  /**
+   * Requests deletion of the instance, without creating a final snapshot or deleting any other related
+   * snapshots.
+   * <p/>
+   * Caller must wait for status=deleted afterwards.
+   */
+  public DBInstance deleteInstance(String instanceName)
+  {
+    LOGGER.debug("deleteDBInstance(instanceName: " + instanceName + ")");
+    StopWatch stopWatch = new StopWatch();
+    try
+    {
+      stopWatch.start();
+      DeleteDBInstanceRequest request = new DeleteDBInstanceRequest(instanceName);
+      request.setSkipFinalSnapshot(true);
+      return awsRdsClient.deleteDBInstance(request);
+    }
+    finally
+    {
+      stopWatch.stop();
+      LOGGER.debug("deleteDBInstance time elapsed: " + stopWatch);
+    }
+  }
+
+  /**
+   * Deletes the parameter group.  (Assuming it is not in use by any database instance.)
+   */
+  public void deleteParameterGroup(String paramGroupName)
+  {
+    LOGGER.debug("deleteDBParameterGroup(paramGroupName: " + paramGroupName + ")");
+    StopWatch stopWatch = new StopWatch();
+    try
+    {
+      stopWatch.start();
+      DeleteDBParameterGroupRequest request = new DeleteDBParameterGroupRequest(paramGroupName);
+      awsRdsClient.deleteDBParameterGroup(request);
+    }
+    finally
+    {
+      stopWatch.stop();
+      LOGGER.debug("deleteDBParameterGroup time elapsed: " + stopWatch);
+    }
+  }
+
+  /**
+   * Deletes the snapshot.  (Assuming it was in available state.)
+   * <p/>
+   * Caller must wait for status=deleted afterwards.
+   */
+  public DBSnapshot deleteSnapshot(String snapshotId)
+  {
+    LOGGER.debug("deleteDBSnapshot(snapshotId: " + snapshotId + ")");
+    StopWatch stopWatch = new StopWatch();
+    try
+    {
+      stopWatch.start();
+      DeleteDBSnapshotRequest request = new DeleteDBSnapshotRequest(snapshotId);
+      return awsRdsClient.deleteDBSnapshot(request);
+    }
+    finally
+    {
+      stopWatch.stop();
+      LOGGER.debug("deleteDBSnapshot time elapsed: " + stopWatch);
     }
   }
 }

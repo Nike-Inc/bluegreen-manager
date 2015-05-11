@@ -12,6 +12,7 @@ import com.amazonaws.services.rds.model.DBParameterGroupStatus;
 import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class RdsAnalyzerTest
 {
@@ -34,7 +35,7 @@ public class RdsAnalyzerTest
   }
 
   /**
-   * Tests the default case where a self-named paramgroup can't be found.
+   * Tests the default case where a self-named paramgroup can't be found.  Allow default.
    */
   @Test
   public void testFindSelfNamedOrDefaultParamGroupName_Default()
@@ -50,7 +51,37 @@ public class RdsAnalyzerTest
   public void testFindSelfNamedOrDefaultParamGroupName_NoParamGroups()
   {
     DBInstance dbInstance = makeDBInstanceWithParamGroups();
-    assertEquals(null, rdsAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
+    assertNull(rdsAnalyzer.findSelfNamedOrDefaultParamGroupName(dbInstance));
+  }
+
+  /**
+   * Tests the self-named case.
+   */
+  @Test
+  public void testFindSelfNamedParamGroupName_SelfNamed()
+  {
+    DBInstance dbInstance = makeDBInstanceWithParamGroups(PARAM_GROUP_DEFAULT, PARAM_GROUP_INSTANCE_SPECIFIC);
+    assertEquals(PARAM_GROUP_INSTANCE_SPECIFIC, rdsAnalyzer.findSelfNamedParamGroupName(dbInstance));
+  }
+
+  /**
+   * Tests the default case where a self-named paramgroup can't be found.  Default is not a match.
+   */
+  @Test
+  public void testFindSelfNamedParamGroupName_Default()
+  {
+    DBInstance dbInstance = makeDBInstanceWithParamGroups(PARAM_GROUP_DEFAULT);
+    assertNull(rdsAnalyzer.findSelfNamedParamGroupName(dbInstance));
+  }
+
+  /**
+   * Tests the case with no paramgroups.
+   */
+  @Test
+  public void testFindSelfNamedParamGroupName_NoParamGroups()
+  {
+    DBInstance dbInstance = makeDBInstanceWithParamGroups();
+    assertNull(rdsAnalyzer.findSelfNamedParamGroupName(dbInstance));
   }
 
   /**

@@ -10,43 +10,99 @@ import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
- * Knows how to check progress of an RDS instance going from 'creating' to 'available'.
+ * Knows how to check progress of an RDS instance whose state is progressing through intermediate states
+ * toward a final state.
  */
 public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(RdsInstanceProgressChecker.class);
+  private static final RdsInstanceStatus CREATE_FINAL_STATE = RdsInstanceStatus.AVAILABLE;
+  private static final RdsInstanceStatus MODIFY_FINAL_STATE = RdsInstanceStatus.AVAILABLE;
+  private static final RdsInstanceStatus DELETE_FINAL_STATE = RdsInstanceStatus.DELETED;
   private static final RdsInstanceStatus[] CREATE_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
       RdsInstanceStatus.CREATING, RdsInstanceStatus.BACKING_UP, RdsInstanceStatus.MODIFYING
   };
   private static final RdsInstanceStatus[] MODIFY_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
       RdsInstanceStatus.MODIFYING
   };
+  private static final RdsInstanceStatus[] DELETE_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
+      RdsInstanceStatus.DELETING
+  };
 
   private String instanceId;
   private String logContext;
   private RdsClient rdsClient;
   private DBInstance initialInstance;
-  private boolean create; //False: modify
-  private RdsInstanceStatus[] intermediateStates;
+  private RdsInstanceStatus expectedInitialState;
+  private RdsInstanceStatus[] expectedIntermediateStates;
+  private RdsInstanceStatus expectedFinalState;
   private boolean done;
   private DBInstance result;
 
   public RdsInstanceProgressChecker(String instanceId,
                                     String logContext,
-                                    RdsClient rdsClient, DBInstance initialInstance, boolean create)
+                                    RdsClient rdsClient,
+                                    DBInstance initialInstance,
+                                    RdsInstanceStatus expectedInitialState)
   {
     this.instanceId = instanceId;
     this.logContext = logContext;
     this.rdsClient = rdsClient;
     this.initialInstance = initialInstance;
-    this.create = create;
-    this.intermediateStates = create ? CREATE_INTERMEDIATE_STATES : MODIFY_INTERMEDIATE_STATES;
+    this.expectedInitialState = expectedInitialState;
+    this.expectedIntermediateStates = getExpectedIntermediateStates();
+    this.expectedFinalState = getExpectedFinalState();
   }
 
   @Override
   public String getDescription()
   {
-    return (create ? "Create Instance" : "Modify Instance") + " '" + instanceId + "'";
+    return describeExpectedInitialState() + " '" + instanceId + "'";
+  }
+
+  private String describeExpectedInitialState()
+  {
+    switch (expectedInitialState)
+    {
+      case CREATING:
+        return "Create Instance";
+      case MODIFYING:
+        return "Modify Instance";
+      case DELETING:
+        return "Delete Instance";
+      default:
+        throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
+    }
+  }
+
+  private RdsInstanceStatus[] getExpectedIntermediateStates()
+  {
+    switch (expectedInitialState)
+    {
+      case CREATING:
+        return CREATE_INTERMEDIATE_STATES;
+      case MODIFYING:
+        return MODIFY_INTERMEDIATE_STATES;
+      case DELETING:
+        return DELETE_INTERMEDIATE_STATES;
+      default:
+        throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
+    }
+  }
+
+  private RdsInstanceStatus getExpectedFinalState()
+  {
+    switch (expectedInitialState)
+    {
+      case CREATING:
+        return CREATE_FINAL_STATE;
+      case MODIFYING:
+        return MODIFY_FINAL_STATE;
+      case DELETING:
+        return DELETE_FINAL_STATE;
+      default:
+        throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
+    }
   }
 
   /**
@@ -87,19 +143,19 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   }
 
   /**
-   * Checks if the instance is in an acceptable intermediate status, and flags done if status=available.
+   * Checks if the instance is in an acceptable intermediate status, and flags done if at final state.
    */
   private void checkInstanceStatus(DBInstance dbInstance)
   {
     final String status = dbInstance.getDBInstanceStatus();
     final String instanceId = dbInstance.getDBInstanceIdentifier();
-    if (RdsInstanceStatus.AVAILABLE.equalsString(status))
+    if (expectedFinalState.equalsString(status))
     {
       LOGGER.info("RDS " + getDescription() + " '" + instanceId + "' is done");
       done = true;
       result = dbInstance;
     }
-    else if (isOneOfTheseStates(intermediateStates, status))
+    else if (isOneOfTheseStates(expectedIntermediateStates, status))
     {
       //Keep waiting.
     }
@@ -111,15 +167,15 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   }
 
   /**
-   * True if the status is in the array of intermediateStates.
+   * True if the status is in the array.
    */
-  private boolean isOneOfTheseStates(RdsInstanceStatus[] intermediateStates, String status)
+  private boolean isOneOfTheseStates(RdsInstanceStatus[] array, String status)
   {
     if (StringUtils.isNotBlank(status))
     {
-      for (RdsInstanceStatus intermediateState : intermediateStates)
+      for (RdsInstanceStatus oneStatus : array)
       {
-        if (intermediateState.equalsString(status))
+        if (oneStatus.equalsString(status))
         {
           return true;
         }

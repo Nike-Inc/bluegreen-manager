@@ -11,6 +11,14 @@
   </bean>
 
   <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+    <qualifier value="rdsInstanceDeleteTask"/>
+    <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.rdsInstanceDeleteTask.initialWaitDelayMilliseconds}"/>
+    <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.rdsInstanceDeleteTask.followupWaitDelayMilliseconds}"/>
+    <property name="waitReportInterval" value="${bluegreen.waiter.rdsInstanceDeleteTask.waitReportInterval}"/>
+    <property name="maxNumWaits" value="${bluegreen.waiter.rdsInstanceDeleteTask.maxNumWaits}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
     <qualifier value="sshVmCreateTask"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.followupWaitDelayMilliseconds}"/>

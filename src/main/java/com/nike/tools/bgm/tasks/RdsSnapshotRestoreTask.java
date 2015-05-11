@@ -22,11 +22,14 @@ import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
 import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsClientFactory;
+import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
+import com.nike.tools.bgm.client.aws.RdsSnapshotBluegreenId;
 import com.nike.tools.bgm.model.domain.DatabaseType;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
+import com.nike.tools.bgm.model.tx.EnvironmentHelper;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
@@ -48,13 +51,6 @@ public class RdsSnapshotRestoreTask extends TaskImpl
 {
   private static final Pattern JDBC_URL = Pattern.compile("(jdbc:mysql://)([^:/]+)(.*)");
 
-  /**
-   * Using '9' as a delimiter char, since the only other special char allowed in a snapshotId is '-' and we are
-   * already using that inside the tokens we use to make the id.
-   */
-  private static final char SNAPSHOT_ID_DELIMITER = '9';
-  private static final String SNAPSHOT_PREFIX = "bluegreen";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(RdsSnapshotRestoreTask.class);
 
   @Autowired
@@ -72,6 +68,9 @@ public class RdsSnapshotRestoreTask extends TaskImpl
 
   @Autowired
   private ThreadSleeper threadSleeper;
+
+  @Autowired
+  private EnvironmentHelper environmentHelper;
 
   private String liveEnvName;
   private String stageEnvName;
@@ -111,9 +110,11 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    */
   protected void loadDataModel()
   {
+    //TODO - start using TwoEnvLoader for these calls!
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
     this.liveLogicalDatabase = findLiveLogicalDatabaseFromEnvironment();
     this.livePhysicalDatabase = liveLogicalDatabase.getPhysicalDatabase();
+
     checkLivePhysicalDatabase();
     checkNoStageEnvironment();
     checkDbMap();
@@ -199,7 +200,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
     else if (logicalDatabases.size() > 1)
     {
       throw new UnsupportedOperationException(liveContext() + "Currently only support case of 1 logicalDatabase, but live env has "
-          + logicalDatabases.size() + ": " + listOfNames(logicalDatabases));
+          + logicalDatabases.size() + ": " + environmentHelper.listOfNames(logicalDatabases));
     }
     else if (StringUtils.isBlank(logicalDatabases.get(0).getLogicalName()))
     {
@@ -242,39 +243,9 @@ public class RdsSnapshotRestoreTask extends TaskImpl
     {
       throw new IllegalStateException(stageContext() + "Stage env exists already, with "
           + CollectionUtils.size(stageEnv.getLogicalDatabases()) + " logical databases ["
-          + listOfNames(stageEnv.getLogicalDatabases())
+          + environmentHelper.listOfNames(stageEnv.getLogicalDatabases())
           + "], you must manually destroy the stage env and run this job again");
     }
-  }
-
-  /**
-   * Makes a comma-separated list of database names.
-   * Uses logical name (with physical instname and url in parentheses if applicable).
-   */
-  private String listOfNames(List<LogicalDatabase> logicalDatabases)
-  {
-    StringBuilder sb = new StringBuilder();
-    if (logicalDatabases != null)
-    {
-      for (LogicalDatabase logicalDatabase : logicalDatabases)
-      {
-        if (sb.length() > 0)
-        {
-          sb.append(", ");
-        }
-        sb.append(logicalDatabase.getLogicalName());
-        PhysicalDatabase physicalDatabase = logicalDatabase.getPhysicalDatabase();
-        if (physicalDatabase != null)
-        {
-          sb.append(" (");
-          sb.append(physicalDatabase.getInstanceName());
-          sb.append(" - ");
-          sb.append(physicalDatabase.getUrl());
-          sb.append(")");
-        }
-      }
-    }
-    return sb.toString();
   }
 
   /**
@@ -349,22 +320,11 @@ public class RdsSnapshotRestoreTask extends TaskImpl
     return dbSnapshot;
   }
 
-  /**
-   * Makes an RDS snapshot id based on the live physicaldb.  Always the same string for a given physicaldb.
-   * <p/>
-   * If we didn't specify one, Amazon would create a random identifier for us.
-   */
   String makeSnapshotId()
   {
-    StringBuilder sb = new StringBuilder();
-    sb.append(SNAPSHOT_PREFIX);
-    sb.append(SNAPSHOT_ID_DELIMITER);
-    sb.append(liveEnv.getEnvName());
-    sb.append(SNAPSHOT_ID_DELIMITER);
-    sb.append(liveLogicalDatabase.getLogicalName());
-    sb.append(SNAPSHOT_ID_DELIMITER);
-    sb.append(livePhysicalDatabase.getInstanceName());
-    return sb.toString();
+    RdsSnapshotBluegreenId id = new RdsSnapshotBluegreenId(liveEnv.getEnvName(), liveLogicalDatabase.getLogicalName(),
+        livePhysicalDatabase.getInstanceName());
+    return id.toString();
   }
 
   /**
@@ -474,8 +434,9 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance, boolean create)
   {
     LOGGER.info(liveContext() + "Waiting for instance to become available");
+    RdsInstanceStatus initialState = create ? RdsInstanceStatus.CREATING : RdsInstanceStatus.MODIFYING;
     RdsInstanceProgressChecker progressChecker = new RdsInstanceProgressChecker(instanceId, liveContext(), rdsClient,
-        initialInstance, create);
+        initialInstance, initialState);
     Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBInstance dbInstance = waiter.waitTilDone();
     if (dbInstance == null)

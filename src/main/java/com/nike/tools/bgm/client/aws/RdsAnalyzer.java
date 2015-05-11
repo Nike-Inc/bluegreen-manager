@@ -30,6 +30,27 @@ public class RdsAnalyzer
    */
   public String findSelfNamedOrDefaultParamGroupName(DBInstance dbInstance)
   {
+    String selfNamedGroupName = findSelfNamedParamGroupName(dbInstance);
+    if (selfNamedGroupName != null)
+    {
+      return selfNamedGroupName;
+    }
+    if (dbInstance != null && CollectionUtils.isNotEmpty(dbInstance.getDBParameterGroups()))
+    {
+      String defaultName = dbInstance.getDBParameterGroups().get(0).getDBParameterGroupName();
+      LOGGER.warn("Could not find paramgroup containing the string '" + dbInstance.getDBInstanceIdentifier()
+          + "', falling back to '" + defaultName + "'");
+      return defaultName;
+    }
+    return null;
+  }
+
+  /**
+   * Finds the name of the instance's paramgroup whose name embeds the instname, or null if not found.
+   * We are assuming there is at most one such paramgroup!
+   */
+  public String findSelfNamedParamGroupName(DBInstance dbInstance)
+  {
     if (dbInstance != null && CollectionUtils.isNotEmpty(dbInstance.getDBParameterGroups()))
     {
       String instanceName = dbInstance.getDBInstanceIdentifier();
@@ -41,9 +62,6 @@ public class RdsAnalyzer
           return paramGroup.getDBParameterGroupName();
         }
       }
-      String defaultName = dbInstance.getDBParameterGroups().get(0).getDBParameterGroupName();
-      LOGGER.warn("Could not find paramgroup containing the string '" + instanceName + "', falling back to '" + defaultName + "'");
-      return defaultName;
     }
     return null;
   }

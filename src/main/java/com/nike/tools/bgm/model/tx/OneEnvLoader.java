@@ -3,6 +3,7 @@ package com.nike.tools.bgm.model.tx;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.domain.Application;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.Environment;
+import com.nike.tools.bgm.model.domain.LogicalDatabase;
+import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 
 /**
  * Loads datamodel entities for one environment and asserts preconditions.  How much to load is decided by the caller.
@@ -23,14 +26,19 @@ public class OneEnvLoader
   @Autowired
   private EnvironmentTx environmentTx;
 
+  @Autowired
+  private EnvironmentHelper environmentHelper;
+
   private String envName;
   private Environment environment;
   private ApplicationVm applicationVm;
   private Application application;
+  private LogicalDatabase logicalDatabase;
+  private PhysicalDatabase physicalDatabase;
 
   /**
    * Loads the environment on the assumption that there is exactly 1 application vm, or that there are 0 vms.
-   * No attempt is made to load an application or database.
+   * Does not assert the existence of an application or database.
    */
   public void loadApplicationVm(boolean createVm)
   {
@@ -40,7 +48,7 @@ public class OneEnvLoader
 
   /**
    * Loads the environment on the assumption that there is exactly 1 application vm and 1 application.
-   * No attempt is made to load a database.
+   * Does not assert the existence of a database.
    */
   public void loadApplication()
   {
@@ -49,7 +57,21 @@ public class OneEnvLoader
   }
 
   /**
+   * Loads the environment on the assumption that there is exactly 1 logicaldb and 1 physicaldb.
+   * Does not assert the existence of an application vm or application.
+   */
+  public void loadPhysicalDatabase()
+  {
+    this.environment = environmentTx.findNamedEnv(envName);
+    this.logicalDatabase = findLogicalDatabaseFromEnvironment();
+    this.physicalDatabase = logicalDatabase.getPhysicalDatabase();
+    checkPhysicalDatabase();
+  }
+
+  /**
    * Returns a string that describes the known environment context, for logging purposes.
+   * <p/>
+   * TODO - show the db context, or make separate method for that
    */
   public String context()
   {
@@ -117,6 +139,43 @@ public class OneEnvLoader
     this.application = applications.get(0);
   }
 
+  /**
+   * Gets the env's persisted logicaldb record.  Requires exactly 1.
+   */
+  private LogicalDatabase findLogicalDatabaseFromEnvironment()
+  {
+    List<LogicalDatabase> logicalDatabases = environment.getLogicalDatabases();
+    if (CollectionUtils.isEmpty(logicalDatabases))
+    {
+      throw new IllegalStateException(context() + "No logical databases");
+    }
+    else if (logicalDatabases.size() > 1)
+    {
+      throw new UnsupportedOperationException(context() + "Currently only support case of 1 logicalDatabase, but env has "
+          + logicalDatabases.size() + ": " + environmentHelper.listOfNames(logicalDatabases));
+    }
+    else if (StringUtils.isBlank(logicalDatabases.get(0).getLogicalName()))
+    {
+      throw new IllegalStateException(context() + "Live logical database has blank name");
+    }
+    return logicalDatabases.get(0);
+  }
+
+  /**
+   * Sanity checks the physical database.  Callers may need to perform additional task-specific checks.
+   */
+  private void checkPhysicalDatabase()
+  {
+    if (physicalDatabase == null)
+    {
+      throw new IllegalStateException(context() + "No physical database");
+    }
+    else if (StringUtils.isBlank(physicalDatabase.getInstanceName()))
+    {
+      throw new IllegalArgumentException(context() + "Physical database has blank instance name");
+    }
+  }
+
   public void setEnvName(String envName)
   {
     this.envName = envName;
@@ -135,5 +194,15 @@ public class OneEnvLoader
   public Application getApplication()
   {
     return application;
+  }
+
+  public LogicalDatabase getLogicalDatabase()
+  {
+    return logicalDatabase;
+  }
+
+  public PhysicalDatabase getPhysicalDatabase()
+  {
+    return physicalDatabase;
   }
 }
