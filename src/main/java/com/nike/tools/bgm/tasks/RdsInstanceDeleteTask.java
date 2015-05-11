@@ -138,14 +138,13 @@ public class RdsInstanceDeleteTask extends TaskImpl
   public TaskStatus process(boolean noop)
   {
     loadDataModel();
-    /*
     checkDeleteDatabaseIsNotLive();
     rdsClient = rdsClientFactory.create();
     DBInstance rdsInstance = describeInstance();
     String paramGroupName = rdsAnalyzer.findSelfNamedParamGroupName(rdsInstance);
     deleteInstance(noop);
     deleteParameterGroup(paramGroupName, noop);
-    deleteSnapshot(noop);*/
+    deleteSnapshot(noop);
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
