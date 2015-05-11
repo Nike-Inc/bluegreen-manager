@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSnapshot;
@@ -18,14 +20,17 @@ import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
+import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
 /**
- * Deletes the target RDS instance, its parameter group (if non-default), and the bluegreen snapshot from which it was
- * originally made.
+ * In the delete env, deletes the RDS instance, its parameter group (if non-default), and the bluegreen snapshot from
+ * which it was originally made.
+ * <p/>
+ * Requires the live env solely to figure out the name of the db snapshot.  Does not otherwise touch the live env!!
  * <p/>
  * Deletes the snapshot prefixed with 'bluegreen' since the next stagingDeploy will need to create another one with
  * exactly the same name.  However this task leaves behind any snapshots that Amazon automatically made of the database
@@ -37,6 +42,8 @@ import com.nike.tools.bgm.utils.WaiterParameters;
  * Automated deletion is DANGEROUS.  This task needs to be extremely well maintained and tested.  Our only safety net
  * is the "isLive" flag: we only delete non-live instances.
  */
+@Lazy
+@Component
 public class RdsInstanceDeleteTask extends TaskImpl
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(RdsInstanceDeleteTask.class);
@@ -44,6 +51,9 @@ public class RdsInstanceDeleteTask extends TaskImpl
   @Autowired
   @Qualifier("rdsInstanceDeleteTask")
   private WaiterParameters waiterParameters;
+
+  @Autowired
+  private EnvironmentTx environmentTx;
 
   @Autowired
   private EnvLoaderFactory envLoaderFactory;
@@ -57,19 +67,25 @@ public class RdsInstanceDeleteTask extends TaskImpl
   @Autowired
   private ThreadSleeper threadSleeper;
 
-  private OneEnvLoader oneEnvLoader;
+  private OneEnvLoader deleteEnvLoader;
+  private OneEnvLoader liveEnvLoader;
   private RdsClient rdsClient;
 
-  private String envName;
+  private String deleteEnvName;
+  private String liveEnvName;
 
-  private Environment environment;
-  private LogicalDatabase logicalDatabase;
-  private PhysicalDatabase physicalDatabase;
+  private Environment deleteEnvironment;
+  private LogicalDatabase deleteLogicalDatabase;
+  private PhysicalDatabase deletePhysicalDatabase;
+  private Environment liveEnvironment;
+  private LogicalDatabase liveLogicalDatabase;
+  private PhysicalDatabase livePhysicalDatabase;
 
-  public Task assign(int position, String envName)
+  public Task assign(int position, String deleteEnvName, String liveEnvName)
   {
     super.assign(position);
-    this.envName = envName;
+    this.deleteEnvName = deleteEnvName;
+    this.liveEnvName = liveEnvName;
     return this;
   }
 
@@ -78,29 +94,35 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * this task is about to begin processing.
    * <p/>
    * Looks up the environment entities by name.
-   * Currently requires that the target env has exactly one logicaldb, with one physicaldb.
+   * Currently requires that the envs have exactly one logicaldb, with one physicaldb.
    */
   private void loadDataModel()
   {
-    this.oneEnvLoader = envLoaderFactory.createOne(envName);
-    oneEnvLoader.loadPhysicalDatabase();
-    this.environment = oneEnvLoader.getEnvironment();
-    this.logicalDatabase = oneEnvLoader.getLogicalDatabase();
-    this.physicalDatabase = oneEnvLoader.getPhysicalDatabase();
+    this.deleteEnvLoader = envLoaderFactory.createOne(deleteEnvName);
+    deleteEnvLoader.loadPhysicalDatabase();
+    this.deleteEnvironment = deleteEnvLoader.getEnvironment();
+    this.deleteLogicalDatabase = deleteEnvLoader.getLogicalDatabase();
+    this.deletePhysicalDatabase = deleteEnvLoader.getPhysicalDatabase();
+
+    this.liveEnvLoader = envLoaderFactory.createOne(liveEnvName);
+    liveEnvLoader.loadPhysicalDatabase();
+    this.liveEnvironment = liveEnvLoader.getEnvironment();
+    this.liveLogicalDatabase = liveEnvLoader.getLogicalDatabase();
+    this.livePhysicalDatabase = liveEnvLoader.getPhysicalDatabase();
   }
 
   private String context()
   {
     StringBuilder sb = new StringBuilder();
-    sb.append("[Environment '" + environment.getEnvName() + "'");
-    if (logicalDatabase != null)
+    sb.append("[Delete Env '" + deleteEnvironment.getEnvName() + "'");
+    if (deleteLogicalDatabase != null)
     {
       sb.append(", ");
-      sb.append(logicalDatabase.getLogicalName());
-      if (StringUtils.isNotBlank(physicalDatabase.getInstanceName()))
+      sb.append(deleteLogicalDatabase.getLogicalName());
+      if (StringUtils.isNotBlank(deletePhysicalDatabase.getInstanceName()))
       {
         sb.append(" - RDS ");
-        sb.append(physicalDatabase.getInstanceName());
+        sb.append(deletePhysicalDatabase.getInstanceName());
       }
     }
     sb.append("]: ");
@@ -116,26 +138,28 @@ public class RdsInstanceDeleteTask extends TaskImpl
   public TaskStatus process(boolean noop)
   {
     loadDataModel();
-    checkDatabaseIsNotLive();
+    /*
+    checkDeleteDatabaseIsNotLive();
     rdsClient = rdsClientFactory.create();
     DBInstance rdsInstance = describeInstance();
     String paramGroupName = rdsAnalyzer.findSelfNamedParamGroupName(rdsInstance);
     deleteInstance(noop);
     deleteParameterGroup(paramGroupName, noop);
-    deleteSnapshot(noop);
-    return null;
+    deleteSnapshot(noop);*/
+    persistModel(noop);
+    return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
 
   /**
-   * Performs the single most important check of this task: asserts that the target database is not live.
+   * Performs the single most important check of this task: asserts that the database to be deleted is not live.
    * <p/>
    * It would be Very Very Bad to delete a live database!
    */
-  private void checkDatabaseIsNotLive()
+  private void checkDeleteDatabaseIsNotLive()
   {
-    if (physicalDatabase.isLive())
+    if (deletePhysicalDatabase.isLive())
     {
-      throw new IllegalArgumentException("Are you CRAZY??? Don't ask us to delete a LIVE database!!!");
+      throw new IllegalArgumentException(context() + "Are you CRAZY??? Don't ask us to delete a LIVE database!!!");
     }
   }
 
@@ -147,7 +171,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
   private DBInstance describeInstance()
   {
     LOGGER.info(context() + "Requesting description of target RDS instance");
-    return rdsClient.describeInstance(physicalDatabase.getInstanceName());
+    return rdsClient.describeInstance(deletePhysicalDatabase.getInstanceName());
   }
 
   /**
@@ -158,7 +182,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
     LOGGER.info(context() + "Deleting non-live target RDS instance" + noopRemark(noop));
     if (!noop)
     {
-      DBInstance initialInstance = rdsClient.deleteInstance(physicalDatabase.getInstanceName());
+      DBInstance initialInstance = rdsClient.deleteInstance(deletePhysicalDatabase.getInstanceName());
       waitTilInstanceIsDeleted(initialInstance);
     }
   }
@@ -221,11 +245,27 @@ public class RdsInstanceDeleteTask extends TaskImpl
     }
   }
 
+  /**
+   * The snapshot id is the sole reason why we need access to the live env here.
+   */
   private String makeSnapshotId()
   {
-    RdsSnapshotBluegreenId id = new RdsSnapshotBluegreenId(envName, logicalDatabase.getLogicalName(),
-        physicalDatabase.getInstanceName());
+    RdsSnapshotBluegreenId id = new RdsSnapshotBluegreenId(liveEnvName, liveLogicalDatabase.getLogicalName(),
+        livePhysicalDatabase.getInstanceName());
     return id.toString();
+  }
+
+  /**
+   * Deletes the physicaldb entity, then opens a transaction to persist the change.
+   */
+  private void persistModel(boolean noop)
+  {
+    LOGGER.info(context() + "Unregistering stage physical database" + noopRemark(noop));
+    if (!noop)
+    {
+      deleteLogicalDatabase.setPhysicalDatabase(null);
+      environmentTx.updateEnvironment(deleteEnvironment); //Cascades to delete physicaldb.
+    }
   }
 
 }

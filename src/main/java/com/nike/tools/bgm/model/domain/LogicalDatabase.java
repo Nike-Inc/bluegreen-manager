@@ -49,7 +49,7 @@ public class LogicalDatabase
   @Column(name = COLUMN_LOGICAL_NAME, nullable = false, length = LENGTH_LOGICAL_NAME)
   private String logicalName;
 
-  @OneToOne(mappedBy = PhysicalDatabase.FIELD_LOGICAL_DATABASE, cascade = CascadeType.ALL)
+  @OneToOne(mappedBy = PhysicalDatabase.FIELD_LOGICAL_DATABASE, cascade = CascadeType.ALL, orphanRemoval = true)
   private PhysicalDatabase physicalDatabase;
 
   public long getLogicalId()

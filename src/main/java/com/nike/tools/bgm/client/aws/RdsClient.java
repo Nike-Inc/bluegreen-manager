@@ -59,6 +59,7 @@ public class RdsClient
       DescribeDBInstancesResult result = awsRdsClient.describeDBInstances(request);
       if (result == null || CollectionUtils.isEmpty(result.getDBInstances()))
       {
+        // Note: this branch should never execute.  We expect Amazon to throw DBInstanceNotFoundException instead.
         throw new RuntimeException("RDS cannot find instance '" + instanceName + "'");
       }
       else if (result.getDBInstances().size() > 1)
@@ -208,7 +209,7 @@ public class RdsClient
    * Requests deletion of the instance, without creating a final snapshot or deleting any other related
    * snapshots.
    * <p/>
-   * Caller must wait for status=deleted afterwards.
+   * Caller must wait for status=deleted or DBInstanceNotFoundException afterwards.
    */
   public DBInstance deleteInstance(String instanceName)
   {

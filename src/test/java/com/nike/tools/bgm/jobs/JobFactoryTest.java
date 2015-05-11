@@ -62,7 +62,8 @@ public class JobFactoryTest
     String explanation = jobFactory.makeExplanationOfValidJobs();
     assertTrue(explanation.contains(JobFactory.JOBNAME_STAGING_DEPLOY));
     assertTrue(explanation.contains(JobFactory.JOBNAME_GO_LIVE));
-    assertTrue(explanation.contains(JobFactory.JOBNAME_TEARDOWN));
+    assertTrue(explanation.contains(JobFactory.JOBNAME_TEARDOWN_COMMIT));
+    assertTrue(explanation.contains(JobFactory.JOBNAME_ROLLBACK_STAGE));
   }
 
   /**
@@ -112,16 +113,30 @@ public class JobFactoryTest
   }
 
   /**
-   * Tests successful creation of a TeardownJob.
+   * Tests successful creation of a TeardownCommitJob.
    */
   @Test
-  public void testMakeJob_Teardown()
+  public void testMakeJob_TeardownCommit()
   {
     when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
-    String commandLine = "teardown --deleteEnv env5 --deleteDb db1 --stopServices a,b --commit";
+    String commandLine = "teardownCommit --deleteOldLiveEnv env5 --stopServices a,b";
     parseAndMakeJob(commandLine);
-    verify(mockApplicationContext).getBean(eq(TeardownJob.class), new Object[] {
-        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), eq("db1"), anyListOf(String.class), eq(true)
+    verify(mockApplicationContext).getBean(eq(TeardownCommitJob.class), new Object[] {
+        eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), anyListOf(String.class)
+    });
+  }
+
+  /**
+   * Tests successful creation of a RollbackStageJob.
+   */
+  @Test
+  public void testMakeJob_RollbackStage()
+  {
+    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString(), anyString())).thenReturn(new boolean[] { true, true });
+    String commandLine = "rollbackStage --deleteStageEnv env6 --stopServices c,d --liveEnv env7";
+    parseAndMakeJob(commandLine);
+    verify(mockApplicationContext).getBean(eq(RollbackStageJob.class), new Object[] {
+        eq(commandLine), eq(false), eq(false), isNull(), eq("env6"), eq("env7"), anyListOf(String.class)
     });
   }
 

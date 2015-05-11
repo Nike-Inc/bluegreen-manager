@@ -516,6 +516,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    */
   private void persistModel(DBInstance stageInstance, boolean noop)
   {
+    LOGGER.info(stageContext() + "Registering stage database" + noopRemark(noop));
     if (!noop)
     {
       String stagePhysicalUrl = makeStagePhysicalUrl(livePhysicalDatabase.getUrl(), stageInstance.getEndpoint().getAddress());

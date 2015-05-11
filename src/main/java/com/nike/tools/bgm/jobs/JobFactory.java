@@ -29,7 +29,8 @@ public class JobFactory
 
   public static final String JOBNAME_STAGING_DEPLOY = "stagingDeploy";
   public static final String JOBNAME_GO_LIVE = "goLive";
-  public static final String JOBNAME_TEARDOWN = "teardown";
+  public static final String JOBNAME_TEARDOWN_COMMIT = "teardownCommit";
+  public static final String JOBNAME_ROLLBACK_STAGE = "rollbackStage";
 
   public static final String PARAMNAME_LIVE_ENV = "liveEnv";
   public static final String PARAMNAME_STAGE_ENV = "stageEnv";
@@ -38,11 +39,9 @@ public class JobFactory
   public static final String PARAMNAME_OLD_LIVE_ENV = "oldLiveEnv";
   public static final String PARAMNAME_NEW_LIVE_ENV = "newLiveEnv";
   public static final String PARAMNAME_FIXED_LB = "fixedLB";
-  public static final String PARAMNAME_DELETE_ENV = "deleteEnv";
-  public static final String PARAMNAME_DELETE_DB = "deleteDb";
+  public static final String PARAMNAME_DELETE_OLD_LIVE_ENV = "deleteOldLiveEnv";
+  public static final String PARAMNAME_DELETE_STAGE_ENV = "deleteStageEnv";
   public static final String PARAMNAME_STOP_SERVICES = "stopServices";
-  public static final String PARAMNAME_COMMIT = "commit";
-  public static final String PARAMNAME_ROLLBACK = "rollback";
   public static final String PARAMNAME_NOOP = "noop";
   public static final String PARAMNAME_FORCE = "force";
 
@@ -99,20 +98,26 @@ public class JobFactory
     sb.append("\t\t\tName of a fixed live load-balancer currently hosting the old live application.  We keep the LB fixed in place,\n");
     sb.append("\t\t\tregister the new live application vm with this LB, and deregister the old live application vm.\n");
     sb.append("\n");
-    sb.append("Job '" + JOBNAME_TEARDOWN + "'\n");
-    sb.append("Description: Spins down and destroys the requested env, and the stage database formerly used by the new live env.\n");
+    sb.append("Job '" + JOBNAME_TEARDOWN_COMMIT + "'\n");
+    sb.append("Description: Commits the prior " + JOBNAME_GO_LIVE + " by spinning down and destroying the old live env, and the stage database formerly\n");
+    sb.append("             used by the new live env.\n");
     sb.append("Required Parameters:\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_ENV + " <envName>\n");
-    sb.append("\t\t\tIn the 'commit' case, specify the old live env for deletion.\n");
-    sb.append("\t\t\tIn the 'rollback' case, specify the stage env for deletion.\n");
-    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_DB + " <stagePhysicalInstName>\n");
-    sb.append("\t\t\tSpecify the stage test database.  Whether or not stagingDeploy and goLive passed, teardown must remove the stage db.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_OLD_LIVE_ENV + " <envName>\n");
+    sb.append("\t\t\tThe old live env, which is to be deleted.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STOP_SERVICES + " <list of services>\n");
-    sb.append("\t\t\tSpecify services running on the deleteEnv which we should try to shutdown gracefully prior to vm deletion.\n");
-    sb.append("\t[" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT + " | " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK + " ]\n");
-    sb.append("\t\t\tSpecify 'commit' if goLive is done and you are ready to teardown the old live env.\n");
-    sb.append("\t\t\tSpecify 'rollback' if stagingDeploy is done but followup tests showed you should teardown the stage env\n");
-    sb.append("\t\t\tand NOT do goLive.\n");
+    sb.append("\t\t\tSpecify services running on the " + PARAMNAME_DELETE_OLD_LIVE_ENV + " which we should try to shutdown gracefully prior to vm deletion.\n");
+    sb.append("\n");
+    sb.append("Job '" + JOBNAME_ROLLBACK_STAGE + "'\n");
+    sb.append("Description: Does a rollback of the prior " + JOBNAME_STAGING_DEPLOY + " by spinning down and destroying the stage env, including\n");
+    sb.append("             the test database.\n");
+    sb.append("Required Parameters:\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_DELETE_STAGE_ENV + " <envName>\n");
+    sb.append("\t\t\tThe stage env, which is to be deleted.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STOP_SERVICES + " <list of services>\n");
+    sb.append("\t\t\tSpecify services running on the " + PARAMNAME_DELETE_STAGE_ENV + " which we should try to shutdown gracefully prior to vm deletion.\n");
+    sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_LIVE_ENV + " <envName>\n");
+    sb.append("\t\t\tSpecify the live env so we can find and delete the db snapshot which was made during " + JOBNAME_STAGING_DEPLOY + ".\n");
+    sb.append("\t\t\tThat is all.  Live env is treated 100% read-only in this job, don't worry.\n");
     sb.append("\n");
     sb.append("Common Optional Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NOOP + "\n");
@@ -139,9 +144,13 @@ public class JobFactory
       {
         return makeGoLiveJob(parameters, commandLine);
       }
-      else if (jobName.equals(JOBNAME_TEARDOWN))
+      else if (jobName.equals(JOBNAME_TEARDOWN_COMMIT))
       {
-        return makeTeardownJob(parameters, commandLine);
+        return makeTeardownCommitJob(parameters, commandLine);
+      }
+      else if (jobName.equals(JOBNAME_ROLLBACK_STAGE))
+      {
+        return makeRollbackStageJob(parameters, commandLine);
       }
     }
     throw new CmdlineException("Unrecognized jobName: " + jobName);
@@ -171,21 +180,21 @@ public class JobFactory
   }
 
   /**
-   * Constructs a new TeardownJob with the specified parameters.
+   * Constructs a new TeardownCommitJob with the specified parameters.
    */
-  private Job makeTeardownJob(List<List<String>> parameters, String commandLine)
+  private Job makeTeardownCommitJob(List<List<String>> parameters, String commandLine)
   {
-    String deleteDbPhysicalInstanceName = getParameter(PARAMNAME_DELETE_DB, parameters, 1).get(1);
     List<String> stopServices = getParameterValues(PARAMNAME_STOP_SERVICES, parameters);
-    boolean isCommit = hasParameter(PARAMNAME_COMMIT, parameters);
-    boolean isRollback = hasParameter(PARAMNAME_ROLLBACK, parameters);
-    if (!isCommit && !isRollback)
-    {
-      throw new CmdlineException("Teardown job must specify either " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_COMMIT
-          + " or " + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_ROLLBACK);
-    }
-    return makeGenericJob(TeardownJob.class, parameters, commandLine, PARAMNAME_DELETE_ENV, null, false,
-        deleteDbPhysicalInstanceName, stopServices, isCommit);
+    return makeGenericJob(TeardownCommitJob.class, parameters, commandLine, PARAMNAME_DELETE_OLD_LIVE_ENV, null, false, stopServices);
+  }
+
+  /**
+   * Constructs a new RollbackStageJob with the specified parameters.
+   */
+  private Job makeRollbackStageJob(List<List<String>> parameters, String commandLine)
+  {
+    List<String> stopServices = getParameterValues(PARAMNAME_STOP_SERVICES, parameters);
+    return makeGenericJob(RollbackStageJob.class, parameters, commandLine, PARAMNAME_DELETE_STAGE_ENV, PARAMNAME_LIVE_ENV, true, stopServices);
   }
 
   /**

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBInstance;
+import com.amazonaws.services.rds.model.DBInstanceNotFoundException;
 import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.utils.ProgressChecker;
@@ -123,10 +124,17 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   @Override
   public void followupCheck(int waitNum)
   {
-    DBInstance dbInstance = rdsClient.describeInstance(instanceId);
-    checkInstanceId(dbInstance);
-    LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
-    checkInstanceStatus(dbInstance);
+    try
+    {
+      DBInstance dbInstance = rdsClient.describeInstance(instanceId);
+      checkInstanceId(dbInstance);
+      LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
+      checkInstanceStatus(dbInstance);
+    }
+    catch (DBInstanceNotFoundException e)
+    {
+      handleInstanceNotFound(waitNum, e);
+    }
   }
 
   /**
@@ -151,7 +159,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
     final String instanceId = dbInstance.getDBInstanceIdentifier();
     if (expectedFinalState.equalsString(status))
     {
-      LOGGER.info("RDS " + getDescription() + " '" + instanceId + "' is done");
+      LOGGER.info("RDS " + getDescription() + " is done");
       done = true;
       result = dbInstance;
     }
@@ -161,7 +169,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
     }
     else
     {
-      LOGGER.error(logContext + getDescription() + " '" + instanceId + "': Unexpected response status '" + status + "'");
+      LOGGER.error(logContext + getDescription() + ": Unexpected response status '" + status + "'");
       done = true;
     }
   }
@@ -182,6 +190,25 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
       }
     }
     return false;
+  }
+
+  /**
+   * Amazon can't find the instance.  This is an allowed final state for a delete operation, otherwise is a bad error.
+   */
+  private void handleInstanceNotFound(int waitNum, DBInstanceNotFoundException e)
+  {
+    LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + e.getClass().getSimpleName()
+        + ": " + e.getMessage());
+    if (expectedFinalState.equals(DELETE_FINAL_STATE))
+    {
+      LOGGER.info("RDS " + getDescription() + " is done");
+      result = new DBInstance(); //Just a stub, since result==null would be considered a progress error.
+    }
+    else
+    {
+      LOGGER.error(logContext + getDescription() + ": not found", e);
+    }
+    done = true;
   }
 
   @Override

@@ -9,8 +9,6 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.LocalShellConfig;
@@ -18,14 +16,13 @@ import com.nike.tools.bgm.tasks.RdsInstanceDeleteTask;
 import com.nike.tools.bgm.tasks.Task;
 
 /**
- * Tears down a target environment, and the test database used by the former stage env.
+ * Tears down the deletion target environment, and the test database used by the former stage env.
  * <p/>
- * "Commit" case: In the case of successful stagingDeploy and goLive, the deletion env is the old live env.
- * "Rollback" case: In case of failed post-stagingDeploy test, the delete env is the stage env ("new live env").
+ * This would be a one-env job except for the fact that you need the live env to make the name of the bluegreen db
+ * snapshot from which the test db was originally made.  So this is a two-env job.  With rollbackStageJob the two envs
+ * are different (stage env and live env); with teardownCommitJob they are the same (both the old live env).
  */
-@Lazy
-@Component
-public class TeardownJob extends TaskSequenceJob
+public abstract class TeardownJob extends TaskSequenceJob
 {
   /**
    * Variable to be substituted with a comma-separated list of app names.
@@ -41,23 +38,21 @@ public class TeardownJob extends TaskSequenceJob
   private LocalShellConfig deleteEnvConfig;
 
   private String deleteEnvName;
-  private String deleteDbPhysicalInstanceName;
+  private String liveEnvName; //For READ-ONLY purposes.
   private List<String> stopServices;
-  private boolean commit; //false=rollback
 
   public TeardownJob(String commandLine, boolean noop, boolean force,
-                     JobHistory oldJobHistory, String deleteEnvName, String deleteDbPhysicalInstanceName,
-                     List<String> stopServices, boolean commit)
+                     JobHistory oldJobHistory, String deleteEnvName,
+                     String liveEnvName, List<String> stopServices)
   {
     super(commandLine, noop, force, oldJobHistory);
     this.deleteEnvName = deleteEnvName;
-    this.deleteDbPhysicalInstanceName = deleteDbPhysicalInstanceName; //Currently unused - due to assumption of exactly 1 logicaldb, 1 physicaldb
+    this.liveEnvName = liveEnvName;
     this.stopServices = stopServices;
-    this.commit = commit;
   }
 
   /**
-   * Instantiates the sequence of tasks for the teardown job.
+   * Instantiates the sequence of tasks for the teardown-commit job.
    * <p/>
    * Is PostConstruct to have access to applicationContext.
    */
@@ -70,7 +65,7 @@ public class TeardownJob extends TaskSequenceJob
     //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
     //tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
     //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, deleteEnvConfig));
-    tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName));
+    tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName, liveEnvName));
     //tasks.add(applicationContext.getBean(ForgetEnvironmentTask.class).assign(position++, deleteEnvName));
     this.tasks = tasks;
   }

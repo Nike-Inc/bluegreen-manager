@@ -9,7 +9,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
-import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
@@ -21,15 +20,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests the ability of LinkLiveDatabaseTask to update stage physicaldb to be same as live physicaldb.
- * <p/>
- * Also implicitly tests the ability of TwoEnvTask to get environmental info.
+ * Tests the ability to swap the physicaldb links of the live and stage envs.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class LinkLiveDatabaseTaskTest
+public class SwapDatabasesTaskTest
 {
   @InjectMocks
-  private LinkLiveDatabaseTask linkLiveDatabaseTask;
+  private SwapDatabasesTask swapDatabasesTask;
 
   @Mock
   private EnvLoaderFactory mockEnvLoaderFactory;
@@ -41,7 +38,7 @@ public class LinkLiveDatabaseTaskTest
   private EnvironmentTx mockEnvironmentTx;
 
   /*
-  Note: linkLiveDatabaseTask.process(false) modifies the contents of the env objects.
+  Note: task processing modifies the contents of the env objects.
    */
   private final Environment fakeLiveEnv = EnvironmentTestHelper.makeFakeFullEnvironment(0);
   private final Environment fakeStageEnv = EnvironmentTestHelper.makeFakeFullEnvironment(1);
@@ -53,7 +50,7 @@ public class LinkLiveDatabaseTaskTest
     when(mockTwoEnvLoader.getLivePhysicalDatabase()).thenReturn(fakeLiveEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
     when(mockTwoEnvLoader.getStageEnv()).thenReturn(fakeStageEnv);
     when(mockTwoEnvLoader.getStagePhysicalDatabase()).thenReturn(fakeStageEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
-    linkLiveDatabaseTask.assign(1, fakeLiveEnv.getEnvName() /*old*/, fakeStageEnv.getEnvName() /*new*/);
+    swapDatabasesTask.assign(1, fakeLiveEnv.getEnvName() /*old*/, fakeStageEnv.getEnvName() /*new*/);
   }
 
   /**
@@ -62,7 +59,7 @@ public class LinkLiveDatabaseTaskTest
   @Test
   public void testProcess_Noop()
   {
-    assertEquals(TaskStatus.NOOP, linkLiveDatabaseTask.process(true));
+    assertEquals(TaskStatus.NOOP, swapDatabasesTask.process(true));
   }
 
   /**
@@ -71,21 +68,25 @@ public class LinkLiveDatabaseTaskTest
   @Test
   public void testProcess_Done()
   {
-    assertNotEquals(getPhysicalDatabaseFromEnvironment(fakeLiveEnv).getInstanceName(),
-        getPhysicalDatabaseFromEnvironment(fakeStageEnv).getInstanceName());
+    String beforeLiveEnvDatabase = getPhysicalDatabaseInstanceName(fakeLiveEnv);
+    String beforeStageEnvDatabase = getPhysicalDatabaseInstanceName(fakeStageEnv);
+    assertNotEquals(beforeLiveEnvDatabase, beforeStageEnvDatabase);
 
-    assertEquals(TaskStatus.DONE, linkLiveDatabaseTask.process(false));
+    assertEquals(TaskStatus.DONE, swapDatabasesTask.process(false));
 
+    verify(mockEnvironmentTx).updateEnvironment(fakeLiveEnv);
     verify(mockEnvironmentTx).updateEnvironment(fakeStageEnv);
-    assertEquals(getPhysicalDatabaseFromEnvironment(fakeLiveEnv).getInstanceName(),
-        getPhysicalDatabaseFromEnvironment(fakeStageEnv).getInstanceName());
+    String afterLiveEnvDatabase = getPhysicalDatabaseInstanceName(fakeLiveEnv);
+    String afterStageEnvDatabase = getPhysicalDatabaseInstanceName(fakeStageEnv);
+    assertEquals(afterLiveEnvDatabase, beforeStageEnvDatabase);
+    assertEquals(afterStageEnvDatabase, beforeLiveEnvDatabase);
   }
 
   /**
-   * Assumes exactly 1 logicaldb.
+   * Returns the instance name of the physicaldb in this env.  Assumes exactly 1 logicaldb.
    */
-  private PhysicalDatabase getPhysicalDatabaseFromEnvironment(Environment environment)
+  private String getPhysicalDatabaseInstanceName(Environment environment)
   {
-    return environment.getLogicalDatabases().get(0).getPhysicalDatabase();
+    return environment.getLogicalDatabases().get(0).getPhysicalDatabase().getInstanceName();
   }
 }

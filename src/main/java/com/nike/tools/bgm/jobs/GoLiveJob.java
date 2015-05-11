@@ -11,8 +11,8 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.DiscoveryTask;
 import com.nike.tools.bgm.tasks.FixedElbFlipEc2Task;
 import com.nike.tools.bgm.tasks.FreezeTask;
-import com.nike.tools.bgm.tasks.LinkLiveDatabaseTask;
 import com.nike.tools.bgm.tasks.SmokeTestTask;
+import com.nike.tools.bgm.tasks.SwapDatabasesTask;
 import com.nike.tools.bgm.tasks.Task;
 import com.nike.tools.bgm.tasks.ThawTask;
 
@@ -51,7 +51,7 @@ public class GoLiveJob extends TaskSequenceJob
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnvName));
-    tasks.add(applicationContext.getBean(LinkLiveDatabaseTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
+    tasks.add(applicationContext.getBean(SwapDatabasesTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
     tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnvName));
     /*

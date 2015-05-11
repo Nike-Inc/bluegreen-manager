@@ -70,4 +70,8 @@ public abstract class TwoEnvTask extends TaskImpl
     return "[Environment '" + environment.getEnvName() + "']: ";
   }
 
+  protected String context()
+  {
+    return "[Live Env '" + liveEnvName + "', Stage Env '" + stageEnvName + "']: ";
+  }
 }
