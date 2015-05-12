@@ -3,6 +3,8 @@ package com.nike.tools.bgm.tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.TaskStatus;
@@ -15,6 +17,8 @@ import com.nike.tools.bgm.model.tx.OneEnvLoader;
  * <p/>
  * Has no impact on actual vms or databases.
  */
+@Lazy
+@Component
 public class ForgetEnvironmentTask extends TaskImpl
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(ForgetEnvironmentTask.class);
