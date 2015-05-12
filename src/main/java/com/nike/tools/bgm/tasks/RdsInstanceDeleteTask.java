@@ -72,7 +72,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
   private RdsClient rdsClient;
 
   private String deleteEnvName;
-  private String liveEnvName;
+  private String liveEnvName; //More accurate name would be "currentOrFormerLiveEnvName"...
 
   private Environment deleteEnvironment;
   private LogicalDatabase deleteLogicalDatabase;
@@ -96,7 +96,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * Looks up the environment entities by name.
    * Currently requires that the envs have exactly one logicaldb, with one physicaldb.
    */
-  private void loadDataModel()
+  void loadDataModel()
   {
     this.deleteEnvLoader = envLoaderFactory.createOne(deleteEnvName);
     deleteEnvLoader.loadPhysicalDatabase();
@@ -111,7 +111,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
     this.livePhysicalDatabase = liveEnvLoader.getPhysicalDatabase();
   }
 
-  private String context()
+  String context()
   {
     StringBuilder sb = new StringBuilder();
     sb.append("[Delete Env '" + deleteEnvironment.getEnvName() + "'");
@@ -140,10 +140,8 @@ public class RdsInstanceDeleteTask extends TaskImpl
     loadDataModel();
     checkDeleteDatabaseIsNotLive();
     rdsClient = rdsClientFactory.create();
-    DBInstance rdsInstance = describeInstance();
-    String paramGroupName = rdsAnalyzer.findSelfNamedParamGroupName(rdsInstance);
-    deleteInstance(noop);
-    deleteParameterGroup(paramGroupName, noop);
+    DBInstance rdsInstance = deleteInstance(noop);
+    deleteParameterGroup(rdsInstance, noop);
     deleteSnapshot(noop);
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
@@ -154,7 +152,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * <p/>
    * It would be Very Very Bad to delete a live database!
    */
-  private void checkDeleteDatabaseIsNotLive()
+  void checkDeleteDatabaseIsNotLive()
   {
     if (deletePhysicalDatabase.isLive())
     {
@@ -174,16 +172,18 @@ public class RdsInstanceDeleteTask extends TaskImpl
   }
 
   /**
-   * Requests deletion of the target RDS instance, does not wait for confirmed deletion.
+   * Requests deletion of the target RDS instance, waits for confirmed deletion.
    */
-  private void deleteInstance(boolean noop)
+  DBInstance deleteInstance(boolean noop)
   {
     LOGGER.info(context() + "Deleting non-live target RDS instance" + noopRemark(noop));
+    DBInstance initialInstance = null;
     if (!noop)
     {
-      DBInstance initialInstance = rdsClient.deleteInstance(deletePhysicalDatabase.getInstanceName());
+      initialInstance = rdsClient.deleteInstance(deletePhysicalDatabase.getInstanceName());
       waitTilInstanceIsDeleted(initialInstance);
     }
+    return initialInstance;
   }
 
   /**
@@ -207,17 +207,23 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * <p/>
    * (The parameter group cannot be deleted until the dependent rdsInstance is fully deleted.)
    */
-  private void deleteParameterGroup(String paramGroupName, boolean noop)
+  void deleteParameterGroup(DBInstance rdsInstance, boolean noop)
   {
-    if (StringUtils.isBlank(paramGroupName))
+    if (noop)
     {
-      LOGGER.info(context() + "Deleted database did have its own special parameter group");
+      //rdsInstance is null, don't try to analyze it
+      LOGGER.info(context() + "Deleting parameter group");
     }
     else
     {
-      LOGGER.info(context() + "Deleting parameter group '" + paramGroupName + "', was used only by the deleted database");
-      if (!noop)
+      String paramGroupName = rdsAnalyzer.findSelfNamedParamGroupName(rdsInstance);
+      if (StringUtils.isBlank(paramGroupName))
       {
+        LOGGER.info(context() + "Deleted database did not have its own special parameter group");
+      }
+      else
+      {
+        LOGGER.info(context() + "Deleting parameter group '" + paramGroupName + "', which was used only by the deleted database");
         rdsClient.deleteParameterGroup(paramGroupName);
       }
     }
@@ -228,7 +234,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * <p/>
    * Does not delete snapshots that Amazon may have made automatically.
    */
-  private void deleteSnapshot(boolean noop)
+  void deleteSnapshot(boolean noop)
   {
     LOGGER.info(context() + "Deleting snapshot from which the deleted database was originally made");
     if (!noop)

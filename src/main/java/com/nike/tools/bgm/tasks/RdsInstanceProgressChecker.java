@@ -233,7 +233,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   @Override
   public DBInstance timeout()
   {
-    LOGGER.error(getDescription() + " failed to become available prior to timeout");
+    LOGGER.error(getDescription() + " failed to reach " + expectedFinalState + " state prior to timeout");
     return null;
   }
 }

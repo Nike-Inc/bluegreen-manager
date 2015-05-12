@@ -3,6 +3,7 @@ package com.nike.tools.bgm.model.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO - seems like EnvironmentTestHelper has made this redundant, this class should be eliminated
 public class DatabaseTestHelper
 {
   public static final String LIVE_ENV_NAME = "liveEnv";
