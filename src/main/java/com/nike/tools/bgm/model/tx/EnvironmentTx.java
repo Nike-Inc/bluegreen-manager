@@ -139,7 +139,12 @@ public class EnvironmentTx
    */
   public void deleteEnvironment(Environment environment)
   {
-    environmentDAO.merge(environment);
-    environmentDAO.remove(environment);
+    /*
+    Need to manage the entity before removal.  However for some reason 'environmentDAO.merge(environment)' does not
+    manage the entity, entityManager.contains() returns false afterwards!  Have to find() it.
+     */
+    Environment managedEnvironment = environmentDAO.find(environment.getEnvId());
+
+    environmentDAO.remove(managedEnvironment);
   }
 }

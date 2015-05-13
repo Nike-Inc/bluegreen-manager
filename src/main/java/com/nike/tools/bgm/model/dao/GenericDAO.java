@@ -23,6 +23,14 @@ public abstract class GenericDAO<T>
   }
 
   /**
+   * Finds and manages an entity.
+   */
+  public T find(long id)
+  {
+    return entityManager.find(entityClass, id);
+  }
+
+  /**
    * Persists a new entity.
    */
   public void persist(T entity)
