@@ -139,7 +139,7 @@ public class EnvironmentTx
    */
   public void deleteEnvironment(Environment environment)
   {
-    environmentDAO.refresh(environment);
+    environmentDAO.merge(environment);
     environmentDAO.remove(environment);
   }
 }
