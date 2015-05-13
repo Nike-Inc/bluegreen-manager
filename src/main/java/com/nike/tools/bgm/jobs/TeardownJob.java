@@ -89,6 +89,6 @@ public abstract class TeardownJob extends TaskSequenceJob
   @Override
   public String getEnv2()
   {
-    return null;
+    return liveEnvName;
   }
 }
