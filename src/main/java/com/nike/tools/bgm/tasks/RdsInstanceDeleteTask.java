@@ -212,7 +212,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
     if (noop)
     {
       //rdsInstance is null, don't try to analyze it
-      LOGGER.info(context() + "Deleting parameter group");
+      LOGGER.info(context() + "Deleting parameter group" + noopRemark(noop));
     }
     else
     {
@@ -236,7 +236,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
    */
   void deleteSnapshot(boolean noop)
   {
-    LOGGER.info(context() + "Deleting snapshot from which the deleted database was originally made");
+    LOGGER.info(context() + "Deleting snapshot from which the deleted database was originally made" + noopRemark(noop));
     if (!noop)
     {
       String snapshotId = makeSnapshotId();
