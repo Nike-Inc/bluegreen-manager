@@ -392,6 +392,8 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    * Then makes a few small modifications that restore would not do automatically (paramgroup and security group).
    * Reboots the db so the paramgroup modification will take effect.
    * Returns the rebooted instance.
+   *
+   * TODO - Break this up, possibly into separate tasks (might need to persist new forms of intermediate data), to simplify unit test and issues of force/skip logic
    */
   DBInstance restoreStage(DBSnapshot dbSnapshot,
                           DBParameterGroup stageParamGroup,
@@ -410,9 +412,9 @@ public class RdsSnapshotRestoreTask extends TaskImpl
       DBInstance modifiedInstance = modifyInstance(stageInstance, stageParamGroup, liveInstance);
       modifiedInstance = waitTilParamGroupIsPendingReboot(stagePhysicalInstanceName, modifiedInstance, stageParamGroup,
           RdsInstanceStatus.MODIFYING);
-      //DBInstance rebootedInstance = rebootInstance(modifiedInstance);
-      //rebootedInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, rebootedInstance, RdsInstanceStatus.REBOOTING);
-      return modifiedInstance;
+      DBInstance rebootedInstance = rebootInstance(modifiedInstance);
+      rebootedInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, rebootedInstance, RdsInstanceStatus.REBOOTING);
+      return rebootedInstance;
     }
     return null;
   }
@@ -479,6 +481,14 @@ public class RdsSnapshotRestoreTask extends TaskImpl
         stageInstance.getDBInstanceIdentifier(),
         vpcSecurityGroupIds,
         stageParamGroup.getDBParameterGroupName());
+  }
+
+  /**
+   * Reboots the stage instance.
+   */
+  private DBInstance rebootInstance(DBInstance stageInstance)
+  {
+    return rdsClient.rebootInstance(stageInstance.getDBInstanceIdentifier());
   }
 
   /**

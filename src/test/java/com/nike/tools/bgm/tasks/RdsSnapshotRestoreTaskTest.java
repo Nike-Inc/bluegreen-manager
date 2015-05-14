@@ -64,7 +64,7 @@ public class RdsSnapshotRestoreTaskTest
   private static final String STAGE_ENDPOINT_ADDRESS = "stage.hello.com";
   private static final String SUBNET_GROUP = "bigvpcsubnet";
   private static final String UGLY_STAGE_PARAM_GROUP_NAME = LIVE_PARAM_GROUP_NAME + "-" + STAGE_PHYSICAL_NAME;
-  private final Environment FAKE_STAGE_ENV = new Environment() //non-static: needs to be reinitialized on every test
+  private final Environment fakeStageEnv = new Environment() //non-static: needs to be reinitialized on every test
   {{
       setEnvName(STAGE_ENV_NAME);
     }};
@@ -222,7 +222,7 @@ public class RdsSnapshotRestoreTaskTest
 
     private DBInstance makeInstance(String instanceName, RdsInstanceStatus instanceStatus)
     {
-      //Could be refactored to share with RdsInstanceParamGroupProgressCheckerTest#fakeInstance
+      //TODO - Refactor to share with RdsInstanceParamGroupProgressCheckerTest#fakeInstance or RdsAnalyzerTest#makeDBInstanceWithParamGroups
       DBInstance dbInstance = new DBInstance();
       dbInstance.setDBInstanceIdentifier(instanceName);
       dbInstance.setDBInstanceStatus(instanceStatus == null ? UNKNOWN_STATUS : instanceStatus.toString());
@@ -298,6 +298,7 @@ public class RdsSnapshotRestoreTaskTest
     when(mockRdsAnalyzer.extractVpcSecurityGroupIds(data.getLiveInstance())).thenReturn(data.getSecurityGroups());
     when(mockRdsClient.modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), stageParamGroupName))
         .thenReturn(data.getStageModifyInstance());
+    when(mockRdsClient.rebootInstance(STAGE_PHYSICAL_NAME)).thenReturn(data.getStageModifyInstance());
     return data;
   }
 
@@ -389,7 +390,7 @@ public class RdsSnapshotRestoreTaskTest
     rdsSnapshotRestoreTask.initModel(STAGE_PHYSICAL_NAME);
     LogicalDatabase stageLogicalDatabase = rdsSnapshotRestoreTask.getStageLogicalDatabase();
     PhysicalDatabase stagePhysicalDatabase = rdsSnapshotRestoreTask.getStagePhysicalDatabase();
-    assertEquals(FAKE_STAGE_ENV, stageLogicalDatabase.getEnvironment());
+    assertEquals(fakeStageEnv, stageLogicalDatabase.getEnvironment());
     assertEquals(LIVE_LOGICAL_NAME, stageLogicalDatabase.getLogicalName());
     assertEquals(STAGE_PHYSICAL_NAME, stagePhysicalDatabase.getInstanceName());
   }

@@ -22,6 +22,7 @@ import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 import com.amazonaws.services.rds.model.DescribeDBSnapshotsRequest;
 import com.amazonaws.services.rds.model.DescribeDBSnapshotsResult;
 import com.amazonaws.services.rds.model.ModifyDBInstanceRequest;
+import com.amazonaws.services.rds.model.RebootDBInstanceRequest;
 import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
 
 /**
@@ -226,6 +227,28 @@ public class RdsClient
     {
       stopWatch.stop();
       LOGGER.debug("deleteDBInstance time elapsed: " + stopWatch);
+    }
+  }
+
+  /**
+   * Requests a reboot of the instance.
+   * <p/>
+   * Caller must wait for status=available afterwards.
+   */
+  public DBInstance rebootInstance(String instanceId)
+  {
+    LOGGER.debug("rebootDBInstance(instanceName: " + instanceId + ")");
+    StopWatch stopWatch = new StopWatch();
+    try
+    {
+      stopWatch.start();
+      RebootDBInstanceRequest request = new RebootDBInstanceRequest(instanceId);
+      return awsRdsClient.rebootDBInstance(request);
+    }
+    finally
+    {
+      stopWatch.stop();
+      LOGGER.debug("rebootDBInstance time elapsed: " + stopWatch);
     }
   }
 

@@ -18,6 +18,7 @@ import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 import com.amazonaws.services.rds.model.DescribeDBSnapshotsRequest;
 import com.amazonaws.services.rds.model.DescribeDBSnapshotsResult;
 import com.amazonaws.services.rds.model.ModifyDBInstanceRequest;
+import com.amazonaws.services.rds.model.RebootDBInstanceRequest;
 import com.amazonaws.services.rds.model.RestoreDBInstanceFromDBSnapshotRequest;
 
 import static org.junit.Assert.assertEquals;
@@ -221,5 +222,17 @@ public class RdsClientTest
     securityGroups.add(SECURITY_GROUP);
 
     assertEquals(mockInstance, rdsClient.modifyInstanceWithSecgrpParamgrp(INSTANCE_NAME, securityGroups, PARAM_GROUP));
+  }
+
+  /**
+   * Tests that rebootInstance returns its rds result object.
+   */
+  @Test
+  public void testRebootInstance()
+  {
+    DBInstance mockInstance = mock(DBInstance.class);
+    when(mockRdsClient.rebootDBInstance(any(RebootDBInstanceRequest.class))).thenReturn(mockInstance);
+
+    assertEquals(mockInstance, rdsClient.rebootInstance(INSTANCE_NAME));
   }
 }
