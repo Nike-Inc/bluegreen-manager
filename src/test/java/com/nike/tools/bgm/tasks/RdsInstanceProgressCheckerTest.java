@@ -155,7 +155,7 @@ public class RdsInstanceProgressCheckerTest
   }
 
   @Test
-  public void testInitialCheckAll_Available()
+  public void testInitialCheckAll_DoneAlready()
   {
     testInitialCheck_DoneAlready(RdsInstanceStatus.CREATING, RdsInstanceStatus.AVAILABLE);
     testInitialCheck_DoneAlready(RdsInstanceStatus.MODIFYING, RdsInstanceStatus.AVAILABLE);

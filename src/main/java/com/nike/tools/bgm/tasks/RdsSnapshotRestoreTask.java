@@ -389,8 +389,9 @@ public class RdsSnapshotRestoreTask extends TaskImpl
 
   /**
    * Restores the live snapshot into the new staging environment.
-   * Then makes a few small modifications that restore would not do automatically.
-   * Returns the modified instance.
+   * Then makes a few small modifications that restore would not do automatically (paramgroup and security group).
+   * Reboots the db so the paramgroup modification will take effect.
+   * Returns the rebooted instance.
    */
   DBInstance restoreStage(DBSnapshot dbSnapshot,
                           DBParameterGroup stageParamGroup,
@@ -405,9 +406,12 @@ public class RdsSnapshotRestoreTask extends TaskImpl
       String subnetGroupName = getSubnetGroupName(liveInstance);
       DBInstance stageInstance = rdsClient.restoreInstanceFromSnapshot(stagePhysicalInstanceName,
           dbSnapshot.getDBSnapshotIdentifier(), subnetGroupName);
-      stageInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, stageInstance, true/*create*/);
+      stageInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, stageInstance, RdsInstanceStatus.CREATING);
       DBInstance modifiedInstance = modifyInstance(stageInstance, stageParamGroup, liveInstance);
-      modifiedInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, modifiedInstance, false/*modify*/);
+      modifiedInstance = waitTilParamGroupIsPendingReboot(stagePhysicalInstanceName, modifiedInstance, stageParamGroup,
+          RdsInstanceStatus.MODIFYING);
+      //DBInstance rebootedInstance = rebootInstance(modifiedInstance);
+      //rebootedInstance = waitTilInstanceIsAvailable(stagePhysicalInstanceName, rebootedInstance, RdsInstanceStatus.REBOOTING);
       return modifiedInstance;
     }
     return null;
@@ -428,20 +432,39 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   /**
    * Creates a Waiter using an instance progress checker, and returns the final DBInstance when waiting is done.
    * In case of error - never returns null, throws instead.
-   *
-   * @param create True if we're waiting on Create Instance, false if Modify Instance.
    */
-  private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance, boolean create)
+  private DBInstance waitTilInstanceIsAvailable(String instanceId, DBInstance initialInstance,
+                                                RdsInstanceStatus expectedInitialState)
   {
     LOGGER.info(liveContext() + "Waiting for instance to become available");
-    RdsInstanceStatus initialState = create ? RdsInstanceStatus.CREATING : RdsInstanceStatus.MODIFYING;
     RdsInstanceProgressChecker progressChecker = new RdsInstanceProgressChecker(instanceId, liveContext(), rdsClient,
-        initialInstance, initialState);
+        initialInstance, expectedInitialState);
     Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBInstance dbInstance = waiter.waitTilDone();
     if (dbInstance == null)
     {
       throw new RuntimeException(liveContext() + progressChecker.getDescription() + " did not become available");
+    }
+    return dbInstance;
+  }
+
+  /**
+   * Creates a Waiter using an instance paramgroup progress checker, and returns the final DBInstance when waiting is done.
+   * In case of error - never returns null, throws instead.
+   */
+  private DBInstance waitTilParamGroupIsPendingReboot(String instanceId, DBInstance initialInstance,
+                                                      DBParameterGroup stageParamGroup,
+                                                      RdsInstanceStatus expectedInitialState)
+  {
+    LOGGER.info(liveContext() + "Waiting for instance to become available and instance paramgroup modification to be fully applied");
+    RdsInstanceParamGroupProgressChecker progressChecker = new RdsInstanceParamGroupProgressChecker(instanceId,
+        stageParamGroup.getDBParameterGroupName(), liveContext(), rdsClient, rdsAnalyzer, initialInstance, expectedInitialState);
+    Waiter<DBInstance> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
+    DBInstance dbInstance = waiter.waitTilDone();
+    if (dbInstance == null)
+    {
+      throw new RuntimeException(liveContext() + progressChecker.getDescription() + " did not become available, "
+          + "or paramgroup failed to reach pending-reboot state");
     }
     return dbInstance;
   }

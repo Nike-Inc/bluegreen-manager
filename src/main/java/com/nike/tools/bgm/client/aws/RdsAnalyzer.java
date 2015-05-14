@@ -82,4 +82,22 @@ public class RdsAnalyzer
     }
     return null;
   }
+
+  /**
+   * Finds the parameter-apply-status of the named parameter group inside the dbInstance.
+   */
+  public RdsParameterApplyStatus findParameterApplyStatus(DBInstance dbInstance, String paramGroupName)
+  {
+    if (dbInstance != null && dbInstance.getDBParameterGroups() != null && StringUtils.isNotBlank(paramGroupName))
+    {
+      for (DBParameterGroupStatus paramGroupStatus : dbInstance.getDBParameterGroups())
+      {
+        if (StringUtils.equals(paramGroupName, paramGroupStatus.getDBParameterGroupName()))
+        {
+          return RdsParameterApplyStatus.fromString(paramGroupStatus.getParameterApplyStatus());
+        }
+      }
+    }
+    return null;
+  }
 }

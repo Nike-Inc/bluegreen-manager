@@ -31,14 +31,14 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   };
 
   private String instanceId;
-  private String logContext;
+  protected String logContext;
   private RdsClient rdsClient;
-  private DBInstance initialInstance;
-  private RdsInstanceStatus expectedInitialState;
-  private RdsInstanceStatus[] expectedIntermediateStates;
-  private RdsInstanceStatus expectedFinalState;
-  private boolean done;
-  private DBInstance result;
+  protected DBInstance initialInstance;
+  protected RdsInstanceStatus expectedInitialState;
+  protected RdsInstanceStatus[] expectedIntermediateStates;
+  protected RdsInstanceStatus expectedFinalState;
+  protected boolean done;
+  protected DBInstance result;
 
   public RdsInstanceProgressChecker(String instanceId,
                                     String logContext,
@@ -61,7 +61,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
     return describeExpectedInitialState() + " '" + instanceId + "'";
   }
 
-  private String describeExpectedInitialState()
+  protected String describeExpectedInitialState()
   {
     switch (expectedInitialState)
     {
@@ -112,7 +112,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   @Override
   public void initialCheck()
   {
-    LOGGER.debug("Initial RDS " + getDescription() + " status: " + initialInstance.getDBInstanceStatus());
+    logInitialStatus();
     checkInstanceId(initialInstance);
     checkInstanceStatus(initialInstance);
   }
@@ -128,13 +128,23 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
     {
       DBInstance dbInstance = rdsClient.describeInstance(instanceId);
       checkInstanceId(dbInstance);
-      LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
+      logFollowupStatus(waitNum, dbInstance);
       checkInstanceStatus(dbInstance);
     }
     catch (DBInstanceNotFoundException e)
     {
       handleInstanceNotFound(waitNum, e);
     }
+  }
+
+  protected void logInitialStatus()
+  {
+    LOGGER.debug("Initial RDS " + getDescription() + " status: " + initialInstance.getDBInstanceStatus());
+  }
+
+  protected void logFollowupStatus(int waitNum, DBInstance dbInstance)
+  {
+    LOGGER.debug("RDS " + getDescription() + " status after wait#" + waitNum + ": " + dbInstance.getDBInstanceStatus());
   }
 
   /**
@@ -153,10 +163,9 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   /**
    * Checks if the instance is in an acceptable intermediate status, and flags done if at final state.
    */
-  private void checkInstanceStatus(DBInstance dbInstance)
+  protected void checkInstanceStatus(DBInstance dbInstance)
   {
     final String status = dbInstance.getDBInstanceStatus();
-    final String instanceId = dbInstance.getDBInstanceIdentifier();
     if (expectedFinalState.equalsString(status))
     {
       LOGGER.info("RDS " + getDescription() + " is done");
