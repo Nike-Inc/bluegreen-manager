@@ -65,6 +65,7 @@ public class RdsInstanceProgressCheckerTest
     testGetDescription("Create", RdsInstanceStatus.CREATING);
     testGetDescription("Modify", RdsInstanceStatus.MODIFYING);
     testGetDescription("Delete", RdsInstanceStatus.DELETING);
+    testGetDescription("Reboot", RdsInstanceStatus.REBOOTING);
   }
 
   /**
@@ -95,6 +96,12 @@ public class RdsInstanceProgressCheckerTest
     testInitialCheck_Acceptable(RdsInstanceStatus.DELETING);
   }
 
+  @Test
+  public void testInitialCheckReboot_Acceptable()
+  {
+    testInitialCheck_Acceptable(RdsInstanceStatus.REBOOTING);
+  }
+
   /**
    * Ask for initial status, describe shows initially doing other status = done with error (null result).
    */
@@ -113,6 +120,7 @@ public class RdsInstanceProgressCheckerTest
     testInitialCheck_BadStatus(RdsInstanceStatus.CREATING, RdsInstanceStatus.DELETING);
     testInitialCheck_BadStatus(RdsInstanceStatus.MODIFYING, RdsInstanceStatus.DELETING);
     testInitialCheck_BadStatus(RdsInstanceStatus.DELETING, RdsInstanceStatus.AVAILABLE);
+    testInitialCheck_BadStatus(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.CREATING);
   }
 
   /**
@@ -142,6 +150,12 @@ public class RdsInstanceProgressCheckerTest
     testInitialCheck_WrongId(RdsInstanceStatus.DELETING);
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void testInitialCheckReboot_WrongId()
+  {
+    testInitialCheck_WrongId(RdsInstanceStatus.REBOOTING);
+  }
+
   /**
    * Ask for initial status, describe shows final state = done, with good result.
    */
@@ -160,6 +174,7 @@ public class RdsInstanceProgressCheckerTest
     testInitialCheck_DoneAlready(RdsInstanceStatus.CREATING, RdsInstanceStatus.AVAILABLE);
     testInitialCheck_DoneAlready(RdsInstanceStatus.MODIFYING, RdsInstanceStatus.AVAILABLE);
     testInitialCheck_DoneAlready(RdsInstanceStatus.DELETING, RdsInstanceStatus.DELETED);
+    testInitialCheck_DoneAlready(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.AVAILABLE);
   }
 
   /**
@@ -210,6 +225,12 @@ public class RdsInstanceProgressCheckerTest
     testFollowupCheck_Intermediate(RdsInstanceStatus.DELETING, RdsInstanceStatus.DELETING);
   }
 
+  @Test
+  public void testFollowupCheckReboot_Intermediate()
+  {
+    testFollowupCheck_Intermediate(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.REBOOTING);
+  }
+
   /**
    * Followup with bad status = end with error (i.e. null result).
    */
@@ -242,6 +263,12 @@ public class RdsInstanceProgressCheckerTest
     testFollowupCheck_BadStatus(RdsInstanceStatus.DELETING, RdsInstanceStatus.AVAILABLE);
   }
 
+  @Test
+  public void testFollowupCheckReboot_BadStatus()
+  {
+    testFollowupCheck_BadStatus(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.CREATING);
+  }
+
   /**
    * Followup shows wrong snapshot id = throw.
    */
@@ -269,6 +296,12 @@ public class RdsInstanceProgressCheckerTest
   public void testFollowupCheckDelete_WrongId()
   {
     testFollowupCheck_WrongId(RdsInstanceStatus.DELETING, RdsInstanceStatus.DELETING);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testFollowupCheckReboot_WrongId()
+  {
+    testFollowupCheck_WrongId(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.REBOOTING);
   }
 
   /**
@@ -301,5 +334,11 @@ public class RdsInstanceProgressCheckerTest
   public void testFollowupCheckDelete_Final()
   {
     testFollowupCheck_Final(RdsInstanceStatus.DELETING, RdsInstanceStatus.DELETED);
+  }
+
+  @Test
+  public void testFollowupCheckReboot_Final()
+  {
+    testFollowupCheck_Final(RdsInstanceStatus.REBOOTING, RdsInstanceStatus.AVAILABLE);
   }
 }

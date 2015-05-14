@@ -84,10 +84,16 @@ public class RdsAnalyzerTest
     assertNull(rdsAnalyzer.findSelfNamedParamGroupName(dbInstance));
   }
 
+  private DBInstance makeDBInstanceWithParamGroups(String... paramGroupNames)
+  {
+    return makeDBInstanceWithParamGroups(RdsParameterApplyStatus.IN_SYNC, paramGroupNames);
+  }
+
   /**
    * Test helper - makes a DBInstance having the specified paramgroup names.
    */
-  private DBInstance makeDBInstanceWithParamGroups(String... paramGroupNames)
+  private DBInstance makeDBInstanceWithParamGroups(RdsParameterApplyStatus parameterApplyStatus,
+                                                   String... paramGroupNames)
   {
     DBInstance dbInstance = new DBInstance();
     dbInstance.setDBInstanceIdentifier(INSTANCE_NAME);
@@ -96,17 +102,19 @@ public class RdsAnalyzerTest
       Collection<DBParameterGroupStatus> paramGroups = new ArrayList<DBParameterGroupStatus>();
       for (String paramGroupName : paramGroupNames)
       {
-        paramGroups.add(makeDBParameterGroupStatus(paramGroupName));
+        paramGroups.add(makeDBParameterGroupStatus(paramGroupName, parameterApplyStatus));
       }
       dbInstance.setDBParameterGroups(paramGroups);
     }
     return dbInstance;
   }
 
-  private DBParameterGroupStatus makeDBParameterGroupStatus(String paramGroupName)
+  private DBParameterGroupStatus makeDBParameterGroupStatus(String paramGroupName,
+                                                            RdsParameterApplyStatus parameterApplyStatus)
   {
     DBParameterGroupStatus paramGroup = new DBParameterGroupStatus();
     paramGroup.setDBParameterGroupName(paramGroupName);
+    paramGroup.setParameterApplyStatus(parameterApplyStatus.toString());
     return paramGroup;
   }
 
@@ -146,5 +154,12 @@ public class RdsAnalyzerTest
     VpcSecurityGroupMembership securityGroup = new VpcSecurityGroupMembership();
     securityGroup.setVpcSecurityGroupId(securityGroupId);
     return securityGroup;
+  }
+
+  @Test
+  public void testFindParameterApplyStatus()
+  {
+    DBInstance dbInstance = makeDBInstanceWithParamGroups(RdsParameterApplyStatus.APPLYING, PARAM_GROUP_DEFAULT);
+    assertEquals(RdsParameterApplyStatus.APPLYING, rdsAnalyzer.findParameterApplyStatus(dbInstance, PARAM_GROUP_DEFAULT));
   }
 }

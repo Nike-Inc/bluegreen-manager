@@ -20,6 +20,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   private static final RdsInstanceStatus CREATE_FINAL_STATE = RdsInstanceStatus.AVAILABLE;
   private static final RdsInstanceStatus MODIFY_FINAL_STATE = RdsInstanceStatus.AVAILABLE;
   private static final RdsInstanceStatus DELETE_FINAL_STATE = RdsInstanceStatus.DELETED;
+  private static final RdsInstanceStatus REBOOT_FINAL_STATE = RdsInstanceStatus.AVAILABLE;
   private static final RdsInstanceStatus[] CREATE_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
       RdsInstanceStatus.CREATING, RdsInstanceStatus.BACKING_UP, RdsInstanceStatus.MODIFYING
   };
@@ -28,6 +29,9 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
   };
   private static final RdsInstanceStatus[] DELETE_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
       RdsInstanceStatus.DELETING
+  };
+  private static final RdsInstanceStatus[] REBOOT_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
+      RdsInstanceStatus.REBOOTING
   };
 
   private String instanceId;
@@ -71,6 +75,8 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
         return "Modify Instance";
       case DELETING:
         return "Delete Instance";
+      case REBOOTING:
+        return "Reboot Instance";
       default:
         throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
     }
@@ -86,6 +92,8 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
         return MODIFY_INTERMEDIATE_STATES;
       case DELETING:
         return DELETE_INTERMEDIATE_STATES;
+      case REBOOTING:
+        return REBOOT_INTERMEDIATE_STATES;
       default:
         throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
     }
@@ -101,6 +109,8 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
         return MODIFY_FINAL_STATE;
       case DELETING:
         return DELETE_FINAL_STATE;
+      case REBOOTING:
+        return REBOOT_FINAL_STATE;
       default:
         throw new IllegalArgumentException("Cannot check progress from initial state '" + expectedInitialState + "'");
     }
