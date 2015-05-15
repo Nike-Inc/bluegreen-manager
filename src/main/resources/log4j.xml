@@ -87,6 +87,11 @@
     <priority value="DEBUG"/>
   </category>
 
+  <!-- Amazon logRequestId ("x-amzn-RequestId") at level INFO can be a tad verbose -->
+  <category name="com.amazonaws.http.AmazonHttpClient">
+    <priority value="WARN"/>
+  </category>
+
   <category name="com.nike.tools.bgm">
     <priority value="DEBUG"/>
   </category>
