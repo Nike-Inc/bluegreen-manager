@@ -91,17 +91,20 @@ public class SshClient
       session.execCommand(wrappedCommand);
       return makeResult(session);
     }
-    catch (IOException e)
+    catch (Throwable e)
     {
+      // Technically the above should only throw IOException.  However other exceptions are possible,
+      // such as NullPointerException, and it would be a shame to have captured no output in such an event.
       try
       {
+        LOGGER.error("Error in command: " + wrappedCommand);
         LOGGER.error("Command output:\n" + streamToString(session.getStdout()));
         LOGGER.error("Command exitValue: " + session.getExitStatus());
         LOGGER.error("Command exitSignal: " + session.getExitSignal());
       }
-      catch (IOException e2)
+      catch (Throwable e2)
       {
-        LOGGER.error("Unable to capture any output :(");
+        LOGGER.error("Unable to capture full results from ssh session :(");
       }
       throw new RuntimeException(context() + "Error executing command '" + wrappedCommand + "', time elapsed: " + stopWatch, e);
     }
@@ -125,6 +128,7 @@ public class SshClient
   {
     String output = streamToString(session.getStdout());
     Integer exitValue = session.getExitStatus();
-    return new ShellResult(output, exitValue);
+    int exitValueAsInt = exitValue == null ? Integer.MIN_VALUE : exitValue;
+    return new ShellResult(output, exitValueAsInt);
   }
 }
