@@ -93,6 +93,16 @@ public class SshClient
     }
     catch (IOException e)
     {
+      try
+      {
+        LOGGER.error("Command output:\n" + streamToString(session.getStdout()));
+        LOGGER.error("Command exitValue: " + session.getExitStatus());
+        LOGGER.error("Command exitSignal: " + session.getExitSignal());
+      }
+      catch (IOException e2)
+      {
+        LOGGER.error("Unable to capture any output :(");
+      }
       throw new RuntimeException(context() + "Error executing command '" + wrappedCommand + "', time elapsed: " + stopWatch, e);
     }
     finally
