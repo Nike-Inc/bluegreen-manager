@@ -115,11 +115,16 @@ public class SshVmCreateTask extends ApplicationVmTask
     }
   }
 
+  /**
+   * Makes a zero-env string substituter based on the user-specified envName.
+   * <p/>
+   * Can't use OneEnvStringSubstituter because of its assertion that 1 applicationVm already exists!
+   */
   private StringSubstituter makeInitialStringSubstituter(String envName)
   {
     Map<String, String> substitutions = new HashMap<String, String>();
     substitutions.put(ENV_NAME, envName);
-    return stringSubstituterFactory.createOne(envName, substitutions);
+    return stringSubstituterFactory.createZero(substitutions);
   }
 
   /**
