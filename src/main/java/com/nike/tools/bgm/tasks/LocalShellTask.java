@@ -3,10 +3,8 @@ package com.nike.tools.bgm.tasks;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +14,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.TaskStatus;
-import com.nike.tools.bgm.substituter.StringSubstituter;
-import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
 
@@ -34,55 +31,12 @@ import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
 @Lazy
 @Component
 @Scope("prototype")
-public class LocalShellTask extends TaskImpl
+public class LocalShellTask extends ShellTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(LocalShellTask.class);
 
   @Autowired
   private ProcessBuilderAdapterFactory processBuilderAdapterFactory;
-
-  @Autowired
-  private StringSubstituterFactory stringSubstituterFactory;
-
-  private LocalShellConfig localShellConfig;
-  private Pattern patternError;
-  private StringSubstituter stringSubstituter;
-
-  /**
-   * Two-env shell task.
-   */
-  public Task assign(int position, String liveEnvName, String stageEnvName, LocalShellConfig localShellConfig)
-  {
-    super.assign(position);
-    this.localShellConfig = localShellConfig;
-    if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
-    {
-      this.patternError = Pattern.compile(localShellConfig.getRegexpError());
-    }
-    this.stringSubstituter = stringSubstituterFactory.createTwo(liveEnvName, stageEnvName,
-        localShellConfig.getExtraSubstitutions());
-    return this;
-  }
-
-  /**
-   * One-env shell task.
-   */
-  public Task assign(int position, String envName, LocalShellConfig localShellConfig)
-  {
-    super.assign(position);
-    this.localShellConfig = localShellConfig;
-    if (StringUtils.isNotBlank(localShellConfig.getRegexpError()))
-    {
-      this.patternError = Pattern.compile(localShellConfig.getRegexpError());
-    }
-    this.stringSubstituter = stringSubstituterFactory.createOne(envName, localShellConfig.getExtraSubstitutions());
-    return this;
-  }
-
-  private void loadDataModel()
-  {
-    stringSubstituter.loadDataModel();
-  }
 
   /**
    * Runs a configurable command locally.
@@ -98,10 +52,11 @@ public class LocalShellTask extends TaskImpl
     if (!noop)
     {
       checkConfig();
-      String[] commandTokens = stringSubstituter.substituteVariables(localShellConfig.getCommand()).split("\\s+");
+      SubstituterResult command = stringSubstituter.substituteVariables(shellConfig.getCommand());
+      String[] commandTokens = command.getSubstituted().split("\\s+");
       ProcessBuilderAdapter processBuilderAdapter = processBuilderAdapterFactory.create(commandTokens)
           .redirectErrorStream(true);
-      LOGGER.info("Executing command '" + StringUtils.join(commandTokens, " ") + "'");
+      LOGGER.info("Executing command '" + command.getExpurgated() + "'");
       StopWatch stopWatch = new StopWatch();
       Process process = null;
       try
@@ -113,12 +68,12 @@ public class LocalShellTask extends TaskImpl
       }
       catch (IOException e)
       {
-        LOGGER.error("Shell command failed: " + StringUtils.join(commandTokens, " "), e);
+        LOGGER.error("Shell command failed: " + command.getExpurgated(), e);
         taskStatus = TaskStatus.ERROR;
       }
       catch (InterruptedException e)
       {
-        LOGGER.error("Shell command interrupted: " + StringUtils.join(commandTokens, " "), e);
+        LOGGER.error("Shell command interrupted: " + command.getExpurgated(), e);
         taskStatus = TaskStatus.ERROR;
       }
       finally
@@ -129,17 +84,6 @@ public class LocalShellTask extends TaskImpl
       }
     }
     return taskStatus;
-  }
-
-  /**
-   * Checks that the local shell config gives a way to verify success or failure of the process run.
-   */
-  private void checkConfig()
-  {
-    if (localShellConfig.getExitvalueSuccess() == null && StringUtils.isBlank(localShellConfig.getRegexpError()))
-    {
-      throw new IllegalArgumentException("Configuration should specify one or both of exitvalueSuccess and regexpError");
-    }
   }
 
   /**
@@ -163,49 +107,6 @@ public class LocalShellTask extends TaskImpl
     LOGGER.debug("---------- OUTPUT ENDS ----------");
     logExitValue(process.waitFor());
     return sb.toString();
-  }
-
-  /**
-   * Checks the process output and exitValue and returns DONE (success) or ERROR.
-   */
-  private TaskStatus checkForErrors(String output, int exitValue)
-  {
-    return checkOutput(output) && checkExitValue(exitValue) ? TaskStatus.DONE : TaskStatus.ERROR;
-  }
-
-  /**
-   * True if output looks ok, or if error-regexp hasn't been defined.
-   * False if output matches the error-regexp.
-   */
-  private boolean checkOutput(String output)
-  {
-    return patternError == null || !patternError.matcher(output).find();
-  }
-
-  /**
-   * True if exitValue looks like success, or if success hasn't been defined.
-   * <p/>
-   * False only if success was defined and this exitValue is something else.
-   */
-  private boolean checkExitValue(int exitValue)
-  {
-    return localShellConfig.getExitvalueSuccess() == null || localShellConfig.getExitvalueSuccess() == exitValue;
-  }
-
-  /**
-   * Logs the exit value, remarking on success/failure if the local shell config has defined the success value.
-   */
-  private void logExitValue(int exitValue)
-  {
-    if (localShellConfig.getExitvalueSuccess() == null)
-    {
-      LOGGER.debug("Command exit code: " + exitValue);
-    }
-    else
-    {
-      boolean success = localShellConfig.getExitvalueSuccess() == exitValue;
-      LOGGER.debug("Command exit code: " + exitValue + " " + (success ? "(success)" : "(failure)"));
-    }
   }
 
   /**

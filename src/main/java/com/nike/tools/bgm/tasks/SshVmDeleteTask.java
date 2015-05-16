@@ -12,6 +12,7 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.substituter.StringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ShellResult;
 
 /**
@@ -90,11 +91,12 @@ public class SshVmDeleteTask extends ApplicationVmTask
     LOGGER.info(context() + "Executing vm-delete command over ssh" + noopRemark(noop));
     if (!noop)
     {
-      String command = stringSubstituter.substituteVariables(sshVmDeleteConfig.getInitialCommand());
+      SubstituterResult command = stringSubstituter.substituteVariables(sshVmDeleteConfig.getInitialCommand());
       ShellResult result = sshClient.execCommand(command);
       checkDeleted(result);
     }
   }
+
   /**
    * Checks that there were no errors in the deletion result.
    * <p/>

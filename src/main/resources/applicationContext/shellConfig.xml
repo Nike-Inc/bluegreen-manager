@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <bean class="com.nike.tools.bgm.tasks.ShellConfig">
+    <qualifier value="createStageEnv"/>
+    <property name="command" value="${bluegreen.shellConfig.createStageEnv.command}"/>
+    <property name="regexpError" value="${bluegreen.shellConfig.createStageEnv.regexp.error}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.createStageEnv.exitvalue.success}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.tasks.ShellConfig">
+    <qualifier value="deployPackages"/>
+    <property name="command" value="${bluegreen.shellConfig.deployPackages.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.deployPackages.exitvalue.success}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.tasks.ShellConfig">
+    <qualifier value="shutdownApplications"/>
+    <property name="command" value="${bluegreen.shellConfig.shutdownApplications.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.shutdownApplications.exitvalue.success}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.tasks.ShellConfig">
+    <qualifier value="deleteEnv"/>
+    <property name="command" value="${bluegreen.shellConfig.deleteEnv.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.deleteEnv.exitvalue.success}"/>
+  </bean>
+
+</beans>

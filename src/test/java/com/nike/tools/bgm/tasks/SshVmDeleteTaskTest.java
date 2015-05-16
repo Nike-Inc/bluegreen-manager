@@ -18,6 +18,7 @@ import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
 import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import static org.junit.Assert.assertEquals;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 public class SshVmDeleteTaskTest
 {
   private static final String INITIAL_CMD = "delete stuff in env %{envName}";
+  private static final SubstituterResult INITIAL_CMD_SUBST = new SubstituterResult(INITIAL_CMD, INITIAL_CMD);
   private static final Integer INITIAL_EXITVALUE_SUCCESS = 0;
   private static final ShellResult DONE_RESULT = new ShellResult("New VM was successfully deleted", 0);
   private static final ShellResult ERROR_RESULT = new ShellResult("No such VM, could not delete", 1);
@@ -73,7 +75,7 @@ public class SshVmDeleteTaskTest
     when(mockOneEnvLoader.getApplicationVm()).thenReturn(fullEnv.getApplicationVms().get(0));
     when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     when(mockStringSubstituterFactory.createOne(fullEnv.getEnvName(), null)).thenReturn(mockOneEnvStringSubstituter);
-    when(mockOneEnvStringSubstituter.substituteVariables(INITIAL_CMD)).thenReturn(INITIAL_CMD);
+    when(mockOneEnvStringSubstituter.substituteVariables(INITIAL_CMD)).thenReturn(INITIAL_CMD_SUBST);
     sshVmDeleteTask.init(1, fullEnv.getEnvName());
   }
 
@@ -93,11 +95,11 @@ public class SshVmDeleteTaskTest
   @Test
   public void testProcess_Pass()
   {
-    when(mockSshClient.execCommand(INITIAL_CMD)).thenReturn(DONE_RESULT);
+    when(mockSshClient.execCommand(INITIAL_CMD_SUBST)).thenReturn(DONE_RESULT);
     assertEquals(TaskStatus.DONE, sshVmDeleteTask.process(false));
     verify(mockOneEnvLoader).loadApplicationVm(false);
     verify(mockSshClient).init(mockSshTarget);
-    verify(mockSshClient).execCommand(INITIAL_CMD);
+    verify(mockSshClient).execCommand(INITIAL_CMD_SUBST);
     verify(mockEnvironmentTx).updateEnvironment(fullEnv);
   }
 
@@ -107,7 +109,7 @@ public class SshVmDeleteTaskTest
   @Test(expected = RuntimeException.class)
   public void testProcess_Fail()
   {
-    when(mockSshClient.execCommand(INITIAL_CMD)).thenReturn(ERROR_RESULT);
+    when(mockSshClient.execCommand(INITIAL_CMD_SUBST)).thenReturn(ERROR_RESULT);
     sshVmDeleteTask.process(false);
   }
 }

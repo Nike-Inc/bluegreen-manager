@@ -1,8 +1,8 @@
 package com.nike.tools.bgm.substituter;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
@@ -11,44 +11,20 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.TwoEnvLoader;
 
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.APPLICATION_VM_MAP;
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.LIVE_ENV;
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.PHYSICAL_DB_MAP;
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.STAGE_ENV;
+
 /**
- * Makes string substitutions of %{..} variables using datamodel entity values involving two environments
- * (live and stage envs).
- * <p/>
- * Variables supported: liveEnv, stageEnv, applicationVmMap, physicalDbMap.
- * Also any extraSubstitutions.
+ * Adds to the base string substituter impl by defining variables related to datamodel entity values involving two
+ * environments (live and stage envs).
  */
 @Lazy
 @Component
 @Scope("prototype")
-public class TwoEnvStringSubstituter extends StringSubstituterExtraImpl
+public class TwoEnvStringSubstituter extends StringSubstituterBaseImpl
 {
-  /**
-   * Variable to be substituted with the name of the live environment.
-   */
-  private static final String CMDVAR_LIVE_ENV = "%{liveEnv}";
-
-  /**
-   * Variable to be substituted with the name of the stage environment.
-   */
-  private static final String CMDVAR_STAGE_ENV = "%{stageEnv}";
-
-  /**
-   * Variable to be substituted with a comma-delimited list of four applicationVm properties:
-   * liveHostname,liveIpAddress,stageHostname,stageIpAddress.
-   * <p/>
-   * Currently only supports mapping 1 vm from live to stage.
-   */
-  private static final String CMDVAR_APPLICATION_VM_MAP = "%{applicationVmMap}";
-
-  /**
-   * Variable to be substituted with a comma-delimited list of two physicaldb properties:
-   * livePhysicalInstName,stagePhysicalInstName
-   * <p/>
-   * Currently only supports mapping 1 physicaldb from live to stage.
-   */
-  private static final String CMDVAR_PHYSICAL_DB_MAP = "%{physicalDbMap}";
-
   @Autowired
   private EnvLoaderFactory envLoaderFactory;
 
@@ -57,16 +33,11 @@ public class TwoEnvStringSubstituter extends StringSubstituterExtraImpl
   private Map<String, String> extraSubstitutions;
   private TwoEnvLoader twoEnvLoader;
 
-  public TwoEnvStringSubstituter()
-  {
-    super();
-  }
-
   public TwoEnvStringSubstituter(String liveEnvName, String stageEnvName, Map<String, String> extraSubstitutions)
   {
-    super(extraSubstitutions);
     this.liveEnvName = liveEnvName;
     this.stageEnvName = stageEnvName;
+    this.extraSubstitutions = extraSubstitutions;
   }
 
   @Override
@@ -74,24 +45,20 @@ public class TwoEnvStringSubstituter extends StringSubstituterExtraImpl
   {
     this.twoEnvLoader = envLoaderFactory.createTwo(liveEnvName, stageEnvName);
     twoEnvLoader.loadDataModel();
+    prepareSubstitutions();
   }
 
-  /**
-   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   */
-  @Override
-  public String substituteVariables(String command)
+  private void prepareSubstitutions()
   {
-    if (StringUtils.isBlank(command))
+    substitutions = new HashMap<String, String>();
+    if (extraSubstitutions != null)
     {
-      throw new IllegalArgumentException("Command is blank");
+      substitutions.putAll(extraSubstitutions);
     }
-    String substituted = command;
-    substituted = StringUtils.replace(substituted, CMDVAR_LIVE_ENV, liveEnvName);
-    substituted = StringUtils.replace(substituted, CMDVAR_STAGE_ENV, stageEnvName);
-    substituted = StringUtils.replace(substituted, CMDVAR_APPLICATION_VM_MAP, makeApplicationVmMapString());
-    substituted = StringUtils.replace(substituted, CMDVAR_PHYSICAL_DB_MAP, makePhysicalDbMapString());
-    return substituteExtra(substituted);
+    substitutions.put(LIVE_ENV, liveEnvName);
+    substitutions.put(STAGE_ENV, stageEnvName);
+    substitutions.put(APPLICATION_VM_MAP, makeApplicationVmMapString());
+    substitutions.put(PHYSICAL_DB_MAP, makePhysicalDbMapString());
   }
 
   /**

@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import ch.ethz.ssh2.Connection;
@@ -36,6 +37,7 @@ public class SshClientTest
   private static final long TIMEOUT = 10L;
   private static final int TIMEOUT_INT = (int) TIMEOUT;
   private static final String COMMAND = "run the big stuff";
+  private static final SubstituterResult SUBSTITUTED_COMMAND = new SubstituterResult(COMMAND, COMMAND);
   private static final String STDOUT_STRING = "The first line of output.\nThe second line.\nAnd a third line.\n";
   private static final ShellResult RESULT = new ShellResult(STDOUT_STRING, 0);
   private static final InputStream INPUT_STREAM = IOUtils.toInputStream(STDOUT_STRING);
@@ -115,7 +117,7 @@ public class SshClientTest
     when(mockSession.getExitStatus()).thenReturn(0);
     authenticationIsSuccessful(true);
     initWithFakeTarget();
-    assertEquals(RESULT, sshClient.execCommand(COMMAND));
+    assertEquals(RESULT, sshClient.execCommand(SUBSTITUTED_COMMAND));
     verify(mockSession).close();
   }
 
@@ -128,6 +130,6 @@ public class SshClientTest
     doThrow(new IOException()).when(mockSession).execCommand(anyString());
     authenticationIsSuccessful(true);
     initWithFakeTarget();
-    sshClient.execCommand(COMMAND);
+    sshClient.execCommand(SUBSTITUTED_COMMAND);
   }
 }

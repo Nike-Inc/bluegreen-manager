@@ -15,6 +15,7 @@ import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.substituter.TwoEnvStringSubstituter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapter;
 import com.nike.tools.bgm.utils.ProcessBuilderAdapterFactory;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 public class LocalShellTaskTest
 {
   private static final String COMMAND = "run some stuff";
+  private static final SubstituterResult SUBSTITUTED_COMMAND = new SubstituterResult(COMMAND, COMMAND);
   private static final String REGEXP_ERROR = "(An ERROR happened!|Bad stuff)";
   private static final Integer EXITCODE_SUCCESS = 0;
   private static final Integer EXITCODE_ERROR = 1;
@@ -60,15 +62,15 @@ public class LocalShellTaskTest
   @Mock
   private Process mockProcess;
 
-  private LocalShellConfig localShellConfig = new LocalShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
+  private ShellConfig shellConfig = new ShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
 
   @Before
   public void setUpTwoEnv() //TODO - need to test setUpOneEnv as well
   {
     when(mockStringSubstituterFactory.createTwo(anyString(), anyString(), anyMapOf(String.class, String.class)))
         .thenReturn(mockTwoEnvStringSubstituter);
-    when(mockTwoEnvStringSubstituter.substituteVariables(anyString())).thenReturn(COMMAND);
-    localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), localShellConfig);
+    when(mockTwoEnvStringSubstituter.substituteVariables(anyString())).thenReturn(SUBSTITUTED_COMMAND);
+    localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), shellConfig);
   }
 
   private void setUpProcessBuilder(String fakeOutput, int fakeExitValue) throws IOException
@@ -128,7 +130,7 @@ public class LocalShellTaskTest
   public void testProcess_ExitValueOk() throws IOException
   {
     setUpProcessBuilder("Output: exitValue is an 'error' but it will pass since there is no configured success value\n", EXITCODE_ERROR);
-    localShellConfig.setExitvalueSuccess(null);
+    shellConfig.setExitvalueSuccess(null);
     assertEquals(TaskStatus.DONE, localShellTask.process(false));
     verifyProcessBuilder();
   }

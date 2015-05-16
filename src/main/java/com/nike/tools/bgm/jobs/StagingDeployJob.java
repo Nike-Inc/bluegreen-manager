@@ -14,10 +14,10 @@ import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.FreezeTask;
-import com.nike.tools.bgm.tasks.LocalShellConfig;
 import com.nike.tools.bgm.tasks.LocalShellTask;
 import com.nike.tools.bgm.tasks.RdsSnapshotRestoreTask;
 import com.nike.tools.bgm.tasks.RegisterApplicationTask;
+import com.nike.tools.bgm.tasks.ShellConfig;
 import com.nike.tools.bgm.tasks.SmokeTestTask;
 import com.nike.tools.bgm.tasks.SshVmCreateTask;
 import com.nike.tools.bgm.tasks.Task;
@@ -38,11 +38,11 @@ public class StagingDeployJob extends TaskSequenceJob
 
   @Autowired
   @Qualifier("createStageEnv")
-  private LocalShellConfig createStageEnvConfig;
+  private ShellConfig createStageEnvConfig;
 
   @Autowired
   @Qualifier("deployPackages")
-  private LocalShellConfig deployPackagesConfig;
+  private ShellConfig deployPackagesConfig;
 
   private String liveEnvName;
   private String stageEnvName;

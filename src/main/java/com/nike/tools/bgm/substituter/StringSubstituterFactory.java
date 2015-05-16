@@ -17,6 +17,11 @@ public class StringSubstituterFactory
   @Autowired
   protected ApplicationContext applicationContext;
 
+  public ZeroEnvStringSubstituter createZero(Map<String, String> extraSubstitutions)
+  {
+    return applicationContext.getBean(ZeroEnvStringSubstituter.class, extraSubstitutions);
+  }
+
   public OneEnvStringSubstituter createOne(String envName, Map<String, String> extraSubstitutions)
   {
     return applicationContext.getBean(OneEnvStringSubstituter.class, envName, extraSubstitutions);

@@ -1,5 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,8 +12,13 @@ import org.slf4j.LoggerFactory;
 import com.nike.tools.bgm.client.ssh.SshClient;
 import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
+import com.nike.tools.bgm.substituter.StringSubstituter;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ProgressChecker;
 import com.nike.tools.bgm.utils.ShellResult;
+
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.HOSTNAME;
 
 /**
  * Knows how to check progress of vm creation initiated by an ssh command.
@@ -26,6 +33,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   private SshClient sshClient;
   private SshTarget sshTarget;
   private SshVmCreateConfig sshVmCreateConfig;
+  private StringSubstituterFactory stringSubstituterFactory;
   private String hostname; //vm created
   private String ipAddress; //vm created
   private Pattern initialPatternHostname;
@@ -37,13 +45,15 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
 
   public SshVmCreateProgressChecker(ShellResult initialResult,
                                     String logContext, SshClient sshClient,
-                                    SshTarget sshTarget, SshVmCreateConfig sshVmCreateConfig)
+                                    SshTarget sshTarget, SshVmCreateConfig sshVmCreateConfig,
+                                    StringSubstituterFactory stringSubstituterFactory)
   {
     this.initialResult = initialResult;
     this.logContext = logContext;
     this.sshClient = sshClient;
     this.sshTarget = sshTarget;
     this.sshVmCreateConfig = sshVmCreateConfig;
+    this.stringSubstituterFactory = stringSubstituterFactory;
     this.initialPatternHostname = Pattern.compile(sshVmCreateConfig.getInitialRegexpHostname());
     this.initialPatternIpAddress = Pattern.compile(sshVmCreateConfig.getInitialRegexpIpaddress());
     this.followupPatternDone = Pattern.compile(sshVmCreateConfig.getFollowupRegexpDone());
@@ -145,7 +155,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   @Override
   public void followupCheck(int waitNum)
   {
-    String command = substituteFollowupVariables(sshVmCreateConfig.getFollowupCommand());
+    SubstituterResult command = substituteFollowupVariables(sshVmCreateConfig.getFollowupCommand());
     ShellResult followupResult = sshClient.execCommand(command);
     String followupOutput = followupResult.getOutput();
     LOGGER.debug("SSH VM Creation state after wait#" + waitNum + ": " + followupOutput);
@@ -161,14 +171,14 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   }
 
   /**
-   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   * Currently supports only one variable: hostname
-   * <p/>
-   * Can't support '${..}' since Spring already substitutes that in properties file.
+   * Substitutes %{..} variables in the template commmand, returns the result.
    */
-  private String substituteFollowupVariables(String original)
+  private SubstituterResult substituteFollowupVariables(String template)
   {
-    return StringUtils.replace(original, CMDVAR_HOSTNAME, hostname);
+    Map<String, String> substitutions = new HashMap<String, String>();
+    substitutions.put(HOSTNAME, hostname);
+    StringSubstituter stringSubstituter = stringSubstituterFactory.createZero(substitutions);
+    return stringSubstituter.substituteVariables(template);
   }
 
   /**

@@ -6,11 +6,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
- * Configures the local shell command.
+ * Configures a shell command: the command template, variable substitutions, regular expression to detect errors,
+ * expected command exit value.
  */
 @Lazy
 @Component
-public class LocalShellConfig
+public class ShellConfig
 {
   /**
    * Shell command, which may include instances of "%{variable}".
@@ -31,18 +32,18 @@ public class LocalShellConfig
    * Optional map from %{variable} to 'replacement-value'.  e.g. Map('%{hello}', 'world') applied to command
    * "doStuff --arg %{hello}" would result in a shell command "doStuff --arg world".
    * <p/>
-   * This is in addition to the datamodel-related variables defined in LocalShellTask for all shell commands.
+   * This is in addition to the datamodel-related variables defined in LocalShellTask or RemoteShellTask.
    */
   private Map<String, String> extraSubstitutions;
 
-  public LocalShellConfig()
+  public ShellConfig()
   {
   }
 
-  public LocalShellConfig(String command,
-                          String regexpError,
-                          Integer exitvalueSuccess,
-                          Map<String, String> extraSubstitutions)
+  public ShellConfig(String command,
+                     String regexpError,
+                     Integer exitvalueSuccess,
+                     Map<String, String> extraSubstitutions)
   {
     this.command = command;
     this.regexpError = regexpError;

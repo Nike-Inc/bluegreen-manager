@@ -1,6 +1,8 @@
 package com.nike.tools.bgm.tasks;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,15 +15,20 @@ import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.model.domain.ApplicationVm;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
+import com.nike.tools.bgm.substituter.StringSubstituter;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.ENV_NAME;
+
 /**
  * Executes a long-running configurable command over ssh to a third-party system that knows how to
  * create an application vm.
- *
+ * <p/>
  * TODO - this should be two tasks, one for remote cmd execution and one for model update
  */
 @Lazy
@@ -51,13 +58,17 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Autowired
   private SshClient sshClient;
 
+  @Autowired
+  private StringSubstituterFactory stringSubstituterFactory;
+
   public Task init(int position, String envName)
   {
     super.assign(position, envName, true/*createVm*/);
     return this;
   }
 
-  /**a
+  /**
+   * a
    * Runs a command over ssh on a third-party host that knows how to create an application vm.
    * <p/>
    * Persists the record of this new vm in the current environment.
@@ -88,23 +99,21 @@ public class SshVmCreateTask extends ApplicationVmTask
     LOGGER.info(context() + "Executing vm-create command over ssh" + noopRemark(noop));
     if (!noop)
     {
-      String command = substituteInitialVariables(sshVmCreateConfig.getInitialCommand());
+      SubstituterResult command = substituteInitialVariables(sshVmCreateConfig.getInitialCommand());
       ShellResult result = sshClient.execCommand(command);
       applicationVm = waitTilVmIsAvailable(result);
     }
   }
 
   /**
-   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   * Currently supports only one variable: envName
-   * <p/>
-   * Can't support '${..}' since Spring already substitutes that in properties file.
-   * <p/>
-   * TODO - Start using StringSubstituter
+   * Substitutes %{..} variables in the template commmand, returns the result.
    */
-  private String substituteInitialVariables(String original)
+  private SubstituterResult substituteInitialVariables(String template)
   {
-    return StringUtils.replace(original, CMDVAR_ENVNAME, environment.getEnvName());
+    Map<String, String> substitutions = new HashMap<String, String>();
+    substitutions.put(ENV_NAME, environment.getEnvName());
+    StringSubstituter stringSubstituter = stringSubstituterFactory.createOne(envName, substitutions);
+    return stringSubstituter.substituteVariables(template);
   }
 
   /**
@@ -115,7 +124,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   {
     LOGGER.info(context() + "Waiting for applicationVm to become available");
     SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialResult, context(),
-        sshClient, sshTarget, sshVmCreateConfig);
+        sshClient, sshTarget, sshVmCreateConfig, stringSubstituterFactory);
     Waiter<ApplicationVm> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     applicationVm = waiter.waitTilDone();
     if (applicationVm == null)

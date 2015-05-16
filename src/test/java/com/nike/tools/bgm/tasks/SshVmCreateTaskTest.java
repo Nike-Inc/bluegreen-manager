@@ -16,12 +16,17 @@ import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
+import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
+import com.nike.tools.bgm.substituter.ZeroEnvStringSubstituter;
 import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,8 +41,8 @@ public class SshVmCreateTaskTest
 {
   private static final Environment FAKE_EMPTY_ENVIRONMENT = EnvironmentTestHelper.makeFakeEnvironment();
   private static final String FAKE_EMPTY_ENV_NAME = FAKE_EMPTY_ENVIRONMENT.getEnvName();
-  private static final String INITIAL_CMD = "run stuff in env %{envName}";
-  private static final String SUBSTITUTED_INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;
+  private static final String INITIAL_CMD_TEMPLATE = "run stuff in env %{envName}";
+  private static final String INITIAL_CMD = "run stuff in env " + FAKE_EMPTY_ENV_NAME;
   private static final String VM_HOSTNAME = "cloudbox1234.hello.com";
   private static final String VM_IPADDRESS = "123.45.67.89";
   private static final ShellResult INITIAL_RESULT = new ShellResult("New VM starting: Hostname=" + VM_HOSTNAME + " IP Address=" + VM_IPADDRESS, 0);
@@ -72,11 +77,23 @@ public class SshVmCreateTaskTest
   protected SshTarget mockSshTarget;
 
   @Spy
-  protected SshVmCreateConfig fakeSshVmCreateConfig = new SshVmCreateConfig(INITIAL_CMD, INITIAL_REGEXP_IPADDR, INITIAL_REGEXP_HOST,
+  protected SshVmCreateConfig fakeSshVmCreateConfig = new SshVmCreateConfig(INITIAL_CMD_TEMPLATE, INITIAL_REGEXP_IPADDR, INITIAL_REGEXP_HOST,
       FOLLOWUP_CMD, FOLLOWUP_REGEXP_DONE, FOLLOWUP_REGEXP_ERROR);
 
   @Mock
   private SshClient mockSshClient;
+
+  @Mock
+  private StringSubstituterFactory mockStringSubstituterFactory;
+
+  @Mock
+  private OneEnvStringSubstituter mockOneEnvStringSubstituter;
+
+  @Mock
+  private ZeroEnvStringSubstituter mockZeroEnvStringSubstituter;
+
+  @Mock
+  private SubstituterResult mockSubstituterResult;
 
   @Before
   public void setUp()
@@ -84,6 +101,10 @@ public class SshVmCreateTaskTest
     when(mockEnvLoaderFactory.createOne(FAKE_EMPTY_ENV_NAME)).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getEnvironment()).thenReturn(FAKE_EMPTY_ENVIRONMENT);
     when(mockOneEnvLoader.context()).thenReturn("(Context) ");
+    when(mockStringSubstituterFactory.createOne(anyString(), anyMap())).thenReturn(mockOneEnvStringSubstituter);
+    when(mockStringSubstituterFactory.createZero(anyMap())).thenReturn(mockZeroEnvStringSubstituter);
+    when(mockOneEnvStringSubstituter.substituteVariables(anyString())).thenReturn(mockSubstituterResult);
+    when(mockZeroEnvStringSubstituter.substituteVariables(anyString())).thenReturn(mockSubstituterResult);
     sshVmCreateTask.init(1, FAKE_EMPTY_ENV_NAME);
     sshVmCreateTask.loadDataModel();
   }
@@ -96,7 +117,7 @@ public class SshVmCreateTaskTest
                                                               Class<? extends Throwable> expectedExceptionType)
       throws InterruptedException
   {
-    when(mockSshClient.execCommand(anyString()))
+    when(mockSshClient.execCommand(mockSubstituterResult))
         .thenReturn(INITIAL_RESULT)           //progress #0
         .thenReturn(NOTDONE_FOLLOWUP_RESULT)  //progress #1, after 1st wait
         .thenReturn(NOTDONE_FOLLOWUP_RESULT)  //progress #2, after 2nd wait
@@ -116,8 +137,7 @@ public class SshVmCreateTaskTest
       }
     }
 
-    verify(mockSshClient).execCommand(SUBSTITUTED_INITIAL_CMD);
-    verify(mockSshClient, times(5)).execCommand(anyString());
+    verify(mockSshClient, times(5)).execCommand(mockSubstituterResult);
     verify(mockThreadSleeper, times(4)).sleep(anyLong());
   }
 

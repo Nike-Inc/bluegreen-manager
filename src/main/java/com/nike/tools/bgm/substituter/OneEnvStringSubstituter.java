@@ -1,8 +1,8 @@
 package com.nike.tools.bgm.substituter;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
@@ -11,42 +11,29 @@ import org.springframework.stereotype.Component;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.ENV;
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.VM_HOSTNAME;
+
 /**
- * Makes string substitutions of %{..} variables using datamodel entity values involving one environment.
- * <p/>
- * Variables supported: vmHostname.
- * Also any extraSubstitutions.
+ * Adds to the base string substituter impl by defining variables related to datamodel entity values involving one
+ * environment.
  */
 @Lazy
 @Component
 @Scope("prototype")
-public class OneEnvStringSubstituter extends StringSubstituterExtraImpl
+public class OneEnvStringSubstituter extends StringSubstituterBaseImpl
 {
-  /**
-   * Variable to be substituted with the name of the target environment.
-   */
-  private static final String CMDVAR_ENV = "%{env}";
-
-  /**
-   * Variable to be substituted with the application vm hostname in this env.
-   * (Assumes there is exactly 1 applicationVm.)
-   */
-  private static final String CMDVAR_VM_HOSTNAME = "%{vmHostname}";
-
   @Autowired
   private EnvLoaderFactory envLoaderFactory;
 
   private String envName;
+  private Map<String, String> extraSubstitutions;
   private OneEnvLoader oneEnvLoader;
-
-  public OneEnvStringSubstituter()
-  {
-  }
 
   public OneEnvStringSubstituter(String envName, Map<String, String> extraSubstitutions)
   {
-    super(extraSubstitutions);
     this.envName = envName;
+    this.extraSubstitutions = extraSubstitutions;
   }
 
   /**
@@ -57,21 +44,18 @@ public class OneEnvStringSubstituter extends StringSubstituterExtraImpl
   {
     oneEnvLoader = envLoaderFactory.createOne(envName);
     oneEnvLoader.loadApplication();
+    prepareSubstitutions();
   }
 
-  /**
-   * Substitutes variables of the form '%{vblname}' in the original string, returns the replaced version.
-   */
-  @Override
-  public String substituteVariables(String command)
+  private void prepareSubstitutions()
   {
-    if (StringUtils.isBlank(command))
+    substitutions = new HashMap<String, String>();
+    if (extraSubstitutions != null)
     {
-      throw new IllegalArgumentException("Command is blank");
+      substitutions.putAll(extraSubstitutions);
     }
-    String substituted = command;
-    substituted = StringUtils.replace(substituted, CMDVAR_ENV, envName);
-    substituted = StringUtils.replace(substituted, CMDVAR_VM_HOSTNAME, oneEnvLoader.getApplicationVm().getHostname());
-    return substituteExtra(substituted);
+    substitutions.put(ENV, envName);
+    substitutions.put(VM_HOSTNAME, oneEnvLoader.getApplicationVm().getHostname());
   }
+
 }

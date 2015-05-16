@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import ch.ethz.ssh2.Connection;
@@ -78,35 +79,27 @@ public class SshClient
   /**
    * Executes the command and returns the stdout/stderr as a combined string.
    */
-  public ShellResult execCommand(String command)
+  public ShellResult execCommand(SubstituterResult command)
   {
-    String wrappedCommand = "(" + command + ") 2>&1"; //Concats stderr to stdout; assumes bash shell.
-    LOGGER.debug(context() + "Executing command '" + wrappedCommand + "'");
+    SubstituterResult wrappedCommand = wrapSubstituterResultForStdout(command);
+    LOGGER.debug(context() + "Executing command '" + wrappedCommand.getExpurgated() + "'");
     StopWatch stopWatch = new StopWatch();
     Session session = null;
     try
     {
       stopWatch.start();
       session = connection.openSession();
-      session.execCommand(wrappedCommand);
+      session.execCommand(wrappedCommand.getSubstituted());
       return makeResult(session);
     }
     catch (Throwable e)
     {
       // Technically the above should only throw IOException.  However other exceptions are possible,
       // such as NullPointerException, and it would be a shame to have captured no output in such an event.
-      try
-      {
-        LOGGER.error("Error in command: " + wrappedCommand);
-        LOGGER.error("Command output:\n" + streamToString(session.getStdout()));
-        LOGGER.error("Command exitValue: " + session.getExitStatus());
-        LOGGER.error("Command exitSignal: " + session.getExitSignal());
-      }
-      catch (Throwable e2)
-      {
-        LOGGER.error("Unable to capture full results from ssh session :(");
-      }
-      throw new RuntimeException(context() + "Error executing command '" + wrappedCommand + "', time elapsed: " + stopWatch, e);
+      logSessionResultNoThrow(wrappedCommand.getExpurgated(), session);
+
+      throw new RuntimeException(context() + "Error executing command '" + wrappedCommand.getExpurgated()
+          + "', time elapsed: " + stopWatch, e);
     }
     finally
     {
@@ -117,6 +110,20 @@ public class SshClient
         session.close();
       }
     }
+  }
+
+  private SubstituterResult wrapSubstituterResultForStdout(SubstituterResult command)
+  {
+    return new SubstituterResult(wrapStringForStdout(command.getSubstituted()),
+        wrapStringForStdout(command.getExpurgated()));
+  }
+
+  /**
+   * Concats stderr to stdout; assumes bash shell.
+   */
+  private String wrapStringForStdout(String command)
+  {
+    return "(" + command + ") 2>&1";
   }
 
   private String streamToString(InputStream inputStream) throws IOException
@@ -130,5 +137,24 @@ public class SshClient
     Integer exitValue = session.getExitStatus();
     int exitValueAsInt = exitValue == null ? Integer.MIN_VALUE : exitValue;
     return new ShellResult(output, exitValueAsInt);
+  }
+
+  /**
+   * Desperate attempt to log something for diagnostics purposes, without allowing the session to throw during logging.
+   * The caller has already caught an exception, and it will be re-thrown as soon as this returns.
+   */
+  private void logSessionResultNoThrow(String command, Session session)
+  {
+    try
+    {
+      LOGGER.error("Error in command: " + command);
+      LOGGER.error("Command output:\n" + streamToString(session.getStdout()));
+      LOGGER.error("Command exitValue: " + session.getExitStatus());
+      LOGGER.error("Command exitSignal: " + session.getExitSignal());
+    }
+    catch (Throwable e)
+    {
+      LOGGER.error("Unable to capture full results from ssh session :(", e);
+    }
   }
 }

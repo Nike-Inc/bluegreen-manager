@@ -15,6 +15,7 @@ import com.nike.tools.bgm.model.domain.EnvironmentTestHelper;
 import com.nike.tools.bgm.model.tx.EnvLoaderFactory;
 import com.nike.tools.bgm.model.tx.OneEnvLoader;
 
+import static com.nike.tools.bgm.substituter.StringSubstituter.BLEEP;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,7 +26,7 @@ public class OneEnvStringSubstituterTest
   private static final Environment FAKE_ENV = EnvironmentTestHelper.makeFakeFullEnvironment(0);
   private static final Map<String, String> EXTRA = new HashMap<String, String>()
   {{
-      put("%{extra}", "One Extra Substitution Value");
+      put("extra", "One Extra Substitution Value");
     }};
 
   @InjectMocks
@@ -58,9 +59,11 @@ public class OneEnvStringSubstituterTest
   @Test
   public void testSubstituteVariables()
   {
-    String command = "run stuff with VM_HOSTNAME=%{vmHostname}; EXTRA=%{extra}!";
-    String result = oneEnvStringSubstituter.substituteVariables(command);
-    assertTrue(result.contains("VM_HOSTNAME=" + FAKE_ENV.getApplicationVms().get(0).getHostname()));
-    assertTrue(result.contains("EXTRA=One Extra Substitution Value"));
+    oneEnvStringSubstituter.loadDataModel();
+    String template = "run stuff with VM_HOSTNAME=%{vmHostname}; EXTRA=%{{extra}}!";
+    SubstituterResult result = oneEnvStringSubstituter.substituteVariables(template);
+    assertTrue(result.getSubstituted().contains("VM_HOSTNAME=" + FAKE_ENV.getApplicationVms().get(0).getHostname()));
+    assertTrue(result.getSubstituted().contains("EXTRA=One Extra Substitution Value"));
+    assertTrue(result.getExpurgated().contains("EXTRA=" + BLEEP));
   }
 }

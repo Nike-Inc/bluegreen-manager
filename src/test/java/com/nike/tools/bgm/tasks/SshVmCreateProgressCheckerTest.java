@@ -7,12 +7,16 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
 import com.nike.tools.bgm.client.ssh.SshTarget;
+import com.nike.tools.bgm.substituter.StringSubstituterFactory;
+import com.nike.tools.bgm.substituter.SubstituterResult;
+import com.nike.tools.bgm.substituter.ZeroEnvStringSubstituter;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,19 +45,27 @@ public class SshVmCreateProgressCheckerTest
   private static final ShellResult DONE_FOLLOWUP_RESULT = new ShellResult("VM is all done!\nThe End", 0);
   private static final ShellResult ERROR_FOLLOWUP_RESULT = new ShellResult("Error starting your VM", 1);
   private static final ShellResult NOTDONE_FOLLOWUP_RESULT = new ShellResult("VM is still starting up", 0);
-  private static final String FOLLOWUP_CMD = "check how %{hostname} is doing";
-  private static final String SUBSTITUTED_FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
+  private static final String FOLLOWUP_CMD_TEMPLATE = "check how %{hostname} is doing";
+  private static final String FOLLOWUP_CMD = "check how " + VM_HOSTNAME + " is doing";
+  private static final SubstituterResult SUBSTITUTED_FOLLOWUP_CMD = new SubstituterResult(FOLLOWUP_CMD, FOLLOWUP_CMD);
   private static final String FOLLOWUP_REGEXP_DONE = "all done";
   private static final String FOLLOWUP_REGEXP_ERROR = "[Ee]rror";
   private static final SshVmCreateConfig FAKE_CONFIG = new SshVmCreateConfig(INITIAL_CMD, INITIAL_REGEXP_IPADDR, INITIAL_REGEXP_HOST,
-      FOLLOWUP_CMD, FOLLOWUP_REGEXP_DONE, FOLLOWUP_REGEXP_ERROR);
+      FOLLOWUP_CMD_TEMPLATE, FOLLOWUP_REGEXP_DONE, FOLLOWUP_REGEXP_ERROR);
 
   @Mock
   private SshClient mockSshClient;
 
+  @Mock
+  private StringSubstituterFactory mockStringSubstituterFactory;
+
+  @Mock
+  private ZeroEnvStringSubstituter mockZeroEnvStringSubstituter;
+
   private SshVmCreateProgressChecker makeProgressChecker(ShellResult initialResult, SshVmCreateConfig sshVmCreateConfig)
   {
-    return new SshVmCreateProgressChecker(initialResult, LOG_CONTEXT, mockSshClient, FAKE_SSH_TARGET, sshVmCreateConfig);
+    return new SshVmCreateProgressChecker(initialResult, LOG_CONTEXT, mockSshClient, FAKE_SSH_TARGET, sshVmCreateConfig,
+        mockStringSubstituterFactory);
   }
 
   /**
@@ -100,12 +112,19 @@ public class SshVmCreateProgressCheckerTest
     assertEquals(VM_IPADDRESS, progressChecker.getIpAddress());
   }
 
+  private void setupFollowupMocks(ShellResult followupResult)
+  {
+    when(mockStringSubstituterFactory.createZero(anyMap())).thenReturn(mockZeroEnvStringSubstituter);
+    when(mockZeroEnvStringSubstituter.substituteVariables(anyString())).thenReturn(SUBSTITUTED_FOLLOWUP_CMD);
+    when(mockSshClient.execCommand(SUBSTITUTED_FOLLOWUP_CMD)).thenReturn(followupResult);
+  }
+
   /**
    * Run ok through initialCheck, then try a followup which may or may not work.
    */
   private SshVmCreateProgressChecker testFollowupCheck(ShellResult followupResult)
   {
-    when(mockSshClient.execCommand(anyString())).thenReturn(followupResult);
+    setupFollowupMocks(followupResult);
     SshVmCreateProgressChecker progressChecker = makeProgressChecker(GOOD_INITIAL_RESULT, FAKE_CONFIG);
     progressChecker.initialCheck();
     progressChecker.followupCheck(WAIT_NUM);
