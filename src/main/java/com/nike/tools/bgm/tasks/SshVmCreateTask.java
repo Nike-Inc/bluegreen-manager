@@ -61,9 +61,12 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Autowired
   private StringSubstituterFactory stringSubstituterFactory;
 
+  private StringSubstituter initialStringSubstituter;
+
   public Task init(int position, String envName)
   {
     super.assign(position, envName, true/*createVm*/);
+    this.initialStringSubstituter = makeInitialStringSubstituter(envName);
     return this;
   }
 
@@ -83,6 +86,13 @@ public class SshVmCreateTask extends ApplicationVmTask
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
 
+  @Override
+  protected void loadDataModel()
+  {
+    super.loadDataModel(); //TODO - Duplicates work of initialStringSubstituter.loadDataModel(), see if we can avoid this
+    initialStringSubstituter.loadDataModel();
+  }
+
   private void initSshClient(boolean noop)
   {
     if (!noop)
@@ -99,21 +109,17 @@ public class SshVmCreateTask extends ApplicationVmTask
     LOGGER.info(context() + "Executing vm-create command over ssh" + noopRemark(noop));
     if (!noop)
     {
-      SubstituterResult command = substituteInitialVariables(sshVmCreateConfig.getInitialCommand());
+      SubstituterResult command = initialStringSubstituter.substituteVariables(sshVmCreateConfig.getInitialCommand());
       ShellResult result = sshClient.execCommand(command);
       applicationVm = waitTilVmIsAvailable(result);
     }
   }
 
-  /**
-   * Substitutes %{..} variables in the template commmand, returns the result.
-   */
-  private SubstituterResult substituteInitialVariables(String template)
+  private StringSubstituter makeInitialStringSubstituter(String envName)
   {
     Map<String, String> substitutions = new HashMap<String, String>();
-    substitutions.put(ENV_NAME, environment.getEnvName());
-    StringSubstituter stringSubstituter = stringSubstituterFactory.createOne(envName, substitutions);
-    return stringSubstituter.substituteVariables(template);
+    substitutions.put(ENV_NAME, envName);
+    return stringSubstituterFactory.createOne(envName, substitutions);
   }
 
   /**

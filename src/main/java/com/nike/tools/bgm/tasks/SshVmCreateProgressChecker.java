@@ -178,6 +178,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
     Map<String, String> substitutions = new HashMap<String, String>();
     substitutions.put(HOSTNAME, hostname);
     StringSubstituter stringSubstituter = stringSubstituterFactory.createZero(substitutions);
+    stringSubstituter.loadDataModel();
     return stringSubstituter.substituteVariables(template);
   }
 

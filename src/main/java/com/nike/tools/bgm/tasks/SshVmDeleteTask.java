@@ -71,7 +71,7 @@ public class SshVmDeleteTask extends ApplicationVmTask
   @Override
   protected void loadDataModel()
   {
-    super.loadDataModel();
+    super.loadDataModel(); //TODO - Duplicates work of stringSubstituter.loadDataModel(), see if we can avoid this
     stringSubstituter.loadDataModel();
   }
 
