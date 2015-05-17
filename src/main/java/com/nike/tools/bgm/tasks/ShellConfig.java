@@ -29,10 +29,10 @@ public class ShellConfig
   private Integer exitvalueSuccess;
 
   /**
-   * Optional map from %{variable} to 'replacement-value'.  e.g. Map('%{hello}', 'world') applied to command
+   * Optional map from 'variable' to 'replacement-value'.  e.g. Map('hello', 'world') applied to command
    * "doStuff --arg %{hello}" would result in a shell command "doStuff --arg world".
    * <p/>
-   * This is in addition to the datamodel-related variables defined in LocalShellTask or RemoteShellTask.
+   * See usage in StringSubstituter class hierarchy.
    */
   private Map<String, String> extraSubstitutions;
 

@@ -39,6 +39,7 @@ public class RemoteShellTask extends ShellTask
   public TaskStatus process(boolean noop)
   {
     LOGGER.info("Launching remote shell command" + noopRemark(noop));
+    forbidCheckingExitValue();
     loadDataModel();
     TaskStatus taskStatus = TaskStatus.NOOP;
     if (!noop)
@@ -52,6 +53,19 @@ public class RemoteShellTask extends ShellTask
       logResults(result, taskStatus);
     }
     return taskStatus;
+  }
+
+  /**
+   * Unfortunately our ssh library Ganymed does not reliably return an exitValue.
+   *
+   * @see com.nike.tools.bgm.client.ssh.SshClient#execCommand
+   */
+  public void forbidCheckingExitValue()
+  {
+    if (shellConfig.getExitvalueSuccess() != null)
+    {
+      throw new IllegalArgumentException("RemoteShellTask currently does not support checking exitValue of remote command");
+    }
   }
 
   /**

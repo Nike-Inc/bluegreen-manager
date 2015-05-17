@@ -27,6 +27,10 @@ public class RemoteShellTaskTest
 {
   private static final String COMMAND = "run some stuff";
   private static final SubstituterResult SUBSTITUTED_COMMAND = new SubstituterResult(COMMAND, COMMAND);
+  private static final String OUTPUT = "hello, there was SUCCESS";
+  private static final String REGEXP_ERROR = "There was an Error";
+  private static final int EXIT_VALUE = 0;
+  private static final String ENV_NAME = "env1";
 
   @InjectMocks
   private RemoteShellTask remoteShellTask;
@@ -48,8 +52,8 @@ public class RemoteShellTaskTest
   {
     when(mockStringSubstituterFactory.createOne(anyString(), anyMap())).thenReturn(mockOneEnvStringSubstituter);
     when(mockOneEnvStringSubstituter.substituteVariables(anyString())).thenReturn(SUBSTITUTED_COMMAND);
-    when(mockSshClient.execCommand(SUBSTITUTED_COMMAND)).thenReturn(new ShellResult("hello", 0));
-    remoteShellTask.assign(1, "env1", new ShellConfig(COMMAND, null, 0, null));
+    when(mockSshClient.execCommand(SUBSTITUTED_COMMAND)).thenReturn(new ShellResult(OUTPUT, EXIT_VALUE));
+    remoteShellTask.assign(1, ENV_NAME, new ShellConfig(COMMAND, REGEXP_ERROR, null, null));
   }
 
   /**

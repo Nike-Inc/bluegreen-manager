@@ -12,8 +12,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.ForgetEnvironmentTask;
+import com.nike.tools.bgm.tasks.LocalShellTask;
+import com.nike.tools.bgm.tasks.RdsInstanceDeleteTask;
 import com.nike.tools.bgm.tasks.RemoteShellTask;
 import com.nike.tools.bgm.tasks.ShellConfig;
+import com.nike.tools.bgm.tasks.SshVmDeleteTask;
 import com.nike.tools.bgm.tasks.Task;
 
 import static com.nike.tools.bgm.substituter.SubstitutionKeys.STOP_SERVICES;
@@ -60,10 +63,10 @@ public abstract class TeardownJob extends TaskSequenceJob
     defineSubstitutionsForShutdownApplications();
     int position = 1;
     List<Task> tasks = new ArrayList<Task>();
-    //tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, deleteEnvName, shutdownApplicationsConfig));
     tasks.add(applicationContext.getBean(RemoteShellTask.class).assign(position++, deleteEnvName, deleteEnvConfig));
-    //tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
-    //tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName, liveEnvName));
+    tasks.add(applicationContext.getBean(SshVmDeleteTask.class).init(position++, deleteEnvName));
+    tasks.add(applicationContext.getBean(RdsInstanceDeleteTask.class).assign(position++, deleteEnvName, liveEnvName));
     tasks.add(applicationContext.getBean(ForgetEnvironmentTask.class).assign(position++, deleteEnvName));
     this.tasks = tasks;
   }

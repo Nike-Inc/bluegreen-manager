@@ -78,6 +78,10 @@ public class SshClient
 
   /**
    * Executes the command and returns the stdout/stderr as a combined string.
+   * <p/>
+   * Technically it returns the exitValue as well, but our ssh library (Ganymed) is unreliable here.  I cannot figure
+   * out why sometimes session.getExitStatus has a good value and other times is null, even when the remote vms have
+   * the same configuration and are running the same command with presumably the same results.
    */
   public ShellResult execCommand(SubstituterResult command)
   {
