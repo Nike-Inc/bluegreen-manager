@@ -57,4 +57,14 @@ public interface SubstitutionKeys
    * Currently only supports mapping 1 physicaldb from live to stage.
    */
   String PHYSICAL_DB_MAP = "physicalDbMap";
+
+  /**
+   * Variable to be substituted with a comma-separated list of package names.
+   */
+  String PACKAGES = "packages";
+
+  /**
+   * Variable to be substituted with a comma-separated list of app names.
+   */
+  String STOP_SERVICES = "stopServices";
 }

@@ -35,8 +35,6 @@ import static com.nike.tools.bgm.substituter.SubstitutionKeys.ENV_NAME;
 @Component
 public class SshVmCreateTask extends ApplicationVmTask
 {
-  private static final String CMDVAR_ENVNAME = "%{envName}";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateTask.class);
 
   @Autowired

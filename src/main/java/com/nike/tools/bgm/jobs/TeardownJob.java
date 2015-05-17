@@ -16,6 +16,8 @@ import com.nike.tools.bgm.tasks.RemoteShellTask;
 import com.nike.tools.bgm.tasks.ShellConfig;
 import com.nike.tools.bgm.tasks.Task;
 
+import static com.nike.tools.bgm.substituter.SubstitutionKeys.STOP_SERVICES;
+
 /**
  * Tears down the deletion target environment, and the test database used by the former stage env.
  * <p/>
@@ -25,11 +27,6 @@ import com.nike.tools.bgm.tasks.Task;
  */
 public abstract class TeardownJob extends TaskSequenceJob
 {
-  /**
-   * Variable to be substituted with a comma-separated list of app names.
-   */
-  private static final String CMDVAR_STOP_SERVICES = "%{stopServices}";
-
   @Autowired
   @Qualifier("shutdownApplications")
   private ShellConfig shutdownApplicationsConfig;
@@ -74,7 +71,7 @@ public abstract class TeardownJob extends TaskSequenceJob
   private void defineSubstitutionsForShutdownApplications()
   {
     Map<String, String> substitutions = new TreeMap<String, String>();
-    substitutions.put(CMDVAR_STOP_SERVICES, StringUtils.join(stopServices, ","));
+    substitutions.put(STOP_SERVICES, StringUtils.join(stopServices, ","));
     shutdownApplicationsConfig.setExtraSubstitutions(substitutions);
   }
 

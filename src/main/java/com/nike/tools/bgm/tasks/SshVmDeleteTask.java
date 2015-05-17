@@ -24,8 +24,6 @@ import com.nike.tools.bgm.utils.ShellResult;
 @Component
 public class SshVmDeleteTask extends ApplicationVmTask
 {
-  private static final String CMDVAR_ENVNAME = "%{envName}";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateTask.class);
 
   @Autowired

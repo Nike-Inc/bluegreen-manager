@@ -26,7 +26,6 @@ import static com.nike.tools.bgm.substituter.SubstitutionKeys.HOSTNAME;
 public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm>
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateProgressChecker.class);
-  private static final String CMDVAR_HOSTNAME = "%{hostname}";
 
   private ShellResult initialResult;
   private String logContext;
