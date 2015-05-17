@@ -85,10 +85,10 @@ public class RemoteShellTask extends ShellTask
       }
       LOGGER.debug("---------- OUTPUT ENDS ----------");
     }
-    logExitValue(result.getExitValue());
+    logExitValue(result.getExitValue()); //exitValue is currently for informational purposes only
     if (taskStatus == TaskStatus.ERROR)
     {
-      LOGGER.debug("Output and/or exitValue was deemed an error");
+      LOGGER.debug("Output was deemed an error");
     }
   }
 }
