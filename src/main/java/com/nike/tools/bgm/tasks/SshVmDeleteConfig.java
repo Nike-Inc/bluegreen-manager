@@ -16,17 +16,19 @@ public class SshVmDeleteConfig
   @Value("${bluegreen.sshvmdelete.initial.command}")
   private String initialCommand;
 
-  @Value("${bluegreen.sshvmdelete.initial.exitvalue.success}")
-  private Integer initialExitvalueSuccess;
+  @Value("${bluegreen.sshvmdelete.initial.regexp.success}")
+  private String initialRegexpSuccess;
+
+  //Warning: don't try to examine exitValue for success/failure, our ssh library Ganymed does not reliably return it.
 
   public SshVmDeleteConfig()
   {
   }
 
-  public SshVmDeleteConfig(String initialCommand, Integer initialExitvalueSuccess)
+  public SshVmDeleteConfig(String initialCommand, String initialRegexpSuccess)
   {
     this.initialCommand = initialCommand;
-    this.initialExitvalueSuccess = initialExitvalueSuccess;
+    this.initialRegexpSuccess = initialRegexpSuccess;
   }
 
   public String getInitialCommand()
@@ -39,13 +41,13 @@ public class SshVmDeleteConfig
     this.initialCommand = initialCommand;
   }
 
-  public Integer getInitialExitvalueSuccess()
+  public String getInitialRegexpSuccess()
   {
-    return initialExitvalueSuccess;
+    return initialRegexpSuccess;
   }
 
-  public void setInitialExitvalueSuccess(Integer initialExitvalueSuccess)
+  public void setInitialRegexpSuccess(String initialRegexpSuccess)
   {
-    this.initialExitvalueSuccess = initialExitvalueSuccess;
+    this.initialRegexpSuccess = initialRegexpSuccess;
   }
 }

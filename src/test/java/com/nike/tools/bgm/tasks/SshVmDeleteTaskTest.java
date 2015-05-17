@@ -19,6 +19,7 @@ import com.nike.tools.bgm.model.tx.OneEnvLoader;
 import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import static org.junit.Assert.assertEquals;
@@ -34,9 +35,9 @@ public class SshVmDeleteTaskTest
 {
   private static final String INITIAL_CMD = "delete stuff in env %{envName}";
   private static final SubstituterResult INITIAL_CMD_SUBST = new SubstituterResult(INITIAL_CMD, INITIAL_CMD);
-  private static final Integer INITIAL_EXITVALUE_SUCCESS = 0;
   private static final ShellResult DONE_RESULT = new ShellResult("New VM was successfully deleted", 0);
   private static final ShellResult ERROR_RESULT = new ShellResult("No such VM, could not delete", 1);
+  private static final String REGEXP_SUCCESS = "successfully";
 
   @InjectMocks
   private SshVmDeleteTask sshVmDeleteTask;
@@ -54,10 +55,13 @@ public class SshVmDeleteTaskTest
   protected SshTarget mockSshTarget;
 
   @Spy
-  protected SshVmDeleteConfig fakeSshVmDeleteConfig = new SshVmDeleteConfig(INITIAL_CMD, INITIAL_EXITVALUE_SUCCESS);
+  protected SshVmDeleteConfig fakeSshVmDeleteConfig = new SshVmDeleteConfig(INITIAL_CMD, REGEXP_SUCCESS);
 
   @Mock
   private SshClient mockSshClient;
+
+  @Spy
+  private RegexHelper spyRegexHelper;
 
   @Mock
   private StringSubstituterFactory mockStringSubstituterFactory;

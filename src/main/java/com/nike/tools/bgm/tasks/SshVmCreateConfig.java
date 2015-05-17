@@ -31,6 +31,8 @@ public class SshVmCreateConfig
   @Value("${bluegreen.sshvmcreate.followup.regexp.error}")
   private String followupRegexpError;
 
+  //Warning: don't try to examine exitValue for success/failure, our ssh library Ganymed does not reliably return it.
+
   public SshVmCreateConfig()
   {
   }

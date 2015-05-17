@@ -18,6 +18,7 @@ import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.substituter.StringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.Waiter;
@@ -55,6 +56,9 @@ public class SshVmCreateTask extends ApplicationVmTask
 
   @Autowired
   private SshClient sshClient;
+
+  @Autowired
+  private RegexHelper regexHelper;
 
   @Autowired
   private StringSubstituterFactory stringSubstituterFactory;
@@ -133,7 +137,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   {
     LOGGER.info(context() + "Waiting for applicationVm to become available");
     SshVmCreateProgressChecker progressChecker = new SshVmCreateProgressChecker(initialResult, context(),
-        sshClient, sshTarget, sshVmCreateConfig, stringSubstituterFactory);
+        sshClient, sshTarget, sshVmCreateConfig, regexHelper, stringSubstituterFactory);
     Waiter<ApplicationVm> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     applicationVm = waiter.waitTilDone();
     if (applicationVm == null)

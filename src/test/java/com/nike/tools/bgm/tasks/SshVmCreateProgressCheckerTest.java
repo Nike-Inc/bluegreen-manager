@@ -3,6 +3,7 @@ package com.nike.tools.bgm.tasks;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.nike.tools.bgm.client.ssh.SshClient;
@@ -10,6 +11,7 @@ import com.nike.tools.bgm.client.ssh.SshTarget;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.substituter.ZeroEnvStringSubstituter;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import static org.junit.Assert.assertEquals;
@@ -56,6 +58,9 @@ public class SshVmCreateProgressCheckerTest
   @Mock
   private SshClient mockSshClient;
 
+  @Spy
+  private RegexHelper spyRegexHelper;
+
   @Mock
   private StringSubstituterFactory mockStringSubstituterFactory;
 
@@ -65,7 +70,7 @@ public class SshVmCreateProgressCheckerTest
   private SshVmCreateProgressChecker makeProgressChecker(ShellResult initialResult, SshVmCreateConfig sshVmCreateConfig)
   {
     return new SshVmCreateProgressChecker(initialResult, LOG_CONTEXT, mockSshClient, FAKE_SSH_TARGET, sshVmCreateConfig,
-        mockStringSubstituterFactory);
+        spyRegexHelper, mockStringSubstituterFactory);
   }
 
   /**

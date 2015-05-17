@@ -2,7 +2,6 @@ package com.nike.tools.bgm.tasks;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +15,7 @@ import com.nike.tools.bgm.substituter.StringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.utils.ProgressChecker;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 
 import static com.nike.tools.bgm.substituter.SubstitutionKeys.HOSTNAME;
@@ -32,6 +32,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   private SshClient sshClient;
   private SshTarget sshTarget;
   private SshVmCreateConfig sshVmCreateConfig;
+  private RegexHelper regexHelper;
   private StringSubstituterFactory stringSubstituterFactory;
   private String hostname; //vm created
   private String ipAddress; //vm created
@@ -45,6 +46,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
   public SshVmCreateProgressChecker(ShellResult initialResult,
                                     String logContext, SshClient sshClient,
                                     SshTarget sshTarget, SshVmCreateConfig sshVmCreateConfig,
+                                    RegexHelper regexHelper,
                                     StringSubstituterFactory stringSubstituterFactory)
   {
     this.initialResult = initialResult;
@@ -52,6 +54,7 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
     this.sshClient = sshClient;
     this.sshTarget = sshTarget;
     this.sshVmCreateConfig = sshVmCreateConfig;
+    this.regexHelper = regexHelper;
     this.stringSubstituterFactory = stringSubstituterFactory;
     this.initialPatternHostname = Pattern.compile(sshVmCreateConfig.getInitialRegexpHostname());
     this.initialPatternIpAddress = Pattern.compile(sshVmCreateConfig.getInitialRegexpIpaddress());
@@ -107,45 +110,15 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
    */
   private String getRequiredCapture(String captureName, String output, Pattern pattern)
   {
-    for (String line : parseLines(output))
+    String value = regexHelper.matcherFirstCapture(output, pattern, 1);
+    if (value != null)
     {
-      Matcher matcher = pattern.matcher(line);
-      if (matcher.find())
-      {
-        String value = matcher.group(1);
-        if (StringUtils.isNotBlank(value))
-        {
-          return value;
-        }
-      }
+      return value;
     }
-    throw new RuntimeException(logContext + "Could not find result value '" + captureName + "' in initial output");
-  }
-
-  /**
-   * True if the specified pattern is found in the output.
-   */
-  private boolean matcherFind(String output, Pattern pattern)
-  {
-    for (String line : parseLines(output))
+    else
     {
-      Matcher matcher = pattern.matcher(line);
-      if (matcher.find())
-      {
-        return true;
-      }
+      throw new RuntimeException(logContext + "Could not find result value '" + captureName + "' in initial output");
     }
-    return false;
-  }
-
-  /**
-   * Parses a multi-line 'output' string into an array of single lines.
-   * <p/>
-   * e.g. Parses "Hello\nWorld\n" to ("Hello", "World")
-   */
-  private String[] parseLines(String output)
-  {
-    return output.split("[\\r\\n]+");
   }
 
   /**
@@ -158,11 +131,11 @@ public class SshVmCreateProgressChecker implements ProgressChecker<ApplicationVm
     ShellResult followupResult = sshClient.execCommand(command);
     String followupOutput = followupResult.getOutput();
     LOGGER.debug("SSH VM Creation state after wait#" + waitNum + ": " + followupOutput);
-    if (matcherFind(followupOutput, followupPatternError))
+    if (regexHelper.matcherFind(followupOutput, followupPatternError))
     {
       throw new RuntimeException(context() + "FAILED: " + followupOutput);
     }
-    if (matcherFind(followupOutput, followupPatternDone))
+    if (regexHelper.matcherFind(followupOutput, followupPatternDone))
     {
       done = true;
       result = makeApplicationVm();

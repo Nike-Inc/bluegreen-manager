@@ -20,6 +20,7 @@ import com.nike.tools.bgm.substituter.OneEnvStringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
 import com.nike.tools.bgm.substituter.ZeroEnvStringSubstituter;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
@@ -82,6 +83,9 @@ public class SshVmCreateTaskTest
 
   @Mock
   private SshClient mockSshClient;
+
+  @Spy
+  private RegexHelper spyRegexHelper;
 
   @Mock
   private StringSubstituterFactory mockStringSubstituterFactory;

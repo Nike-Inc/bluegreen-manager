@@ -1,5 +1,7 @@
 package com.nike.tools.bgm.tasks;
 
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import com.nike.tools.bgm.model.tx.EnvironmentTx;
 import com.nike.tools.bgm.substituter.StringSubstituter;
 import com.nike.tools.bgm.substituter.StringSubstituterFactory;
 import com.nike.tools.bgm.substituter.SubstituterResult;
+import com.nike.tools.bgm.utils.RegexHelper;
 import com.nike.tools.bgm.utils.ShellResult;
 
 /**
@@ -39,14 +42,19 @@ public class SshVmDeleteTask extends ApplicationVmTask
   private SshClient sshClient;
 
   @Autowired
+  private RegexHelper regexHelper;
+
+  @Autowired
   private StringSubstituterFactory stringSubstituterFactory;
 
   private StringSubstituter stringSubstituter;
+  private Pattern initialPatternSuccess;
 
   public Task init(int position, String envName)
   {
     super.assign(position, envName, false/*i.e. modify vm*/);
     this.stringSubstituter = stringSubstituterFactory.createOne(envName, null/*no extra substitutions*/);
+    this.initialPatternSuccess = Pattern.compile(sshVmDeleteConfig.getInitialRegexpSuccess());
     return this;
   }
 
@@ -96,17 +104,16 @@ public class SshVmDeleteTask extends ApplicationVmTask
   }
 
   /**
-   * Checks that there were no errors in the deletion result.
+   * Checks that the deletion result output indicated success.
    * <p/>
-   * Currently checks by exitvalue, and ignores stdout.
+   * Currently checks by stdout, and ignores exitValue (because ssh library Ganymed does not reliably return it).
    */
   private void checkDeleted(ShellResult result)
   {
     LOGGER.debug("Command Output:\n" + result.describe());
-    if (result.getExitValue() != sshVmDeleteConfig.getInitialExitvalueSuccess())
+    if (!regexHelper.matcherFind(result.getOutput(), initialPatternSuccess))
     {
-      throw new RuntimeException("Expected exitValue " + sshVmDeleteConfig.getInitialExitvalueSuccess()
-          + ", received exitValue " + result.getExitValue());
+      throw new RuntimeException(context() + "FAILED: " + result.getOutput());
     }
   }
 
