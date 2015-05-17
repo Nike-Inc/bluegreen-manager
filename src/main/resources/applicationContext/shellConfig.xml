@@ -24,7 +24,7 @@
   <bean class="com.nike.tools.bgm.tasks.ShellConfig">
     <qualifier value="deleteEnv"/>
     <property name="command" value="${bluegreen.shellConfig.deleteEnv.command}"/>
-    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.deleteEnv.exitvalue.success}"/>
+    <property name="regexpError" value="${bluegreen.shellConfig.deleteEnv.regexp.error}"/>
   </bean>
 
 </beans>
