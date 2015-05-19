@@ -12,10 +12,11 @@
   'classpath' is the propfile in the bluegreen jar; and is overridden by anything in dependency/ propfile.
   -->
   <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <!--<property name="ignoreResourceNotFound" value="true"/>-->
     <property name="locations">
       <list>
         <value>classpath:bluegreen-manager.properties</value>
-        <value>dependency/bluegreen-manager.properties</value>
+        <value>file:dependency/bluegreen-manager.properties</value>
       </list>
     </property>
   </bean>
