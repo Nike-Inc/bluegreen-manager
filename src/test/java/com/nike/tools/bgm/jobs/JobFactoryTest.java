@@ -62,8 +62,7 @@ public class JobFactoryTest
     String explanation = jobFactory.makeExplanationOfValidJobs();
     assertTrue(explanation.contains(JobFactory.JOBNAME_STAGING_DEPLOY));
     assertTrue(explanation.contains(JobFactory.JOBNAME_GO_LIVE));
-    assertTrue(explanation.contains(JobFactory.JOBNAME_TEARDOWN_COMMIT));
-    assertTrue(explanation.contains(JobFactory.JOBNAME_ROLLBACK_STAGE));
+    assertTrue(explanation.contains(JobFactory.JOBNAME_TEARDOWN));
   }
 
   /**
@@ -113,30 +112,16 @@ public class JobFactoryTest
   }
 
   /**
-   * Tests successful creation of a TeardownCommitJob.
+   * Tests successful creation of a TeardownJob.
    */
   @Test
-  public void testMakeJob_TeardownCommit()
+  public void testMakeJob_Teardown()
   {
     when(mockEnvironmentTx.checkIfEnvNamesExist(anyString())).thenReturn(new boolean[] { true });
-    String commandLine = "teardownCommit --deleteOldLiveEnv env5 --stopServices a,b";
+    String commandLine = "teardown --deleteEnv env5 --stopServices a,b";
     parseAndMakeJob(commandLine);
-    verify(mockApplicationContext).getBean(eq(TeardownCommitJob.class), new Object[] {
+    verify(mockApplicationContext).getBean(eq(TeardownJob.class), new Object[] {
         eq(commandLine), eq(false), eq(false), isNull(), eq("env5"), anyListOf(String.class)
-    });
-  }
-
-  /**
-   * Tests successful creation of a RollbackStageJob.
-   */
-  @Test
-  public void testMakeJob_RollbackStage()
-  {
-    when(mockEnvironmentTx.checkIfEnvNamesExist(anyString(), anyString())).thenReturn(new boolean[] { true, true });
-    String commandLine = "rollbackStage --deleteStageEnv env6 --stopServices c,d --liveEnv env7";
-    parseAndMakeJob(commandLine);
-    verify(mockApplicationContext).getBean(eq(RollbackStageJob.class), new Object[] {
-        eq(commandLine), eq(false), eq(false), isNull(), eq("env6"), eq("env7"), anyListOf(String.class)
     });
   }
 

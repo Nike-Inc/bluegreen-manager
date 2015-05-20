@@ -1,5 +1,6 @@
 package com.nike.tools.bgm.tasks;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -25,8 +26,7 @@ import com.nike.tools.bgm.utils.WaiterParameters;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.contains;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -50,10 +50,7 @@ public class RdsInstanceDeleteTaskTest
   private EnvLoaderFactory mockEnvLoaderFactory;
 
   @Mock
-  private OneEnvLoader mockOneEnvLoaderDelete;
-
-  @Mock
-  private OneEnvLoader mockOneEnvLoaderLive;
+  private OneEnvLoader mockOneEnvLoader;
 
   @Mock
   private EnvironmentTx mockEnvironmentTx;
@@ -77,40 +74,30 @@ public class RdsInstanceDeleteTaskTest
   private final Environment fakeDeleteEnv = EnvironmentTestHelper.makeFakeFullEnvironment(1); //isLive=false
   private final String instanceId = fakeDeleteEnv.getLogicalDatabases().get(0).getPhysicalDatabase().getInstanceName();
 
-  private void setUp(Environment deleteEnv, Environment currentOrFormerLiveEnv)
+  private void setUp(Environment deleteEnv)
   {
-    when(mockEnvLoaderFactory.createOne(deleteEnv.getEnvName())).thenReturn(mockOneEnvLoaderDelete);
-    when(mockOneEnvLoaderDelete.getEnvironment()).thenReturn(deleteEnv);
-    when(mockOneEnvLoaderDelete.getLogicalDatabase()).thenReturn(deleteEnv.getLogicalDatabases().get(0));
-    when(mockOneEnvLoaderDelete.getPhysicalDatabase()).thenReturn(deleteEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
-    when(mockEnvLoaderFactory.createOne(currentOrFormerLiveEnv.getEnvName())).thenReturn(mockOneEnvLoaderLive);
-    when(mockOneEnvLoaderLive.getEnvironment()).thenReturn(currentOrFormerLiveEnv);
-    when(mockOneEnvLoaderLive.getLogicalDatabase()).thenReturn(currentOrFormerLiveEnv.getLogicalDatabases().get(0));
-    when(mockOneEnvLoaderLive.getPhysicalDatabase()).thenReturn(currentOrFormerLiveEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
-    rdsInstanceDeleteTask.assign(1, deleteEnv.getEnvName(), currentOrFormerLiveEnv.getEnvName());
+    when(mockEnvLoaderFactory.createOne(deleteEnv.getEnvName())).thenReturn(mockOneEnvLoader);
+    when(mockOneEnvLoader.getEnvironment()).thenReturn(deleteEnv);
+    when(mockOneEnvLoader.getLogicalDatabase()).thenReturn(deleteEnv.getLogicalDatabases().get(0));
+    when(mockOneEnvLoader.getPhysicalDatabase()).thenReturn(deleteEnv.getLogicalDatabases().get(0).getPhysicalDatabase());
+    rdsInstanceDeleteTask.assign(1, deleteEnv.getEnvName());
     rdsInstanceDeleteTask.loadDataModel();
   }
 
-  /**
-   * TeardownCommit scenario: deleteEnv is old live env.
-   */
-  private void teardownSetup()
+  private void resetMocks()
   {
-    setUp(fakeDeleteEnv, fakeDeleteEnv);
+    reset(mockEnvLoaderFactory, mockOneEnvLoader);
   }
 
-  /**
-   * RollbackStage scenario: deleteEnv is stage env.
-   */
-  private void rollbackSetup()
+  @Before
+  public void setUp()
   {
-    setUp(fakeDeleteEnv, fakeLiveEnv);
+    setUp(fakeDeleteEnv);
   }
 
   @Test
   public void testContext()
   {
-    teardownSetup();
     String context = rdsInstanceDeleteTask.context();
     assertTrue(context.contains(fakeDeleteEnv.getEnvName()));
   }
@@ -121,7 +108,6 @@ public class RdsInstanceDeleteTaskTest
   @Test
   public void testCheckDeleteDatabaseIsNotLive_Pass()
   {
-    teardownSetup();
     rdsInstanceDeleteTask.checkDeleteDatabaseIsNotLive();
   }
 
@@ -131,7 +117,8 @@ public class RdsInstanceDeleteTaskTest
   @Test(expected = IllegalArgumentException.class)
   public void testCheckDeleteDatabaseIsNotLive_Fail()
   {
-    setUp(fakeLiveEnv, fakeLiveEnv); //Bad first arg
+    resetMocks();
+    setUp(fakeLiveEnv);
     rdsInstanceDeleteTask.checkDeleteDatabaseIsNotLive();
   }
 
@@ -175,48 +162,23 @@ public class RdsInstanceDeleteTaskTest
   @Test
   public void testDeleteInstance_TeardownDeleted()
   {
-    teardownSetup();
     testDeleteInstance(RdsInstanceStatus.DELETED); //Done
   }
 
   @Test
   public void testDeleteInstance_TeardownNotFound()
   {
-    teardownSetup();
     testDeleteInstance(null); //Not Found = Done
   }
 
   @Test(expected = RuntimeException.class)
   public void testDeleteInstance_TeardownFailed()
   {
-    teardownSetup();
-    testDeleteInstance(RdsInstanceStatus.DELETING); //Not done -> Timeout
-  }
-
-  @Test
-  public void testDeleteInstance_RollbackDeleted()
-  {
-    rollbackSetup();
-    testDeleteInstance(RdsInstanceStatus.DELETED); //Done
-  }
-
-  @Test
-  public void testDeleteInstance_RollbackNotFound()
-  {
-    rollbackSetup();
-    testDeleteInstance(null); //Not Found = Done
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void testDeleteInstance_RollbackFailed()
-  {
-    rollbackSetup();
     testDeleteInstance(RdsInstanceStatus.DELETING); //Not done -> Timeout
   }
 
   private void testDeleteParameterGroup(String paramGroupName)
   {
-    rollbackSetup();
     DBInstance dbInstance = fakeInstance(RdsInstanceStatus.DELETING);
     when(mockRdsAnalyzer.findSelfNamedParamGroupName(dbInstance)).thenReturn(paramGroupName);
 
@@ -244,25 +206,8 @@ public class RdsInstanceDeleteTaskTest
   }
 
   @Test
-  public void testDeleteSnapshot_Teardown()
-  {
-    teardownSetup();
-    rdsInstanceDeleteTask.deleteSnapshot(false);
-    verify(mockRdsClient).deleteSnapshot(contains(fakeDeleteEnv.getEnvName())); //deleteEnv is old live env
-  }
-
-  @Test
-  public void testDeleteSnapshot_Rollback()
-  {
-    rollbackSetup();
-    rdsInstanceDeleteTask.deleteSnapshot(false);
-    verify(mockRdsClient).deleteSnapshot(contains(fakeLiveEnv.getEnvName())); //deleteEnv is stage env
-  }
-
-  @Test
   public void testProcess_Noop()
   {
-    teardownSetup();
     assertEquals(TaskStatus.NOOP, rdsInstanceDeleteTask.process(true));
   }
 
@@ -276,7 +221,8 @@ public class RdsInstanceDeleteTaskTest
    * <p/>
    * Calls loadDataModel twice, should be ok.
    */
-  private void testProcess()
+  @Test
+  public void testProcess()
   {
     when(mockRdsClientFactory.create()).thenReturn(mockRdsClient);
     when(mockRdsClient.deleteInstance(instanceId)).thenReturn(fakeInstance(RdsInstanceStatus.DELETED));
@@ -284,21 +230,7 @@ public class RdsInstanceDeleteTaskTest
     assertEquals(TaskStatus.DONE, rdsInstanceDeleteTask.process(false));
     verify(mockRdsClient).deleteInstance(instanceId);
     verify(mockRdsClient).deleteParameterGroup(PARAM_GROUP_NAME);
-    verify(mockRdsClient).deleteSnapshot(anyString());
     verify(mockEnvironmentTx).updateEnvironment(fakeDeleteEnv);
   }
 
-  @Test
-  public void testProcess_TeardownDone()
-  {
-    teardownSetup();
-    testProcess();
-  }
-
-  @Test
-  public void testProcess_RollbackDone()
-  {
-    rollbackSetup();
-    testProcess();
-  }
 }

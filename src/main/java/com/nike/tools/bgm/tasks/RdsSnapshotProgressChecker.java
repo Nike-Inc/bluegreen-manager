@@ -6,22 +6,19 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsClient;
-import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
-import com.nike.tools.bgm.utils.ProgressChecker;
 
 /**
- * Knows how to check progress of an RDS snapshot going from 'creating' to 'available'.
+ * Common activities in checking progress of an RDS snapshot.
  */
-public class RdsSnapshotProgressChecker implements ProgressChecker<DBSnapshot>
+public abstract class RdsSnapshotProgressChecker
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(RdsSnapshotProgressChecker.class);
 
-  private String snapshotId;
-  private String logContext;
-  private RdsClient rdsClient;
-  private DBSnapshot initialSnapshot;
-  private boolean done;
-  private DBSnapshot result;
+  protected String snapshotId;
+  protected String logContext;
+  protected RdsClient rdsClient;
+  protected DBSnapshot initialSnapshot;
+  protected boolean done;
 
   public RdsSnapshotProgressChecker(String snapshotId,
                                     String logContext,
@@ -33,16 +30,11 @@ public class RdsSnapshotProgressChecker implements ProgressChecker<DBSnapshot>
     this.initialSnapshot = initialSnapshot;
   }
 
-  @Override
-  public String getDescription()
-  {
-    return "Create Snapshot '" + snapshotId + "'";
-  }
+  public abstract String getDescription();
 
   /**
    * Checks initial response snapshot.
    */
-  @Override
   public void initialCheck()
   {
     LOGGER.debug("Initial RDS snapshot status: " + initialSnapshot.getStatus());
@@ -54,7 +46,6 @@ public class RdsSnapshotProgressChecker implements ProgressChecker<DBSnapshot>
    * Communicates with RDS for updated snapshot progress and checks the status.
    * Concludes if error or if naturally done.
    */
-  @Override
   public void followupCheck(int waitNum)
   {
     DBSnapshot dbSnapshot = rdsClient.describeSnapshot(snapshotId);
@@ -77,52 +68,17 @@ public class RdsSnapshotProgressChecker implements ProgressChecker<DBSnapshot>
   }
 
   /**
-   * Checks if the snapshot is in an acceptable intermediate status, and flags done if status=available.
+   * Checks if the snapshot is in an acceptable intermediate status, maybe flags done if the end state can be detected.
    */
-  private void checkSnapshotStatus(DBSnapshot dbSnapshot)
-  {
-    final String status = dbSnapshot.getStatus();
-    final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (RdsSnapshotStatus.AVAILABLE.equalsString(status))
-    {
-      LOGGER.info("RDS Snapshot '" + snapshotId + "' is done");
-      done = true;
-      result = dbSnapshot;
-    }
-    else if (RdsSnapshotStatus.CREATING.equalsString(status))
-    {
-      //Keep waiting.
-    }
-    else
-    {
-      LOGGER.error(logContext + "Snapshot '" + snapshotId + "': Unexpected response status '" + status + "'");
-      done = true;
-    }
-  }
+  protected abstract void checkSnapshotStatus(DBSnapshot dbSnapshot);
 
-  @Override
   public boolean isDone()
   {
     return done;
   }
 
   /**
-   * True if the snapshot has become available prior to timeout.
-   * False if error.  Null if still creating or timeout.
+   * Returns something when done, or null when not done or timeout.
    */
-  @Override
-  public DBSnapshot getResult()
-  {
-    return result;
-  }
-
-  /**
-   * Simply logs the timeout and returns null.
-   */
-  @Override
-  public DBSnapshot timeout()
-  {
-    LOGGER.error("Snapshot failed to become available prior to timeout");
-    return null;
-  }
+  public abstract Object getResult();
 }

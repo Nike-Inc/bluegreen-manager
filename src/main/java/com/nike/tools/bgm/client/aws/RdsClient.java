@@ -14,6 +14,7 @@ import com.amazonaws.services.rds.model.CreateDBSnapshotRequest;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.amazonaws.services.rds.model.DBSnapshotNotFoundException;
 import com.amazonaws.services.rds.model.DeleteDBInstanceRequest;
 import com.amazonaws.services.rds.model.DeleteDBParameterGroupRequest;
 import com.amazonaws.services.rds.model.DeleteDBSnapshotRequest;
@@ -61,7 +62,7 @@ public class RdsClient
       if (result == null || CollectionUtils.isEmpty(result.getDBInstances()))
       {
         // Note: this branch should never execute.  We expect Amazon to throw DBInstanceNotFoundException instead.
-        throw new RuntimeException("RDS cannot find instance '" + instanceName + "'");
+        throw new DBSnapshotNotFoundException("RDS cannot find instance '" + instanceName + "'");
       }
       else if (result.getDBInstances().size() > 1)
       {

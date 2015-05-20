@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.amazonaws.services.rds.model.DBSnapshotNotFoundException;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
 import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsClientFactory;
@@ -285,6 +286,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
     loadDataModel();
     rdsClient = rdsClientFactory.create();
     DBInstance liveInstance = describeLiveInstance();
+    deletePriorLiveSnapshot(noop);
     DBSnapshot dbSnapshot = snapshotLive(noop);
     DBParameterGroup stageParamGroup = copyParameterGroup(liveInstance, noop);
     DBInstance stageInstance = restoreStage(dbSnapshot, stageParamGroup, liveInstance, noop);
@@ -304,7 +306,58 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   }
 
   /**
-   * Takes a snapshot of the live RDS instance, waits for completion.
+   * Checks if there is already a live db snapshot, and if so then requests deletion and waits until the old
+   * snapshot is deleted.
+   */
+  void deletePriorLiveSnapshot(boolean noop)
+  {
+    LOGGER.info(liveContext() + "Checking for prior snapshot of live RDS instance" + noopRemark(noop));
+    if (!noop)
+    {
+      String snapshotId = makeSnapshotId();
+      if (snapshotExists(snapshotId))
+      {
+        LOGGER.info(liveContext() + "Deleting prior snapshot '" + snapshotId + "'");
+        DBSnapshot initialSnapshot = rdsClient.deleteSnapshot(snapshotId);
+        waitTilSnapshotIsDeleted(snapshotId, initialSnapshot);
+      }
+    }
+  }
+
+  /**
+   * Returns true if the snapshot exists.
+   */
+  private boolean snapshotExists(String snapshotId)
+  {
+    try
+    {
+      rdsClient.describeSnapshot(snapshotId);
+      return true;
+    }
+    catch (DBSnapshotNotFoundException e)
+    {
+      return false;
+    }
+  }
+
+  /**
+   * Creates a Waiter with a snapshot progress checker, and returns when progress is done (i.e. snapshot deleted).
+   */
+  private void waitTilSnapshotIsDeleted(String snapshotId, DBSnapshot initialSnapshot)
+  {
+    LOGGER.info(liveContext() + "Waiting for deletion of old snapshot");
+    RdsSnapshotDeletedProgressChecker progressChecker = new RdsSnapshotDeletedProgressChecker(snapshotId, liveContext(), rdsClient,
+        initialSnapshot);
+    Waiter<Boolean> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
+    Boolean done = waiter.waitTilDone();
+    if (done == null || !done)
+    {
+      throw new RuntimeException(liveContext() + "Snapshot was not deleted");
+    }
+  }
+
+  /**
+   * Takes a fresh snapshot of the live RDS instance, waits for completion.
    * Sanity-checks the result.
    */
   DBSnapshot snapshotLive(boolean noop)
@@ -334,7 +387,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   private DBSnapshot waitTilSnapshotIsAvailable(String snapshotId, DBSnapshot initialSnapshot)
   {
     LOGGER.info(liveContext() + "Waiting for snapshot to become available");
-    RdsSnapshotProgressChecker progressChecker = new RdsSnapshotProgressChecker(snapshotId, liveContext(), rdsClient,
+    RdsSnapshotAvailableProgressChecker progressChecker = new RdsSnapshotAvailableProgressChecker(snapshotId, liveContext(), rdsClient,
         initialSnapshot);
     Waiter<DBSnapshot> waiter = new Waiter(waiterParameters, threadSleeper, progressChecker);
     DBSnapshot dbSnapshot = waiter.waitTilDone();
@@ -392,7 +445,7 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    * Then makes a few small modifications that restore would not do automatically (paramgroup and security group).
    * Reboots the db so the paramgroup modification will take effect.
    * Returns the rebooted instance.
-   *
+   * <p/>
    * TODO - Break this up, possibly into separate tasks (might need to persist new forms of intermediate data), to simplify unit test and issues of force/skip logic
    */
   DBInstance restoreStage(DBSnapshot dbSnapshot,

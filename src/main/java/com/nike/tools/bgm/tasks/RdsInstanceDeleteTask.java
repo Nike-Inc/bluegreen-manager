@@ -9,12 +9,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBSnapshot;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
 import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsClientFactory;
 import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
-import com.nike.tools.bgm.client.aws.RdsSnapshotBluegreenId;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
@@ -29,12 +27,6 @@ import com.nike.tools.bgm.utils.WaiterParameters;
 /**
  * In the delete env, deletes the RDS instance, its parameter group (if non-default), and the bluegreen snapshot from
  * which it was originally made.
- * <p/>
- * Requires the live env solely to figure out the name of the db snapshot.  Does not otherwise touch the live env!!
- * <p/>
- * Deletes the snapshot prefixed with 'bluegreen' since the next stagingDeploy will need to create another one with
- * exactly the same name.  However this task leaves behind any snapshots that Amazon automatically made of the database
- * we're deleting, and they will persist until manually deleted.
  * <p/>
  * Only deletes the parameter group when it is clear that stagingDeploy created it specifically for the RDS instance
  * that we're deleting.
@@ -68,24 +60,18 @@ public class RdsInstanceDeleteTask extends TaskImpl
   private ThreadSleeper threadSleeper;
 
   private OneEnvLoader deleteEnvLoader;
-  private OneEnvLoader liveEnvLoader;
   private RdsClient rdsClient;
 
   private String deleteEnvName;
-  private String liveEnvName; //More accurate name would be "currentOrFormerLiveEnvName"...
 
   private Environment deleteEnvironment;
   private LogicalDatabase deleteLogicalDatabase;
   private PhysicalDatabase deletePhysicalDatabase;
-  private Environment liveEnvironment;
-  private LogicalDatabase liveLogicalDatabase;
-  private PhysicalDatabase livePhysicalDatabase;
 
-  public Task assign(int position, String deleteEnvName, String liveEnvName)
+  public Task assign(int position, String deleteEnvName)
   {
     super.assign(position);
     this.deleteEnvName = deleteEnvName;
-    this.liveEnvName = liveEnvName;
     return this;
   }
 
@@ -94,7 +80,7 @@ public class RdsInstanceDeleteTask extends TaskImpl
    * this task is about to begin processing.
    * <p/>
    * Looks up the environment entities by name.
-   * Currently requires that the envs have exactly one logicaldb, with one physicaldb.
+   * Currently requires that the env has exactly one logicaldb, with one physicaldb.
    */
   void loadDataModel()
   {
@@ -103,12 +89,6 @@ public class RdsInstanceDeleteTask extends TaskImpl
     this.deleteEnvironment = deleteEnvLoader.getEnvironment();
     this.deleteLogicalDatabase = deleteEnvLoader.getLogicalDatabase();
     this.deletePhysicalDatabase = deleteEnvLoader.getPhysicalDatabase();
-
-    this.liveEnvLoader = envLoaderFactory.createOne(liveEnvName);
-    liveEnvLoader.loadPhysicalDatabase();
-    this.liveEnvironment = liveEnvLoader.getEnvironment();
-    this.liveLogicalDatabase = liveEnvLoader.getLogicalDatabase();
-    this.livePhysicalDatabase = liveEnvLoader.getPhysicalDatabase();
   }
 
   String context()
@@ -142,7 +122,6 @@ public class RdsInstanceDeleteTask extends TaskImpl
     rdsClient = rdsClientFactory.create();
     DBInstance rdsInstance = deleteInstance(noop);
     deleteParameterGroup(rdsInstance, noop);
-    deleteSnapshot(noop);
     persistModel(noop);
     return noop ? TaskStatus.NOOP : TaskStatus.DONE;
   }
@@ -158,17 +137,6 @@ public class RdsInstanceDeleteTask extends TaskImpl
     {
       throw new IllegalArgumentException(context() + "Are you CRAZY??? Don't ask us to delete a LIVE database!!!");
     }
-  }
-
-  /**
-   * Gets current info on the live database physical instance.
-   * <p/>
-   * Read-only, so it operates regardless of noop setting.
-   */
-  private DBInstance describeInstance()
-  {
-    LOGGER.info(context() + "Requesting description of target RDS instance");
-    return rdsClient.describeInstance(deletePhysicalDatabase.getInstanceName());
   }
 
   /**
@@ -227,37 +195,6 @@ public class RdsInstanceDeleteTask extends TaskImpl
         rdsClient.deleteParameterGroup(paramGroupName);
       }
     }
-  }
-
-  /**
-   * Deletes the bluegreen snapshot from which the deleted database instance was originally made.
-   * <p/>
-   * Does not delete snapshots that Amazon may have made automatically.
-   */
-  void deleteSnapshot(boolean noop)
-  {
-    LOGGER.info(context() + "Deleting snapshot from which the deleted database was originally made" + noopRemark(noop));
-    if (!noop)
-    {
-      String snapshotId = makeSnapshotId();
-      DBSnapshot initialSnapshot = rdsClient.deleteSnapshot(snapshotId);
-      /*
-      TODO - wait for confirmation that snapshot is deleted.
-      Unlike rds instances, snapshots have 'deleting' but not 'deleted' status, so confirmation would come from
-      describe-snapshots throwing exception ("not found"), or getting the list of all snapshots and seeing that
-      the delete target is not in the list anymore.
-       */
-    }
-  }
-
-  /**
-   * The snapshot id is the sole reason why we need access to the live env here.
-   */
-  private String makeSnapshotId()
-  {
-    RdsSnapshotBluegreenId id = new RdsSnapshotBluegreenId(liveEnvName, liveLogicalDatabase.getLogicalName(),
-        livePhysicalDatabase.getInstanceName());
-    return id.toString();
   }
 
   /**

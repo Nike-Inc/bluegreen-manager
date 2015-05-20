@@ -19,6 +19,7 @@ import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBParameterGroup;
 import com.amazonaws.services.rds.model.DBParameterGroupStatus;
 import com.amazonaws.services.rds.model.DBSnapshot;
+import com.amazonaws.services.rds.model.DBSnapshotNotFoundException;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.Endpoint;
 import com.nike.tools.bgm.client.aws.RdsAnalyzer;
@@ -33,6 +34,7 @@ import com.nike.tools.bgm.model.domain.LogicalDatabase;
 import com.nike.tools.bgm.model.domain.PhysicalDatabase;
 import com.nike.tools.bgm.model.domain.TaskStatus;
 import com.nike.tools.bgm.model.tx.EnvironmentTx;
+import com.nike.tools.bgm.utils.ThreadSleeper;
 import com.nike.tools.bgm.utils.WaiterParameters;
 
 import static com.nike.tools.bgm.model.domain.DatabaseTestHelper.LIVE_ENV_NAME;
@@ -44,6 +46,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -91,6 +94,9 @@ public class RdsSnapshotRestoreTaskTest
   @Mock
   private RdsClient mockRdsClient;
 
+  @Mock
+  private ThreadSleeper mockThreadSleeper;
+
   /**
    * Initializes the object-under-test for the "normal" case where live/stage envs meet preconditions.
    */
@@ -132,6 +138,38 @@ public class RdsSnapshotRestoreTaskTest
   }
 
   /**
+   * Prior snapshot exists, and is seen to be deleted on the first checker followup.
+   */
+  @Test
+  public void testDeletePriorLiveSnapshot_Exists()
+  {
+    normalSetup();
+    DBSnapshot dbSnapshot = makeFakeSnapshot(RdsSnapshotStatus.DELETING);
+    when(mockRdsClient.describeSnapshot(anyString())).thenReturn(dbSnapshot).thenThrow(DBSnapshotNotFoundException.class);
+    when(mockRdsClient.deleteSnapshot(anyString())).thenReturn(dbSnapshot);
+
+    rdsSnapshotRestoreTask.deletePriorLiveSnapshot(false/*noop*/);
+
+    verify(mockRdsClient, times(2)).describeSnapshot(anyString());
+    verify(mockRdsClient).deleteSnapshot(anyString());
+  }
+
+  /**
+   * No prior snapshot exists.
+   */
+  @Test
+  public void testDeletePriorLiveSnapshot_DoesNotExist()
+  {
+    normalSetup();
+    when(mockRdsClient.describeSnapshot(anyString())).thenThrow(DBSnapshotNotFoundException.class);
+
+    rdsSnapshotRestoreTask.deletePriorLiveSnapshot(false/*noop*/);
+
+    verify(mockRdsClient).describeSnapshot(anyString());
+    verify(mockRdsClient, never()).deleteSnapshot(anyString());
+  }
+
+  /**
    * Tests the case where the snapshot is created with an unexpected id.
    */
   @Test(expected = IllegalStateException.class)
@@ -145,6 +183,14 @@ public class RdsSnapshotRestoreTaskTest
     rdsSnapshotRestoreTask.snapshotLive(false/*noop*/);
   }
 
+  private DBSnapshot makeFakeSnapshot(RdsSnapshotStatus status)
+  {
+    DBSnapshot dbSnapshot = new DBSnapshot();
+    dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
+    dbSnapshot.setStatus(status.toString());
+    return dbSnapshot;
+  }
+
   /**
    * Tests the case where the snapshot is created with an unexpected status.
    */
@@ -152,9 +198,7 @@ public class RdsSnapshotRestoreTaskTest
   public void testSnapshotLive_Pass()
   {
     normalSetup();
-    DBSnapshot dbSnapshot = new DBSnapshot();
-    dbSnapshot.setDBSnapshotIdentifier(rdsSnapshotRestoreTask.makeSnapshotId());
-    dbSnapshot.setStatus(RdsSnapshotStatus.AVAILABLE.toString());
+    DBSnapshot dbSnapshot = makeFakeSnapshot(RdsSnapshotStatus.AVAILABLE);
     when(mockRdsClient.createSnapshot(anyString(), anyString())).thenReturn(dbSnapshot);
 
     assertEquals(dbSnapshot, rdsSnapshotRestoreTask.snapshotLive(false/*noop*/));
@@ -194,13 +238,14 @@ public class RdsSnapshotRestoreTaskTest
 
   /**
    * Fake data for use with testing restoreStage.
-   *
+   * <p/>
    * TODO - Separate test helper.
    */
   private static class RestoreStageFakeData
   {
     private static final String UNKNOWN_STATUS = "unknown";
     private DBSnapshot dbSnapshot = new DBSnapshot();
+    private DBSnapshot priorSnapshot = new DBSnapshot();
     private DBParameterGroup stageParamGroup = new DBParameterGroup();
     private DBInstance liveInstance = makeInstance(LIVE_PHYSICAL_NAME, RdsInstanceStatus.AVAILABLE);
     private DBInstance stageRestoreInstance;
@@ -215,6 +260,8 @@ public class RdsSnapshotRestoreTaskTest
     {
       dbSnapshot.setDBSnapshotIdentifier(snapshotId);
       dbSnapshot.setStatus(RdsSnapshotStatus.AVAILABLE.toString());
+      priorSnapshot.setDBSnapshotIdentifier(snapshotId);
+      priorSnapshot.setStatus(RdsSnapshotStatus.DELETING.toString());
       stageParamGroup.setDBParameterGroupName(stageParamGroupName);
       stageRestoreInstance = makeInstance(STAGE_PHYSICAL_NAME, stageRestoreInstanceStatus);
       stageModifyInstance = makeInstance(STAGE_PHYSICAL_NAME, stageModifyInstanceStatus, stageParamGroupName, stageModifyParamStatus);
@@ -254,6 +301,11 @@ public class RdsSnapshotRestoreTaskTest
     public DBSnapshot getDbSnapshot()
     {
       return dbSnapshot;
+    }
+
+    public DBSnapshot getPriorSnapshot()
+    {
+      return priorSnapshot;
     }
 
     public DBParameterGroup getStageParamGroup()
@@ -483,6 +535,9 @@ public class RdsSnapshotRestoreTaskTest
     RestoreStageFakeData data = restoreSetup(snapshotId, UGLY_STAGE_PARAM_GROUP_NAME,
         stageRestoreInstanceStatus, stageModifyInstanceStatus, stageModifyParamStatus);
     when(mockRdsClient.describeInstance(LIVE_PHYSICAL_NAME)).thenReturn(data.getLiveInstance());
+    when(mockRdsClient.describeSnapshot(anyString())).thenReturn(data.getPriorSnapshot())
+        .thenThrow(DBSnapshotNotFoundException.class).thenReturn(data.getDbSnapshot());
+    when(mockRdsClient.deleteSnapshot(anyString())).thenReturn(data.getPriorSnapshot());
     when(mockRdsClient.createSnapshot(snapshotId, LIVE_PHYSICAL_NAME)).thenReturn(data.getDbSnapshot());
     when(mockRdsAnalyzer.findSelfNamedOrDefaultParamGroupName(data.getLiveInstance())).thenReturn(LIVE_PARAM_GROUP_NAME);
     when(mockRdsClient.copyParameterGroup(LIVE_PARAM_GROUP_NAME, UGLY_STAGE_PARAM_GROUP_NAME)).thenReturn(data.getStageParamGroup());
@@ -525,6 +580,7 @@ public class RdsSnapshotRestoreTaskTest
     inOrder.verify(mockRdsClient).copyParameterGroup(anyString(), eq(UGLY_STAGE_PARAM_GROUP_NAME));
     inOrder.verify(mockRdsClient).restoreInstanceFromSnapshot(eq(STAGE_PHYSICAL_NAME), anyString(), eq(SUBNET_GROUP));
     inOrder.verify(mockRdsClient).modifyInstanceWithSecgrpParamgrp(STAGE_PHYSICAL_NAME, data.getSecurityGroups(), UGLY_STAGE_PARAM_GROUP_NAME);
+    //Could also verify describeSnapshot
   }
 
   /**
