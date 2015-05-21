@@ -113,17 +113,19 @@ public class JobFactory
     sb.append("\t\t\tThe env which is to be deleted.  (Take great care to specify the\n");
     sb.append("\t\t\tcorrect env!)  For a rollback (no goLive), specify the stageEnv.\n");
     sb.append("\t\t\tFor cleanup after a goLive, specify the oldLiveEnv.  Either way,\n");
-    sb.append("\t\t\tthe target env is linked to the test database.");
+    sb.append("\t\t\tthe target env is linked to the test database.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_STOP_SERVICES + " <list of services>\n");
     sb.append("\t\t\tSpecify services running on the " + PARAMNAME_DELETE_ENV + " which we should\n");
     sb.append("\t\t\ttry to shutdown gracefully prior to vm deletion.\n");
     sb.append("\n");
     sb.append("Common Optional Parameters:\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_NOOP + "\n");
-    sb.append("\t\t\tNo-op means print out what this job WOULD do, without taking any action that would leave side effects.\n");
-    sb.append("\t\t\tWe will make read-only queries to env services to gather useful information.\n");
+    sb.append("\t\t\tNo-op means print out what this job WOULD do, without taking any\n");
+    sb.append("\t\t\taction that would leave side effects.  We will make read-only\n");
+    sb.append("\t\t\tqueries to env services to gather useful information.\n");
     sb.append("\t" + ArgumentParser.DOUBLE_HYPHEN + PARAMNAME_FORCE + "\n");
-    sb.append("\t\t\tForce job to attempt all tasks, instead of skipping tasks that were successful in the last recent try.\n");
+    sb.append("\t\t\tForce job to attempt all tasks, instead of skipping tasks that\n");
+    sb.append("\t\t\twere successful in the last recent try.\n");
     sb.append("\n");
     return sb.toString();
   }
