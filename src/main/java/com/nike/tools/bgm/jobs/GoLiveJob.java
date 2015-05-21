@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +13,8 @@ import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.DiscoveryTask;
 import com.nike.tools.bgm.tasks.FixedElbFlipEc2Task;
 import com.nike.tools.bgm.tasks.FreezeTask;
+import com.nike.tools.bgm.tasks.LocalShellTask;
+import com.nike.tools.bgm.tasks.ShellConfig;
 import com.nike.tools.bgm.tasks.SmokeTestTask;
 import com.nike.tools.bgm.tasks.SwapDatabasesTask;
 import com.nike.tools.bgm.tasks.Task;
@@ -26,6 +30,10 @@ import com.nike.tools.bgm.tasks.ThawTask;
 @Component
 public class GoLiveJob extends TaskSequenceJob
 {
+  @Autowired
+  @Qualifier("swapDatabases")
+  private ShellConfig swapDatabasesConfig;
+
   private String oldLiveEnvName;
   private String newLiveEnvName;
   private String fixedLbName;
@@ -51,14 +59,10 @@ public class GoLiveJob extends TaskSequenceJob
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnvName));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, oldLiveEnvName, newLiveEnvName, swapDatabasesConfig));
     tasks.add(applicationContext.getBean(SwapDatabasesTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
     tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnvName));
-    /*
-      Note regarding decision to flip first, then thaw: It achieves the most consistent user experience at the cost of
-      waiting longer for live thaw.  If you thaw first, the ELB would send some users to a thawed instance and others to
-      the frozen oldLive instance until flip is done.  Your choice depends on how the nature of your app and its users.
-     */
     tasks.add(applicationContext.getBean(FixedElbFlipEc2Task.class).assign(position++, oldLiveEnvName, newLiveEnvName, fixedLbName));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, newLiveEnvName));
     this.tasks = tasks;

@@ -16,7 +16,13 @@
   </bean>
 
   <bean class="com.nike.tools.bgm.tasks.ShellConfig">
-    <qualifier value="shutdownApplications"/>
+    <qualifier value="swapDatabases"/>
+    <property name="command" value="${bluegreen.shellConfig.swapDatabases.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.swapDatabases.exitvalue.success}"/>
+  </bean>
+
+  <bean class="com.nike.tools.bgm.tasks.ShellConfig">
+  <qualifier value="shutdownApplications"/>
     <property name="command" value="${bluegreen.shellConfig.shutdownApplications.command}"/>
     <property name="exitvalueSuccess" value="${bluegreen.shellConfig.shutdownApplications.exitvalue.success}"/>
   </bean>
