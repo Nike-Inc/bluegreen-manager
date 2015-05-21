@@ -8,7 +8,6 @@ import com.amazonaws.services.rds.model.DBSnapshot;
 import com.amazonaws.services.rds.model.DBSnapshotNotFoundException;
 import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +32,19 @@ public class RdsSnapshotDeletedProgressCheckerTest extends RdsSnapshotProgressCh
   public void testInitialCheck_Deleting()
   {
     testInitialOkNotDone(makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETING)));
+  }
+
+  /**
+   * Initial status=deleted = done.
+   */
+  @Test
+  public void testInitialCheck_DeletedStatus()
+  {
+    DBSnapshot initialSnapshot = fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETED);
+    RdsSnapshotDeletedProgressChecker progressChecker = makeProgressChecker(initialSnapshot);
+    progressChecker.initialCheck();
+    assertTrue(progressChecker.isDone());
+    assertTrue(progressChecker.getResult());
   }
 
   // Not testing "initially available" ...I'm not sure if Amazon thinks it is an ok thing.
@@ -86,14 +98,31 @@ public class RdsSnapshotDeletedProgressCheckerTest extends RdsSnapshotProgressCh
         RdsSnapshotStatus.DELETING);
   }
 
+  /**
+   * Good ending: deleted status.
+   */
   @Test
-  public void testFollowupCheck_Deleted()
+  public void testFollowupCheck_DeletedStatus()
+  {
+    RdsSnapshotDeletedProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETING));
+    whenDescribeSnapshot(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETED));
+    progressChecker.followupCheck(WAIT_NUM);
+    assertTrue(progressChecker.isDone());
+    assertTrue(progressChecker.getResult());
+    verifyDescribeSnapshot();
+  }
+
+  /**
+   * Good ending: not-found exception (i.e. already deleted).
+   */
+  @Test
+  public void testFollowupCheck_NotFoundExceptionIsDone()
   {
     RdsSnapshotDeletedProgressChecker progressChecker = makeProgressChecker(fakeSnapshot(SNAPSHOT_ID, RdsSnapshotStatus.DELETING));
     when(mockRdsClient.describeSnapshot(SNAPSHOT_ID)).thenThrow(DBSnapshotNotFoundException.class);
     progressChecker.followupCheck(WAIT_NUM);
     assertTrue(progressChecker.isDone());
-    assertEquals(true, progressChecker.getResult());
+    assertTrue(progressChecker.getResult());
     verifyDescribeSnapshot();
   }
 

@@ -25,6 +25,7 @@ import com.nike.tools.bgm.client.aws.RdsClient;
 import com.nike.tools.bgm.client.aws.RdsClientFactory;
 import com.nike.tools.bgm.client.aws.RdsInstanceStatus;
 import com.nike.tools.bgm.client.aws.RdsSnapshotBluegreenId;
+import com.nike.tools.bgm.client.aws.RdsSnapshotStatus;
 import com.nike.tools.bgm.model.domain.DatabaseType;
 import com.nike.tools.bgm.model.domain.Environment;
 import com.nike.tools.bgm.model.domain.LogicalDatabase;
@@ -331,7 +332,20 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   {
     try
     {
-      rdsClient.describeSnapshot(snapshotId);
+      DBSnapshot priorSnapshot = rdsClient.describeSnapshot(snapshotId);
+      RdsSnapshotStatus status = RdsSnapshotStatus.fromString(priorSnapshot.getStatus());
+      switch (status)
+      {
+        case AVAILABLE:
+          return true;
+        case CREATING:
+        case DELETING:
+          LOGGER.warn(liveContext() + "Prior snapshot '" + snapshotId + "' has transitional status " + status
+              + ", we will probably crash attempting to request its deletion right now");
+          return true;
+        case DELETED:
+          return false;
+      }
       return true;
     }
     catch (DBSnapshotNotFoundException e)

@@ -12,9 +12,19 @@ import com.nike.tools.bgm.utils.ProgressChecker;
 /**
  * Checks progress of an RDS snapshot undergoing deletion.
  * <p/>
- * Unlike rds instances, snapshots have 'deleting' but not 'deleted' status, so confirmation would come from
- * describe-snapshots throwing exception ("not found"), or getting the list of all snapshots and seeing that
- * the delete target is not in the list anymore.
+ * <a href="http://docs.aws.amazon.com/AmazonRDS/latest/CommandLineReference/CLIReference-cmd-DescribeDBSnapshots.html">
+ *   Amazon documentation</a> says the only snapshot status values are <tt>creating | available | deleting</tt>
+ *   ...but they lie, look at this result:
+ * <pre>
+ DEBUG org.apache.http.impl.conn.Wire.wire(72) -  << "  <DeleteDBSnapshotResult>[\n]"
+ DEBUG org.apache.http.impl.conn.Wire.wire(72) -  << "    <DBSnapshot>[\n]"
+ DEBUG org.apache.http.impl.conn.Wire.wire(72) -  << "      <Status>deleted</Status>[\n]"
+ </pre>
+ * So we need to additionally check for <tt>deleted</tt>.
+ * <p/>
+ * There are many ways now to obtain confirmation that a snapshot is deleted: describe-snapshots returns 'deleted';
+ * describe-snapshots throwing exception ("not found"); describe-all-snapshots and see that the delete target is not
+ * in the list anymore.
  */
 public class RdsSnapshotDeletedProgressChecker extends RdsSnapshotProgressChecker implements ProgressChecker<Boolean>
 {
@@ -72,7 +82,13 @@ public class RdsSnapshotDeletedProgressChecker extends RdsSnapshotProgressChecke
   {
     final String status = dbSnapshot.getStatus();
     final String snapshotId = dbSnapshot.getDBSnapshotIdentifier();
-    if (RdsSnapshotStatus.DELETING.equalsString(status))
+    if (RdsSnapshotStatus.DELETED.equalsString(status))
+    {
+      LOGGER.info(getDescription() + " is done");
+      done = true;
+      result = true;
+    }
+    else if (RdsSnapshotStatus.DELETING.equalsString(status))
     {
       //Keep waiting.
     }
