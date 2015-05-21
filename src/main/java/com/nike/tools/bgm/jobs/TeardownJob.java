@@ -9,6 +9,8 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import com.nike.tools.bgm.model.domain.JobHistory;
 import com.nike.tools.bgm.tasks.ForgetEnvironmentTask;
@@ -24,6 +26,8 @@ import static com.nike.tools.bgm.substituter.SubstitutionKeys.STOP_SERVICES;
 /**
  * Tears down the deletion target environment, and the test database used by the former stage env.
  */
+@Lazy
+@Component
 public class TeardownJob extends TaskSequenceJob
 {
   @Autowired
