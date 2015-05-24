@@ -9,10 +9,9 @@
   <name>bluegreen-manager</name>
   <url>http://maven.apache.org</url>
 
-  <!-- scm spec required for SonarQube -->
   <scm>
-    <connection>${teamcity.scm.connection}</connection>
-    <url>${teamcity.scm.url}</url>
+    <connection>scm:svn:http://ubersvn.nikedev.com:9880/bluegreen-manager/trunk/</connection>
+    <url>http://ubersvn.nikedev.com:9880/bluegreen-manager/trunk/</url>
   </scm>
 
   <properties>
