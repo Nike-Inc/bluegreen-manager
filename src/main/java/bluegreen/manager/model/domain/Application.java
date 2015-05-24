@@ -184,7 +184,7 @@ public class Application
    * Produces a URI string 'scheme://hostname:port/alternateUrlPath'.
    * As an alternative to the normal urlPath.
    * <p/>
-   * TODO - Hopefully remove this, it only exists because kraken's bluegreen endpoints are a tad inconsistent.
+   * TODO - Can remove this when property 'bluegreen.application.urlcontext' goes away
    */
   public String makeAlternateUri(String alternateUrlPath)
   {
