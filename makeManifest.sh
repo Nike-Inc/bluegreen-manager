@@ -6,5 +6,5 @@
 # to put the updated manifest in bluegreen-manager.jar.
 # And remember to checkin the updated MANIFEST.MF.
 
-\ls target/dependency | awk 'BEGIN{printf("Manifest-Version: 1.0\nClass-Path:")} {printf("  dependency/%s\n", $0);} END{printf("Main-Class: com.nike.tools.bgm.main.BlueGreenManager\n")}' > src/main/resources/META-INF/MANIFEST.MF
+\ls target/dependency | awk 'BEGIN{printf("Manifest-Version: 1.0\nClass-Path:")} {printf("  dependency/%s\n", $0);} END{printf("Main-Class: bluegreen.manager.main.BlueGreenManager\n")}' > src/main/resources/META-INF/MANIFEST.MF
 

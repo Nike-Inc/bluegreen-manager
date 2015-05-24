@@ -52,4 +52,4 @@ Class-Path:  dependency/antlr-2.7.7.jar
   dependency/spring-tx-4.1.5.RELEASE.jar
   dependency/validation-api-1.1.0.Final.jar
   dependency/xml-apis-1.0.b2.jar
-Main-Class: com.nike.tools.bgm.main.BlueGreenManager
+Main-Class: bluegreen.manager.main.BlueGreenManager

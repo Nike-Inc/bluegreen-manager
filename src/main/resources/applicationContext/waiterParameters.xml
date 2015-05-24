@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+  <bean class="bluegreen.manager.utils.WaiterParameters">
     <qualifier value="rdsSnapshotRestoreTask"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.rdsSnapshotRestoreTask.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.rdsSnapshotRestoreTask.followupWaitDelayMilliseconds}"/>
@@ -10,7 +10,7 @@
     <property name="maxNumWaits" value="${bluegreen.waiter.rdsSnapshotRestoreTask.maxNumWaits}"/>
   </bean>
 
-  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+  <bean class="bluegreen.manager.utils.WaiterParameters">
     <qualifier value="rdsInstanceDeleteTask"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.rdsInstanceDeleteTask.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.rdsInstanceDeleteTask.followupWaitDelayMilliseconds}"/>
@@ -18,7 +18,7 @@
     <property name="maxNumWaits" value="${bluegreen.waiter.rdsInstanceDeleteTask.maxNumWaits}"/>
   </bean>
 
-  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+  <bean class="bluegreen.manager.utils.WaiterParameters">
     <qualifier value="sshVmCreateTask"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.sshVmCreateTask.followupWaitDelayMilliseconds}"/>
@@ -26,7 +26,7 @@
     <property name="maxNumWaits" value="${bluegreen.waiter.sshVmCreateTask.maxNumWaits}"/>
   </bean>
 
-  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+  <bean class="bluegreen.manager.utils.WaiterParameters">
     <qualifier value="transitionTask"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.transitionTask.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.transitionTask.followupWaitDelayMilliseconds}"/>
@@ -34,7 +34,7 @@
     <property name="maxNumWaits" value="${bluegreen.waiter.transitionTask.maxNumWaits}"/>
   </bean>
 
-  <bean class="com.nike.tools.bgm.utils.WaiterParameters">
+  <bean class="bluegreen.manager.utils.WaiterParameters">
     <qualifier value="fixedELBFlipEC2Task"/>
     <property name="initialWaitDelayMilliseconds" value="${bluegreen.waiter.fixedELBFlipEC2Task.initialWaitDelayMilliseconds}"/>
     <property name="followupWaitDelayMilliseconds" value="${bluegreen.waiter.fixedELBFlipEC2Task.followupWaitDelayMilliseconds}"/>

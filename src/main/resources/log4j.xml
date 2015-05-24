@@ -92,7 +92,7 @@
     <priority value="WARN"/>
   </category>
 
-  <category name="com.nike.tools.bgm">
+  <category name="bluegreen.manager">
     <priority value="DEBUG"/>
   </category>
 
