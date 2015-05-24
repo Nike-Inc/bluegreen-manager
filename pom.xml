@@ -9,6 +9,7 @@
   <name>bluegreen-manager</name>
   <url>http://maven.apache.org</url>
 
+  <!-- scm spec required for SonarQube -->
   <scm>
     <connection>${teamcity.scm.connection}</connection>
     <url>${teamcity.scm.url}</url>
