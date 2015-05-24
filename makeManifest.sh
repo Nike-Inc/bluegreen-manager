@@ -1,7 +1,7 @@
 #!/bin/bash
 # makeManifest.sh
 #
-# After updating log4j.xml, run 'mvn clean package dependency:copy-dependencies'
+# After updating pom.xml deps, run 'mvn clean package dependency:copy-dependencies'
 # and then this script to update MANIFEST.MF.  Then run the mvn command again
 # to put the updated manifest in bluegreen-manager.jar.
 # And remember to checkin the updated MANIFEST.MF.
