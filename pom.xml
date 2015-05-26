@@ -7,7 +7,6 @@
   <packaging>jar</packaging>
 
   <name>bluegreen-manager</name>
-  <url>http://maven.apache.org</url>
 
   <scm>
     <connection>scm:svn:http://ubersvn.nikedev.com:9880/bluegreen-manager/trunk/</connection>
