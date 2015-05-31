@@ -11,7 +11,7 @@ public class DbFreezeProgress implements Lockable
   private DbFreezeMode mode;
 
   /**
-   * SamAccountName of the user who started the current transition, or null if mode is non-transitional.
+   * User who started the current transition, or null if mode is non-transitional.
    */
   private String username;
 
