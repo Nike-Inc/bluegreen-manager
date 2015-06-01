@@ -27,11 +27,6 @@ public class DbFreezeProgress implements Lockable
   private String endTime;
 
   /**
-   * Comma-delimited list of scanners awaiting termination.  Should be blank in steady-state modes.
-   */
-  private String scannersAwaitingTermination;
-
-  /**
    * True if the progress request could not lock the dbfreeze synchronizer, which means another freeze-related
    * thread has the lock (either asking for progress or trying to start a new transition).  If true, the caller
    * should wait and ask again for progress later.
@@ -84,16 +79,6 @@ public class DbFreezeProgress implements Lockable
     this.endTime = endTime;
   }
 
-  public String getScannersAwaitingTermination()
-  {
-    return scannersAwaitingTermination;
-  }
-
-  public void setScannersAwaitingTermination(String scannersAwaitingTermination)
-  {
-    this.scannersAwaitingTermination = scannersAwaitingTermination;
-  }
-
   @Override
   public boolean isLockError()
   {
@@ -128,8 +113,6 @@ public class DbFreezeProgress implements Lockable
     sb.append(startTime);
     sb.append(", endTime: ");
     sb.append(endTime);
-    sb.append(", scannersAwaitingTermination: ");
-    sb.append(scannersAwaitingTermination);
     sb.append(", lockError: ");
     sb.append(lockError);
     sb.append(", transitionError: ");

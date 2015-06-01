@@ -35,7 +35,8 @@ public class ApplicationClientTest
 {
   private static final String JSON_FAKE_LOCKABLE_LOCKED = "{'lockError': true}";
   private static final String JSON_FAKE_LOCKABLE_NOT_LOCKED = "{'lockError': false}";
-  private static final String JSON_DB_FREEZE_PROGRESS = "{'mode':{'printable':'Normal','transition':'blah','code':'NORMAL'}, 'username':'charlie', 'startTime':'12pm', 'endTime':'1pm', 'scannersAwaitingTermination':null, 'lockError':false, 'transitionError':null}";
+  private static final String JSON_DB_FREEZE_PROGRESS = "{'mode':{'printable':'Normal','transition':'blah','code':'NORMAL'}, 'username':'charlie', 'startTime':'12pm', 'endTime':'1pm', 'lockError':false, 'transitionError':null}";
+  private static final String JSON_DB_FREEZE_PROGRESS_EXTRANEOUS = JSON_DB_FREEZE_PROGRESS.replaceFirst("}$", ", 'bogusField1':null, 'bogusField2':{'foo':'bar','wiz':'bang'}}");
   private static final String JSON_DISCOVERY_RESULT = "{'physicalDatabase':{'envName':'env1', 'logicalName':'hello', 'dbUrl':'theUrl', 'dbUsername':'user', 'dbIsLive':true}, 'lockError':false, 'discoveryError':null}";
   private static final String TEST_URI = "http://helloworld.com:8080/restful/interface";
   private static final String METHOD_PATH = "someResourceService";
@@ -199,7 +200,17 @@ public class ApplicationClientTest
     when(mockHttpHelper.executeGet(eq(mockExecutor), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS);
 
     assertOnDbFreezeProgress(applicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, OUTER_FIRST_TRY), true);
+  }
 
+  /**
+   * Even if get-progress returns extraneous JSON fields, it should deserialize safely as a DbFreezeProgress object.
+   */
+  @Test
+  public void testGetDbFreezeProgress_ExtraneousJSON()
+  {
+    when(mockHttpHelper.executeGet(eq(mockExecutor), anyString())).thenReturn(JSON_DB_FREEZE_PROGRESS_EXTRANEOUS);
+
+    assertOnDbFreezeProgress(applicationClient.getDbFreezeProgress(FAKE_APPLICATION, fakeSession, OUTER_FIRST_TRY), true);
   }
 
   /**
