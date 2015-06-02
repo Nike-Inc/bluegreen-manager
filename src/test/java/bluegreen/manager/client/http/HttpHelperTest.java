@@ -19,6 +19,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.gson.Gson;
+
 import static bluegreen.manager.client.http.HttpHelper.HEADERNAME_SET_COOKIE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -41,6 +43,8 @@ public class HttpHelperTest
   @Mock
   private Content mockContent;
 
+  private Gson gson = new Gson();
+
   private HttpHelper httpHelper = new HttpHelper();
 
   @Before
@@ -49,6 +53,7 @@ public class HttpHelperTest
     when(mockExecutor.execute(any(Request.class))).thenReturn(mockResponse);
     when(mockResponse.returnContent()).thenReturn(mockContent);
     when(mockContent.toString()).thenReturn(JSON_RESPONSE_CONTENT);
+    httpHelper.setGson(gson);
   }
 
   /**
@@ -58,7 +63,7 @@ public class HttpHelperTest
   {
     HttpResponse fakeHttpResponse = new BasicHttpResponse(HttpVersion.HTTP_1_1, responseStatus, "some reason");
     fakeHttpResponse.addHeader(headerName, COOKIE_VALUE);
-    fakeHttpResponse.setEntity(new StringEntity("" + isValidUser));
+    fakeHttpResponse.setEntity(new StringEntity("{\"isLoggedIn\": " + isValidUser + "}"));
     when(mockResponse.returnResponse()).thenReturn(fakeHttpResponse);
     NameValuePair[] authParams = new NameValuePair[] {
         new BasicNameValuePair("auth1", "hello"),

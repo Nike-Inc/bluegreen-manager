@@ -9,7 +9,12 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+
+import bluegreen.manager.client.app.LoginResult;
 
 /**
  * Httpcomponents helpers.
@@ -20,6 +25,15 @@ import org.springframework.stereotype.Component;
 public class HttpHelper
 {
   public static final String HEADERNAME_SET_COOKIE = "Set-Cookie";
+
+  @Autowired
+  private Gson gson;
+
+  //Test purposes only
+  void setGson(Gson gson)
+  {
+    this.gson = gson;
+  }
 
   /**
    * Posts the authentication parameters to the given uri and validates the response cookie.
@@ -40,7 +54,8 @@ public class HttpHelper
         if (cookieHeader != null && StringUtils.isNotBlank(cookieHeader.getValue()))
         {
           body = EntityUtils.toString(httpResponse.getEntity());
-          if (StringUtils.equals("true", body))
+          LoginResult result = gson.fromJson(body, LoginResult.class);
+          if (result != null && result.isLoggedIn())
           {
             return; //success
           }
