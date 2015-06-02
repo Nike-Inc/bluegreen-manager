@@ -1,6 +1,5 @@
 package bluegreen.manager.client.app;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
@@ -57,22 +56,12 @@ public class ApplicationClient
   @Value("${bluegreen.application.password}")
   private String applicationPassword;
 
-  //FIXME - unpleasantness for local dev/test until app restful api is made consistent
-  @Value("${bluegreen.application.urlcontext}")
-  private String applicationUrlContext;
-
-
   /**
    * Initializes an http communication session with the application.
    */
   public ApplicationSession authenticate(Application application)
   {
-    String alternateUrlPath = DbFreezeRest.POST_LOGIN;
-    if (StringUtils.equals("localhost", application.getHostname()))
-    {
-      alternateUrlPath = applicationUrlContext + alternateUrlPath; //FIXME - unpleasantness for local dev/test until app restful api is made consistent
-    }
-    String uri = application.makeAlternateUri(alternateUrlPath);
+    String uri = application.makeHostnameUri() + "/" + DbFreezeRest.POST_LOGIN;
     Executor httpExecutor = executorFactory.makeExecutor();
     CookieStore cookieStore = new BasicCookieStore();
     httpExecutor.cookieStore(cookieStore);

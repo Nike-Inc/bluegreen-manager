@@ -10,7 +10,7 @@ public class DbFreezeRest
     //Do not instantiate me
   }
 
-  public static final String POST_LOGIN = "/rest/user/login";
+  public static final String POST_LOGIN = "login";
 
   public static final String GET_DB_FREEZE_PROGRESS = "dbFreezeProgress";
 

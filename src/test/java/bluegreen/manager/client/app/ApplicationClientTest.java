@@ -264,17 +264,6 @@ public class ApplicationClientTest
   }
 
   /**
-   * Tests the ability to make an alternate uri based on the application's host.
-   */
-  @Test
-  public void testMakeAlternateUri()
-  {
-    String uri = FAKE_APPLICATION.makeAlternateUri("alternate");
-    assertTrue(uri.startsWith("http"));
-    assertTrue(uri.endsWith("alternate"));
-  }
-
-  /**
    * For client tests that don't need to care about concrete lockable implementations.
    */
   private static class FakeLockable implements Lockable

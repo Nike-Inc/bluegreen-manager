@@ -180,24 +180,4 @@ public class Application
     return sb.toString();
   }
 
-  /**
-   * Produces a URI string 'scheme://hostname:port/alternateUrlPath'.
-   * As an alternative to the normal urlPath.
-   * <p/>
-   * TODO - Can remove this when property 'bluegreen.application.urlcontext' goes away
-   */
-  public String makeAlternateUri(String alternateUrlPath)
-  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(scheme);
-    sb.append("://");
-    sb.append(hostname);
-    if (port != null)
-    {
-      sb.append(":");
-      sb.append(port);
-    }
-    sb.append(alternateUrlPath);
-    return sb.toString();
-  }
 }
