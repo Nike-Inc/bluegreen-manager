@@ -35,7 +35,7 @@ public class ApplicationClient
   static final int MAX_NUM_TRIES = 3;
   private static final long RETRY_DELAY_MILLISECONDS = 5000L;
   private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationClient.class);
-  private static final String PARAMNAME_AUTHUSER = "user";
+  private static final String PARAMNAME_AUTHUSERNAME = "username";
   private static final String PARAMNAME_AUTHPASSWORD = "password";
 
   @Autowired
@@ -66,7 +66,7 @@ public class ApplicationClient
     CookieStore cookieStore = new BasicCookieStore();
     httpExecutor.cookieStore(cookieStore);
     NameValuePair[] authParams = new NameValuePair[] {
-        new BasicNameValuePair(PARAMNAME_AUTHUSER, applicationUsername),
+        new BasicNameValuePair(PARAMNAME_AUTHUSERNAME, applicationUsername),
         new BasicNameValuePair(PARAMNAME_AUTHPASSWORD, applicationPassword)
     };
     httpHelper.postAuthForCookie(httpExecutor, uri, authParams);
