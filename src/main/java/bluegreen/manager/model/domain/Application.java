@@ -28,9 +28,13 @@ public class Application
   public static final String COLUMN_HOSTNAME = "APP_HOSTNAME";
   public static final String COLUMN_PORT = "APP_PORT";
   public static final String COLUMN_URL_PATH = "APP_URL_PATH";
+  public static final String COLUMN_USERNAME = "APP_USERNAME";
+  public static final String COLUMN_PASSWORD = "APP_PASSWORD";
   public static final int LENGTH_SCHEME = 10;
   public static final int LENGTH_HOSTNAME = 128;
   public static final int LENGTH_URL_PATH = 255;
+  public static final int LENGTH_USERNAME = 64;
+  public static final int LENGTH_PASSWORD = 64;
   public static final String FIELD_APPLICATION_VM = "applicationVm";
   public static final int CONSTRAINT_MIN_PORT = 0;
   public static final int CONSTRAINT_MAX_PORT = 65535;
@@ -58,6 +62,12 @@ public class Application
   @Pattern(regexp = "^/.*")
   @Column(name = COLUMN_URL_PATH, nullable = false, length = LENGTH_URL_PATH)
   private String urlPath;
+
+  @Column(name = COLUMN_USERNAME, nullable = false, length = LENGTH_USERNAME)
+  private String username;
+
+  @Column(name = COLUMN_PASSWORD, nullable = false, length = LENGTH_PASSWORD)
+  private String password;
 
   public long getId()
   {
@@ -119,6 +129,26 @@ public class Application
     this.urlPath = urlPath;
   }
 
+  public String getUsername()
+  {
+    return username;
+  }
+
+  public void setUsername(String username)
+  {
+    this.username = username;
+  }
+
+  public String getPassword()
+  {
+    return password;
+  }
+
+  public void setPassword(String password)
+  {
+    this.password = password;
+  }
+
   /**
    * Equality based solely on database identity.
    */
@@ -157,13 +187,16 @@ public class Application
     sb.append(port);
     sb.append(", urlPath: ");
     sb.append(urlPath);
+    sb.append(", username: ");
+    sb.append(username);
+    sb.append(", password: ");
+    sb.append(password);
     sb.append("]");
     return sb.toString();
   }
 
   /**
    * Produces a URI string 'scheme://hostname:port/urlPath'.
-   * In other words the hostname not the ip.
    */
   public String makeHostnameUri()
   {

@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import bluegreen.manager.client.app.ApplicationClient;
+import bluegreen.manager.client.app.ApplicationClientFactory;
 import bluegreen.manager.client.app.ApplicationSession;
 import bluegreen.manager.client.app.DbFreezeMode;
 import bluegreen.manager.client.app.DbFreezeProgress;
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -47,6 +49,9 @@ public abstract class TransitionTaskBaseTest
 
   @Mock
   protected OneEnvLoader mockOneEnvLoader;
+
+  @Mock
+  protected ApplicationClientFactory mockApplicationClientFactory;
 
   @Mock
   protected ApplicationClient mockApplicationClient;
@@ -74,6 +79,7 @@ public abstract class TransitionTaskBaseTest
     when(mockEnvLoaderFactory.createOne(envName)).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getEnvironment()).thenReturn(FAKE_APPLICATION.getApplicationVm().getEnvironment());
     when(mockOneEnvLoader.getApplication()).thenReturn(FAKE_APPLICATION);
+    when(mockApplicationClientFactory.create(anyString(), anyString())).thenReturn(mockApplicationClient);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(fakeSession);
     transitionTask.assignTransition(1, envName);
     transitionTask.loadDataModel();

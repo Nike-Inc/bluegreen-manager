@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import bluegreen.manager.client.app.ApplicationClient;
+import bluegreen.manager.client.app.ApplicationClientFactory;
 import bluegreen.manager.client.app.ApplicationSession;
 import bluegreen.manager.client.app.DiscoveryResult;
 import bluegreen.manager.client.app.PhysicalDatabase;
@@ -19,6 +20,7 @@ import bluegreen.manager.model.tx.EnvLoaderFactory;
 import bluegreen.manager.model.tx.OneEnvLoader;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +51,9 @@ public class DiscoveryTaskTest
   private OneEnvLoader mockOneEnvLoader;
 
   @Mock
+  protected ApplicationClientFactory mockApplicationClientFactory;
+
+  @Mock
   protected ApplicationClient mockApplicationClient;
 
   @Mock
@@ -61,6 +66,7 @@ public class DiscoveryTaskTest
     when(mockEnvLoaderFactory.createOne(fakeEnv.getEnvName())).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getEnvironment()).thenReturn(fakeEnv);
     when(mockOneEnvLoader.getApplication()).thenReturn(FAKE_APPLICATION);
+    when(mockApplicationClientFactory.create(anyString(), anyString())).thenReturn(mockApplicationClient);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(mockApplicationSession);
     when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     discoveryTask.assign(1, fakeEnv.getEnvName());

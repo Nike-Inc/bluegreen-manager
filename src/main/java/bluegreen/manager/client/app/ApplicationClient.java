@@ -7,10 +7,6 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 
@@ -24,12 +20,8 @@ import bluegreen.manager.utils.ThreadSleeper;
  * HTTP client that makes requests to a blue-green compliant application, and knows to try again if
  * it gets a lock error.
  * <p/>
- * Currently only support one of these in the whole app! i.e. use of @Value.
- * <p/>
  * TODO - start capturing http response code, need to know if client has thrown an exception or responded non-200
  */
-@Lazy
-@Component
 public class ApplicationClient
 {
   static final int MAX_NUM_TRIES = 3;
@@ -38,23 +30,26 @@ public class ApplicationClient
   private static final String PARAMNAME_AUTHUSERNAME = "username";
   private static final String PARAMNAME_AUTHPASSWORD = "password";
 
-  @Autowired
   private ExecutorFactory executorFactory;
-
-  @Autowired
   private HttpHelper httpHelper;
-
-  @Autowired
   private Gson gson;
-
-  @Autowired
   private ThreadSleeper threadSleeper;
-
-  @Value("${bluegreen.application.username}")
   private String applicationUsername;
-
-  @Value("${bluegreen.application.password}")
   private String applicationPassword;
+
+  public ApplicationClient(ExecutorFactory executorFactory,
+                           HttpHelper httpHelper,
+                           Gson gson,
+                           ThreadSleeper threadSleeper,
+                           String applicationUsername, String applicationPassword)
+  {
+    this.executorFactory = executorFactory;
+    this.httpHelper = httpHelper;
+    this.gson = gson;
+    this.threadSleeper = threadSleeper;
+    this.applicationUsername = applicationUsername;
+    this.applicationPassword = applicationPassword;
+  }
 
   /**
    * Initializes an http communication session with the application.

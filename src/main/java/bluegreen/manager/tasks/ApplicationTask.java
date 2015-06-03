@@ -3,6 +3,7 @@ package bluegreen.manager.tasks;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import bluegreen.manager.client.app.ApplicationClient;
+import bluegreen.manager.client.app.ApplicationClientFactory;
 import bluegreen.manager.client.app.ApplicationSession;
 import bluegreen.manager.model.domain.Application;
 
@@ -12,10 +13,10 @@ import bluegreen.manager.model.domain.Application;
 public abstract class ApplicationTask extends ApplicationVmTask
 {
   @Autowired
+  protected ApplicationClientFactory applicationClientFactory;
+
   protected ApplicationClient applicationClient;
-
   protected ApplicationSession applicationSession;
-
   protected Application application;
 
   public Task assign(int position, String envName)
@@ -48,7 +49,8 @@ public abstract class ApplicationTask extends ApplicationVmTask
    */
   void initApplicationSession()
   {
-    applicationSession = applicationClient.authenticate(application);
+    this.applicationClient = applicationClientFactory.create(application.getUsername(), application.getPassword());
+    this.applicationSession = applicationClient.authenticate(application);
   }
 
 }

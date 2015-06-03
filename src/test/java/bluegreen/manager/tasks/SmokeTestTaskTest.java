@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import bluegreen.manager.client.app.ApplicationClient;
+import bluegreen.manager.client.app.ApplicationClientFactory;
 import bluegreen.manager.client.app.ApplicationSession;
 import bluegreen.manager.model.domain.Application;
 import bluegreen.manager.model.domain.Environment;
@@ -16,6 +17,7 @@ import bluegreen.manager.model.domain.TaskStatus;
 import bluegreen.manager.model.tx.EnvLoaderFactory;
 import bluegreen.manager.model.tx.OneEnvLoader;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -38,6 +40,9 @@ public class SmokeTestTaskTest
   private OneEnvLoader mockOneEnvLoader;
 
   @Mock
+  protected ApplicationClientFactory mockApplicationClientFactory;
+
+  @Mock
   private ApplicationClient mockApplicationClient;
 
   @Mock
@@ -50,6 +55,7 @@ public class SmokeTestTaskTest
     when(mockEnvLoaderFactory.createOne(fakeEnv.getEnvName())).thenReturn(mockOneEnvLoader);
     when(mockOneEnvLoader.getEnvironment()).thenReturn(fakeEnv);
     when(mockOneEnvLoader.getApplication()).thenReturn(FAKE_APPLICATION);
+    when(mockApplicationClientFactory.create(anyString(), anyString())).thenReturn(mockApplicationClient);
     when(mockApplicationClient.authenticate(FAKE_APPLICATION)).thenReturn(mockApplicationSession);
     when(mockOneEnvLoader.context()).thenReturn("(Context) ");
     smokeTestTask.assign(1, fakeEnv.getEnvName());
