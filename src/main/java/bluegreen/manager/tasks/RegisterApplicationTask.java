@@ -49,7 +49,7 @@ public class RegisterApplicationTask extends TwoEnvTask
   /**
    * Makes a transient Application entity for stage based on the existing live application.
    * <p/>
-   * There are some big assumptions here.  Stage should be "secret" so we're not expecting an ELB
+   * Important assumption: stage app has same port as live app.
    */
   private Application defineStageApplication()
   {
@@ -59,6 +59,8 @@ public class RegisterApplicationTask extends TwoEnvTask
     stageApplication.setHostname(stageApplicationVm.getHostname());
     stageApplication.setPort(liveApplication.getPort()); //Big assumption: same port in both envs.
     stageApplication.setUrlPath(liveApplication.getUrlPath()); //App should definitely have same client api in both envs.
+    stageApplication.setUsername(liveApplication.getUsername());
+    stageApplication.setPassword(liveApplication.getPassword());
     return stageApplication;
   }
 
