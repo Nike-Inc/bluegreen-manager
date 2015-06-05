@@ -13,8 +13,6 @@ public interface SubstitutionKeys
 
   /**
    * Variable to be substituted with the name of the target bluegreen environment.
-   * <p/>
-   * TODO - Eliminate this one and only use ENV.
    */
   String ENV_NAME = "envName";
 
@@ -27,8 +25,6 @@ public interface SubstitutionKeys
   /**
    * Variable to be substituted with the application vm hostname in a one-env context.
    * (Assumes there is exactly 1 applicationVm.)
-   * <p/>
-   * TODO - Eliminate this one and only use VM_HOSTNAME.
    */
   String HOSTNAME = "hostname";
 

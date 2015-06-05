@@ -28,8 +28,6 @@ import bluegreen.manager.utils.WaiterParameters;
 /**
  * Executes a long-running configurable command over ssh to a third-party system that knows how to
  * create an application vm.
- * <p/>
- * TODO - this should be two tasks, one for remote cmd execution and one for model update
  */
 @Lazy
 @Component
@@ -90,7 +88,7 @@ public class SshVmCreateTask extends ApplicationVmTask
   @Override
   protected void loadDataModel()
   {
-    super.loadDataModel(); //TODO - Duplicates work of initialStringSubstituter.loadDataModel(), see if we can avoid this
+    super.loadDataModel();
     initialStringSubstituter.loadDataModel();
   }
 

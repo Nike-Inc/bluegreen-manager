@@ -52,9 +52,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * TODO - The high level restoreStage tests are too complicated...would help to modularize RDSSnapshotRestoreTask better, then tests would become simpler
- */
 @RunWith(MockitoJUnitRunner.class)
 public class RdsSnapshotRestoreTaskTest
 {
@@ -108,8 +105,6 @@ public class RdsSnapshotRestoreTaskTest
     rdsSnapshotRestoreTask.assign(1, LIVE_ENV_NAME, STAGE_ENV_NAME, DB_MAP);
     rdsSnapshotRestoreTask.loadDataModel();
   }
-
-  //TODO - test loadDataModel() WITHOUT normalSetup() ...i.e. error cases
 
   /**
    * Live context after assign should show env/logical/physical.
@@ -238,8 +233,6 @@ public class RdsSnapshotRestoreTaskTest
 
   /**
    * Fake data for use with testing restoreStage.
-   * <p/>
-   * TODO - Separate test helper.
    */
   private static class RestoreStageFakeData
   {
@@ -269,7 +262,6 @@ public class RdsSnapshotRestoreTaskTest
 
     private DBInstance makeInstance(String instanceName, RdsInstanceStatus instanceStatus)
     {
-      //TODO - Refactor to share with RdsInstanceParamGroupProgressCheckerTest#fakeInstance or RdsAnalyzerTest#makeDBInstanceWithParamGroups
       DBInstance dbInstance = new DBInstance();
       dbInstance.setDBInstanceIdentifier(instanceName);
       dbInstance.setDBInstanceStatus(instanceStatus == null ? UNKNOWN_STATUS : instanceStatus.toString());

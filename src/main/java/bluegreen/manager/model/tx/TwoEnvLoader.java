@@ -125,7 +125,6 @@ public class TwoEnvLoader
     }
     else if (logicalDatabases.size() > 1)
     {
-      //TODO - start sharing code with RDSSnapshotRestoreTask et al
       throw new UnsupportedOperationException(context(environment) + "Currently only support case of 1 logicalDatabase, but live env has "
           + logicalDatabases.size()); // + ": " + listOfNames(logicalDatabases));
     }

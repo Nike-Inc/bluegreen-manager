@@ -25,7 +25,6 @@ public class RemoteShellTask extends ShellTask
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(RemoteShellTask.class);
 
-  // TODO - shellConfig should be a new type RemoteShellConfig which extends ShellConfig and has its own SshTarget... currently SshTarget is a singleton
   @Autowired
   private SshTarget sshTarget;
 

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Configures the commands sent over ssh for vm creation.
- * <p/>
- * TODO - This class should be absorbed into a general purpose shell config
  */
 @Lazy
 @Component

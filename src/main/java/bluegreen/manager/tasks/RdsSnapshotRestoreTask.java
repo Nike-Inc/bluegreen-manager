@@ -113,7 +113,6 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    */
   protected void loadDataModel()
   {
-    //TODO - start using TwoEnvLoader for these calls!
     this.liveEnv = environmentTx.findNamedEnv(liveEnvName);
     this.liveLogicalDatabase = findLiveLogicalDatabaseFromEnvironment();
     this.livePhysicalDatabase = liveLogicalDatabase.getPhysicalDatabase();
@@ -254,8 +253,6 @@ public class RdsSnapshotRestoreTask extends TaskImpl
   /**
    * Checks that mapped stage physical instnames are nonblank and are different from live physical instnames.
    * Returns silently if ok.
-   * <p/>
-   * TODO - expand to support multiple live logicaldbs
    */
   private void checkDbMap()
   {
@@ -460,8 +457,6 @@ public class RdsSnapshotRestoreTask extends TaskImpl
    * Then makes a few small modifications that restore would not do automatically (paramgroup and security group).
    * Reboots the db so the paramgroup modification will take effect.
    * Returns the rebooted instance.
-   * <p/>
-   * TODO - Break this up, possibly into separate tasks (might need to persist new forms of intermediate data), to simplify unit test and issues of force/skip logic
    */
   DBInstance restoreStage(DBSnapshot dbSnapshot,
                           DBParameterGroup stageParamGroup,

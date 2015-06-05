@@ -19,8 +19,6 @@ import bluegreen.manager.utils.ThreadSleeper;
 /**
  * HTTP client that makes requests to a blue-green compliant application, and knows to try again if
  * it gets a lock error.
- * <p/>
- * TODO - start capturing http response code, need to know if client has thrown an exception or responded non-200
  */
 public class ApplicationClient
 {
@@ -120,9 +118,6 @@ public class ApplicationClient
     while (tryNum < MAX_NUM_TRIES)
     {
       response = tryRequest(httpMethodType, session, uri, responseClass, tryNum, outerTryNum);
-      /*
-       * TODO - in case of null, should check http response code.  Might not want to retry.
-       */
       if (response == null || response.isLockError())
       {
         if (++tryNum < MAX_NUM_TRIES)

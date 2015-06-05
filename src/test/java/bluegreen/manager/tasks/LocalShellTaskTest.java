@@ -64,7 +64,7 @@ public class LocalShellTaskTest
   private ShellConfig shellConfig = new ShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
 
   @Before
-  public void setUpTwoEnv() //TODO - need to test setUpOneEnv as well
+  public void setUpTwoEnv()
   {
     when(mockStringSubstituterFactory.createTwo(anyString(), anyString(), anyMapOf(String.class, String.class)))
         .thenReturn(mockTwoEnvStringSubstituter);

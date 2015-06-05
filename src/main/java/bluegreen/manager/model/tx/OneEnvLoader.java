@@ -81,8 +81,6 @@ public class OneEnvLoader
 
   /**
    * Returns a string that describes the known environment context, for logging purposes.
-   * <p/>
-   * TODO - show the db context, or make separate method for that
    */
   public String context()
   {

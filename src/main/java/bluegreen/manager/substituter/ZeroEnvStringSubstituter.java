@@ -22,9 +22,6 @@ public class ZeroEnvStringSubstituter extends StringSubstituterBaseImpl
     this.extraSubstitutions = extraSubstitutions;
   }
 
-  /**
-   * TODO - Probably need to change the name of the base method, since we don't actually load a datamodel here.
-   */
   @Override
   public void loadDataModel()
   {

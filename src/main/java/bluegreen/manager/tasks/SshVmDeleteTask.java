@@ -20,8 +20,6 @@ import bluegreen.manager.utils.ShellResult;
 
 /**
  * Executes a command over ssh to a third-party system that knows how to delete an application vm.
- * <p/>
- * TODO - this should be two tasks, one for remote cmd execution and one for model update
  */
 @Lazy
 @Component
@@ -77,7 +75,7 @@ public class SshVmDeleteTask extends ApplicationVmTask
   @Override
   protected void loadDataModel()
   {
-    super.loadDataModel(); //TODO - Duplicates work of stringSubstituter.loadDataModel(), see if we can avoid this
+    super.loadDataModel();
     stringSubstituter.loadDataModel();
   }
 

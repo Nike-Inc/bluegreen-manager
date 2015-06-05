@@ -53,7 +53,7 @@ public class SshClient
     boolean authenticated = false;
     try
     {
-      connection.connect(null, connectTimeout, kexTimeout);//TODO - specify ServerHostKeyVerifier
+      connection.connect(null, connectTimeout, kexTimeout);//Not specified: ServerHostKeyVerifier
       authenticated = connection.authenticateWithPassword(username, sshTarget.getPassword());
     }
     catch (IOException e)
