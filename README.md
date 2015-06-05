@@ -58,14 +58,14 @@ Job 'teardown'
 Description: Spins down and destroys the requested env, including the
              application vm and test database.
 Required Parameters:
-	--deleteEnv <envName>
-			The env which is to be deleted.  (Take great care to specify the
-			correct env!)  For a rollback (no goLive), specify the stageEnv.
-			For cleanup after a goLive, specify the oldLiveEnv.  Either way,
-			the target env is linked to the test database.
-	--stopServices <list of services>
-			Specify services running on the deleteEnv which we should
-			try to shutdown gracefully prior to vm deletion.
+  --deleteEnv <envName>
+      The env which is to be deleted.  (Take great care to specify the
+      correct env!)  For a rollback (no goLive), specify the stageEnv.
+      For cleanup after a goLive, specify the oldLiveEnv.  Either way,
+      the target env is linked to the test database.
+  --stopServices <list of services>
+      Specify services running on the deleteEnv which we should
+      try to shutdown gracefully prior to vm deletion.
 
 Common Optional Parameters:
   --noop
@@ -161,27 +161,18 @@ You will need to specify the following in dependency/bluegreen-manager.propertie
 
 #### General properties
 
-* bluegreen.datasource.discovery
-  * Database connection parameters for the bluegreen db, which manages the blue/green data model.
-* bluegreen.aws
-  * AWS account credentials.
-* bluegreen.sshtarget
-  * Used by SshVm and Remote tasks, to authenticate with other VMs (peer to the bluegreen-manager) that perform custom environment work.
+* *bluegreen.datasource.discovery*: Database connection parameters for the bluegreen db, which manages the blue/green data model.
+* *bluegreen.aws*: AWS account credentials.
+* *bluegreen.sshtarget*: Used by SshVm and Remote tasks, to authenticate with other VMs (peer to the bluegreen-manager) that perform custom environment work.
 
 #### Shell commands
 
-* bluegreen.sshvmcreate, sshvmdelete
-  * Used by SshVmCreate, SshVmDelete.  Specify a command to be executed (e.g. AWS EC2 script) for VM creation and deletion.  Also the regexps used to evaluate the command output.
-* bluegreen.shellConfig.createStageEnv
-  * During stagingDeploy, this command registers the new environment outside the bluegreen-manager.  If you don't have any other system that needs to know about the new environment, then you can stub it out with a no-op command like "echo".  
-* bluegreen.shellConfig.deployPackages
-  * During stagingDeploy, this command deploys packages to the stage application VM after its initial launch.
-* bluegreen.shellConfig.swapDatabases
-  * During goLive, bluegreen-manager updates its data model by switching the database pointers of the stage and live applications.  Depending on your external environment you may also wish to perform some custom housekeeping, in which case you would specify it here as a local command.
-* bluegreen.shellConfig.shutdownApplications
-  * During teardown, gracefully shuts down applications before the VM is terminated. 
-* bluegreen.shellConfig.deleteEnv
-  * During teardown, this is an opportunity to deregister the target environment outside the bluegreen-manager, if applicable.
+* *bluegreen.sshvmcreate, sshvmdelete*: Used by SshVmCreate, SshVmDelete.  Specify a command to be executed (e.g. AWS EC2 script) for VM creation and deletion.  Also the regexps used to evaluate the command output.
+* *bluegreen.shellConfig.createStageEnv*: During stagingDeploy, this command registers the new environment outside the bluegreen-manager.  If you don't have any other system that needs to know about the new environment, then you can stub it out with a no-op command like "echo".  
+* *bluegreen.shellConfig.deployPackages*: During stagingDeploy, this command deploys packages to the stage application VM after its initial launch.
+* *bluegreen.shellConfig.swapDatabases*: During goLive, bluegreen-manager updates its data model by switching the database pointers of the stage and live applications.  Depending on your external environment you may also wish to perform some custom housekeeping, in which case you would specify it here as a local command.
+* *bluegreen.shellConfig.shutdownApplications*: During teardown, gracefully shuts down applications before the VM is terminated. 
+* *bluegreen.shellConfig.deleteEnv*: During teardown, this is an opportunity to deregister the target environment outside the bluegreen-manager, if applicable.
 
 Other properties can be left at their default values, specified in the bluegreen-manager.properties which is built into bluegreen-manager.jar.
 
