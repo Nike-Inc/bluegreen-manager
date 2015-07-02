@@ -32,7 +32,7 @@ public class RdsInstanceProgressChecker implements ProgressChecker<DBInstance>
       RdsInstanceStatus.DELETING
   };
   private static final RdsInstanceStatus[] REBOOT_INTERMEDIATE_STATES = new RdsInstanceStatus[] {
-      RdsInstanceStatus.REBOOTING
+      RdsInstanceStatus.REBOOTING, RdsInstanceStatus.MODIFYING
   };
 
   private String instanceId;
