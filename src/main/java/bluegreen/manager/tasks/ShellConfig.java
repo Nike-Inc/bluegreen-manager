@@ -19,6 +19,12 @@ public class ShellConfig
   private String command;
 
   /**
+   * Optional regular expression which, if matched in the command output, would indicate the command ended in success.
+   * Allows us to pick bits of information from the successful output of the command
+   */
+  private String regexpSuccess;
+
+  /**
    * Optional regular expression which, if matched in the command output, would indicate the command ended in error.
    */
   private String regexpError;
@@ -41,11 +47,13 @@ public class ShellConfig
   }
 
   public ShellConfig(String command,
+                     String regexpSuccess,
                      String regexpError,
                      Integer exitvalueSuccess,
                      Map<String, String> extraSubstitutions)
   {
     this.command = command;
+    this.regexpSuccess = regexpSuccess;
     this.regexpError = regexpError;
     this.exitvalueSuccess = exitvalueSuccess;
     this.extraSubstitutions = extraSubstitutions;
@@ -59,6 +67,14 @@ public class ShellConfig
   public void setCommand(String command)
   {
     this.command = command;
+  }
+
+  public String getRegexpSuccess() {
+    return regexpSuccess;
+  }
+
+  public void setRegexpSuccess(String regexpSuccess) {
+    this.regexpSuccess = regexpSuccess;
   }
 
   public String getRegexpError()

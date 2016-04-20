@@ -52,7 +52,7 @@ public class RemoteShellTaskTest
     when(mockStringSubstituterFactory.createOne(anyString(), anyMap())).thenReturn(mockOneEnvStringSubstituter);
     when(mockOneEnvStringSubstituter.substituteVariables(anyString())).thenReturn(SUBSTITUTED_COMMAND);
     when(mockSshClient.execCommand(SUBSTITUTED_COMMAND)).thenReturn(new ShellResult(OUTPUT, EXIT_VALUE));
-    remoteShellTask.assign(1, ENV_NAME, new ShellConfig(COMMAND, REGEXP_ERROR, null, null));
+    remoteShellTask.assign(1, ENV_NAME, new ShellConfig(COMMAND, null, REGEXP_ERROR, null, null));
   }
 
   /**

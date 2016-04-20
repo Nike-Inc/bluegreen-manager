@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import bluegreen.manager.model.domain.JobHistory;
 import static bluegreen.manager.substituter.SubstitutionKeys.PACKAGES;
+import bluegreen.manager.tasks.EnvironmentBuildTask;
 import bluegreen.manager.tasks.FreezeTask;
 import bluegreen.manager.tasks.LocalShellTask;
 import bluegreen.manager.tasks.RdsSnapshotRestoreTask;
@@ -33,8 +34,8 @@ import bluegreen.manager.tasks.ThawTask;
 public class StagingDeployJob extends TaskSequenceJob
 {
   @Autowired
-  @Qualifier("createStageEnv")
-  private ShellConfig createStageEnvConfig;
+  @Qualifier("buildStageEnv")
+  private ShellConfig buildStageEnvConfig;
 
   @Autowired
   @Qualifier("deployPackages")
@@ -71,8 +72,8 @@ public class StagingDeployJob extends TaskSequenceJob
     tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnvName, stageEnvName, dbMap));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnvName));
     tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnvName));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, createStageEnvConfig));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, deployPackagesConfig));
+    tasks.add(applicationContext.getBean(EnvironmentBuildTask.class).assign(position++, liveEnvName, stageEnvName, buildStageEnvConfig, false));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, deployPackagesConfig, true));
     tasks.add(applicationContext.getBean(RegisterApplicationTask.class).assign(position++, liveEnvName, stageEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, stageEnvName));
     this.tasks = tasks;

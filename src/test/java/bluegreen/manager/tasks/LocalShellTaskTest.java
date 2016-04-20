@@ -61,7 +61,7 @@ public class LocalShellTaskTest
   @Mock
   private Process mockProcess;
 
-  private ShellConfig shellConfig = new ShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null);
+  private ShellConfig shellConfig = new ShellConfig(COMMAND, null, REGEXP_ERROR, EXITCODE_SUCCESS, null);
 
   @Before
   public void setUpTwoEnv()
@@ -69,7 +69,7 @@ public class LocalShellTaskTest
     when(mockStringSubstituterFactory.createTwo(anyString(), anyString(), anyMapOf(String.class, String.class)))
         .thenReturn(mockTwoEnvStringSubstituter);
     when(mockTwoEnvStringSubstituter.substituteVariables(anyString())).thenReturn(SUBSTITUTED_COMMAND);
-    localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), shellConfig);
+    localShellTask.assign(1, FAKE_LIVE_ENV.getEnvName(), FAKE_STAGE_ENV.getEnvName(), shellConfig, true);
   }
 
   private void setUpProcessBuilder(String fakeOutput, int fakeExitValue) throws IOException

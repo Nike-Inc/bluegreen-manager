@@ -27,6 +27,12 @@ public class StringSubstituterFactory
     return applicationContext.getBean(OneEnvStringSubstituter.class, envName, extraSubstitutions);
   }
 
+  public OnePointFiveEnvStringSubstituter createOnePointFive(String liveEnvName,
+                                                             String stageEnvName,
+                                                             Map<String, String> extraSubstitutions) {
+    return applicationContext.getBean(OnePointFiveEnvStringSubstituter.class, liveEnvName, stageEnvName, extraSubstitutions);
+  }
+
   public TwoEnvStringSubstituter createTwo(String liveEnvName,
                                            String stageEnvName,
                                            Map<String, String> extraSubstitutions)

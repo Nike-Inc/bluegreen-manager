@@ -3,10 +3,11 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd">
 
   <bean class="bluegreen.manager.tasks.ShellConfig">
-    <qualifier value="createStageEnv"/>
-    <property name="command" value="${bluegreen.shellConfig.createStageEnv.command}"/>
-    <property name="regexpError" value="${bluegreen.shellConfig.createStageEnv.regexp.error}"/>
-    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.createStageEnv.exitvalue.success}"/>
+    <qualifier value="buildStageEnv"/>
+    <property name="command" value="${bluegreen.shellConfig.buildStageEnv.command}"/>
+    <property name="regexpSuccess" value="${bluegreen.shellConfig.buildStageEnv.regexp.success}"/>
+    <property name="regexpError" value="${bluegreen.shellConfig.buildStageEnv.regexp.error}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.buildStageEnv.exitvalue.success}"/>
   </bean>
 
   <bean class="bluegreen.manager.tasks.ShellConfig">

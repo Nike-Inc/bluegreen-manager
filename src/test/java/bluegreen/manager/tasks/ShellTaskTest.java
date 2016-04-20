@@ -63,12 +63,12 @@ public class ShellTaskTest
 
   private void setupTwoEnvProperly()
   {
-    shellTask.assign(1, ENV1, ENV2, new ShellConfig(COMMAND, REGEXP_ERROR, EXITCODE_SUCCESS, null));
+    shellTask.assign(1, ENV1, ENV2, new ShellConfig(COMMAND, null, REGEXP_ERROR, EXITCODE_SUCCESS, null), true);
   }
 
   private void setupTwoEnv()
   {
-    shellTask.assign(1, ENV1, ENV2, new ShellConfig());
+    shellTask.assign(1, ENV1, ENV2, new ShellConfig(), true);
   }
 
   private void setupOneEnv()

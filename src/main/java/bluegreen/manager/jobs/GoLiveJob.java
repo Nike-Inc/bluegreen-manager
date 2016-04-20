@@ -59,7 +59,7 @@ public class GoLiveJob extends TaskSequenceJob
     List<Task> tasks = new ArrayList<Task>();
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, oldLiveEnvName));
-    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, oldLiveEnvName, newLiveEnvName, swapDatabasesConfig));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, oldLiveEnvName, newLiveEnvName, swapDatabasesConfig, true));
     tasks.add(applicationContext.getBean(SwapDatabasesTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
     tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnvName));

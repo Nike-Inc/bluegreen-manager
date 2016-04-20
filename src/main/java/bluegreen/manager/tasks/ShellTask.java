@@ -24,8 +24,14 @@ public abstract class ShellTask extends TaskImpl
 
   /**
    * Two-env shell task.
+   *
+   * @param isStageBuilt - true if the stage environment is completely registered in the discovery DB, minus the Application
    */
-  public Task assign(int position, String liveEnvName, String stageEnvName, ShellConfig shellConfig)
+  public Task assign(int position,
+                     String liveEnvName,
+                     String stageEnvName,
+                     ShellConfig shellConfig,
+                     boolean isStageBuilt)
   {
     super.assign(position);
     this.shellConfig = shellConfig;
@@ -33,8 +39,14 @@ public abstract class ShellTask extends TaskImpl
     {
       this.patternError = Pattern.compile(shellConfig.getRegexpError());
     }
-    this.stringSubstituter = stringSubstituterFactory.createTwo(liveEnvName, stageEnvName,
-        shellConfig.getExtraSubstitutions());
+
+    if (isStageBuilt) {
+      this.stringSubstituter = stringSubstituterFactory.createTwo(liveEnvName, stageEnvName,
+          shellConfig.getExtraSubstitutions());
+    } else {
+      this.stringSubstituter = stringSubstituterFactory.createOnePointFive(liveEnvName, stageEnvName,
+          shellConfig.getExtraSubstitutions());
+    }
     return this;
   }
 

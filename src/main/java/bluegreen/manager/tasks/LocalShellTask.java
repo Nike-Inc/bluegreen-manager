@@ -63,8 +63,7 @@ public class LocalShellTask extends ShellTask
       {
         stopWatch.start();
         process = processBuilderAdapter.start();
-        String output = blockAndLogOutput(process);
-        taskStatus = checkForErrors(output, process.exitValue());
+        taskStatus = handleProcessTracking(process, noop);
       }
       catch (IOException e)
       {
@@ -86,13 +85,18 @@ public class LocalShellTask extends ShellTask
     return taskStatus;
   }
 
+  protected TaskStatus handleProcessTracking(Process process, boolean noop) throws InterruptedException, IOException {
+    String output = blockAndLogOutput(process);
+    return checkForErrors(output, process.exitValue());
+  }
+
   /**
    * Iterates over the process stdout until there is no more.  Blocks til the process is done.
    * Returns the output as a single string.
    * <p/>
    * Also logs the process exit value.
    */
-  private String blockAndLogOutput(Process process) throws IOException, InterruptedException
+  protected String blockAndLogOutput(Process process) throws IOException, InterruptedException
   {
     // Yes, stdout is 'getInputStream'.
     StringBuilder sb = new StringBuilder();
