@@ -21,7 +21,6 @@ import bluegreen.manager.tasks.RdsSnapshotRestoreTask;
 import bluegreen.manager.tasks.RegisterApplicationTask;
 import bluegreen.manager.tasks.ShellConfig;
 import bluegreen.manager.tasks.SmokeTestTask;
-import bluegreen.manager.tasks.SshVmCreateTask;
 import bluegreen.manager.tasks.Task;
 import bluegreen.manager.tasks.ThawTask;
 
@@ -71,7 +70,6 @@ public class StagingDeployJob extends TaskSequenceJob
     tasks.add(applicationContext.getBean(FreezeTask.class).assignTransition(position++, liveEnvName));
     tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnvName, stageEnvName, dbMap));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnvName));
-    tasks.add(applicationContext.getBean(SshVmCreateTask.class).init(position++, stageEnvName));
     tasks.add(applicationContext.getBean(EnvironmentBuildTask.class).assign(position++, liveEnvName, stageEnvName, buildStageEnvConfig, false));
     tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, deployPackagesConfig, true));
     tasks.add(applicationContext.getBean(RegisterApplicationTask.class).assign(position++, liveEnvName, stageEnvName));

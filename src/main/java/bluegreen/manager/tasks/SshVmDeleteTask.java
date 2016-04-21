@@ -25,7 +25,7 @@ import bluegreen.manager.utils.ShellResult;
 @Component
 public class SshVmDeleteTask extends ApplicationVmTask
 {
-  private static final Logger LOGGER = LoggerFactory.getLogger(SshVmCreateTask.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SshVmDeleteTask.class);
 
   @Autowired
   private EnvironmentTx environmentTx;
