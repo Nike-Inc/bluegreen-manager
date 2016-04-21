@@ -49,15 +49,12 @@ public class EnvironmentBuildTask extends ShellTask {
 
   private String stageEnvironmentName;
 
-  private Environment stageEnvironment;
-
   @Override
   public Task assign(int position,
                      String liveEnvName,
                      String stageEnvName,
                      ShellConfig shellConfig,
                      boolean isStageBuilt) {
-    stageEnvironment = environmentTx.findNamedEnv(stageEnvName);
     this.stageEnvironmentName = stageEnvName;
 
     return super.assign(position, liveEnvName, stageEnvName, shellConfig, isStageBuilt);
@@ -159,6 +156,7 @@ public class EnvironmentBuildTask extends ShellTask {
    */
   private void persistModel(boolean noop) {
     if (!noop) {
+      Environment stageEnvironment = environmentTx.findNamedEnv(stageEnvironmentName);
       ApplicationVm applicationVm = makeApplicationVm();
       LOGGER.debug("Persisting new applicationVm " + applicationVm.getHostname() + " in env " + stageEnvironmentName);
       stageEnvironment.addApplicationVm(applicationVm);
