@@ -11,6 +11,13 @@
   </bean>
 
   <bean class="bluegreen.manager.tasks.ShellConfig">
+    <qualifier value="validateVm"/>
+    <property name="command" value="${bluegreen.shellConfig.validateVm.command}"/>
+    <property name="regexpError" value="${bluegreen.shellConfig.validateVm.regexp.error}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.validateVm.exitvalue.success}"/>
+  </bean>
+
+  <bean class="bluegreen.manager.tasks.ShellConfig">
     <qualifier value="deployPackages"/>
     <property name="command" value="${bluegreen.shellConfig.deployPackages.command}"/>
     <property name="exitvalueSuccess" value="${bluegreen.shellConfig.deployPackages.exitvalue.success}"/>

@@ -40,6 +40,10 @@ public class StagingDeployJob extends TaskSequenceJob
   @Qualifier("deployPackages")
   private ShellConfig deployPackagesConfig;
 
+  @Autowired
+  @Qualifier("validateVm")
+  private ShellConfig validateVmConfig;
+
   private String liveEnvName;
   private String stageEnvName;
   private Map<String, String> dbMap;
@@ -71,6 +75,7 @@ public class StagingDeployJob extends TaskSequenceJob
     tasks.add(applicationContext.getBean(RdsSnapshotRestoreTask.class).assign(position++, liveEnvName, stageEnvName, dbMap));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, liveEnvName));
     tasks.add(applicationContext.getBean(EnvironmentBuildTask.class).assign(position++, liveEnvName, stageEnvName, buildStageEnvConfig, false));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, validateVmConfig, true));
     tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, liveEnvName, stageEnvName, deployPackagesConfig, true));
     tasks.add(applicationContext.getBean(RegisterApplicationTask.class).assign(position++, liveEnvName, stageEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, stageEnvName));
