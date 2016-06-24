@@ -172,8 +172,7 @@ public class JobFactory
    */
   private Job makeGoLiveJob(List<List<String>> parameters, String commandLine)
   {
-    String fixedLbName = getParameter(PARAMNAME_FIXED_LB, parameters, 1).get(1);
-    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true, fixedLbName);
+    return makeGenericJob(GoLiveJob.class, parameters, commandLine, PARAMNAME_OLD_LIVE_ENV, PARAMNAME_NEW_LIVE_ENV, true);
   }
 
   /**

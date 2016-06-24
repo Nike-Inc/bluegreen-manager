@@ -41,4 +41,10 @@
     <property name="regexpError" value="${bluegreen.shellConfig.deleteEnv.regexp.error}"/>
   </bean>
 
+  <bean class="bluegreen.manager.tasks.ShellConfig">
+    <qualifier value="swapInstances"/>
+    <property name="command" value="${bluegreen.shellConfig.swapInstances.command}"/>
+    <property name="exitvalueSuccess" value="${bluegreen.shellConfig.swapInstances.exitvalue.success}"/>
+  </bean>
+
 </beans>

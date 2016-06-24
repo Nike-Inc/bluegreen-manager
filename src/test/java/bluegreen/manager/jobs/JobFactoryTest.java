@@ -103,10 +103,10 @@ public class JobFactoryTest
   public void testMakeJob_GoLive()
   {
     when(mockEnvironmentTx.checkIfEnvNamesExist(anyString(), anyString())).thenReturn(new boolean[] { true, true });
-    String commandLine = "goLive --oldLiveEnv env3 --newLiveEnv env4 --force --fixedLB lb1";
+    String commandLine = "goLive --oldLiveEnv env3 --newLiveEnv env4 --force";
     parseAndMakeJob(commandLine);
     verify(mockApplicationContext).getBean(eq(GoLiveJob.class), new Object[] {
-        eq(commandLine), eq(false), eq(true)/*force*/, isNull(), eq("env3"), eq("env4"), eq("lb1")
+        eq(commandLine), eq(false), eq(true)/*force*/, isNull(), eq("env3"), eq("env4")
     });
   }
 

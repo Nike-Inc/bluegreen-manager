@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import bluegreen.manager.model.domain.JobHistory;
 import bluegreen.manager.tasks.DiscoveryTask;
-import bluegreen.manager.tasks.FixedElbFlipEc2Task;
 import bluegreen.manager.tasks.FreezeTask;
 import bluegreen.manager.tasks.LocalShellTask;
 import bluegreen.manager.tasks.ShellConfig;
@@ -34,17 +33,19 @@ public class GoLiveJob extends TaskSequenceJob
   @Qualifier("swapDatabases")
   private ShellConfig swapDatabasesConfig;
 
+  @Autowired
+  @Qualifier("swapInstances")
+  private ShellConfig swapInstancesConfig;
+
   private String oldLiveEnvName;
   private String newLiveEnvName;
-  private String fixedLbName;
 
   public GoLiveJob(String commandLine, boolean noop, boolean force,
-                   JobHistory oldJobHistory, String oldLiveEnvName, String newLiveEnvName, String fixedLbName)
+                   JobHistory oldJobHistory, String oldLiveEnvName, String newLiveEnvName)
   {
     super(commandLine, noop, force, oldJobHistory);
     this.oldLiveEnvName = oldLiveEnvName;
     this.newLiveEnvName = newLiveEnvName;
-    this.fixedLbName = fixedLbName;
   }
 
   /**
@@ -63,7 +64,7 @@ public class GoLiveJob extends TaskSequenceJob
     tasks.add(applicationContext.getBean(SwapDatabasesTask.class).assign(position++, oldLiveEnvName, newLiveEnvName));
     tasks.add(applicationContext.getBean(DiscoveryTask.class).assign(position++, newLiveEnvName));
     tasks.add(applicationContext.getBean(SmokeTestTask.class).assign(position++, newLiveEnvName));
-    tasks.add(applicationContext.getBean(FixedElbFlipEc2Task.class).assign(position++, oldLiveEnvName, newLiveEnvName, fixedLbName));
+    tasks.add(applicationContext.getBean(LocalShellTask.class).assign(position++, newLiveEnvName, swapInstancesConfig));
     tasks.add(applicationContext.getBean(ThawTask.class).assignTransition(position++, newLiveEnvName));
     this.tasks = tasks;
   }
