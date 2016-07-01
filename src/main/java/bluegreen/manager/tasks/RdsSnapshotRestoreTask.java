@@ -568,11 +568,13 @@ public class RdsSnapshotRestoreTask extends TaskImpl
 
   /**
    * Makes a transient entity for the new stage environment.
+   * Datacenter will be equal to the datacenter that houses the live environment
    */
   private Environment makeStageEnvironmentEntity()
   {
     Environment stageEnv = new Environment();
     stageEnv.setEnvName(stageEnvName);
+    stageEnv.setDatacenter(liveEnv.getDatacenter());
     return stageEnv;
   }
 

@@ -2,6 +2,8 @@
 -- to describe your first environment.  You would need to change all these values
 -- to make them specific for you.
 
+insert into DATACENTER (DATACENTER_ID, DATACENTER_NAME) values (1, 'DC');
+
 insert into ENVIRONMENT (ENV_ID, ENV_NAME) values (1, 'env1');
 
 insert into APPLICATION_VM (APPVM_ID, APPVM_HOSTNAME, APPVM_IP_ADDRESS, FK_ENV_ID) values

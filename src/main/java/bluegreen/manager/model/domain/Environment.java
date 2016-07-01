@@ -7,13 +7,15 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import bluegreen.manager.utils.HashUtil;
 
 /**
- * An environment is defined by a list of logical databases.
+ * An environment is defined by a list of logical databases and application VMs.
  */
 @Entity
 @Table(name = Environment.TABLE_NAME)
@@ -22,6 +24,7 @@ public class Environment
   public static final String TABLE_NAME = "ENVIRONMENT";
   public static final String COLUMN_ID = "ENV_ID";
   public static final String COLUMN_ENV_NAME = "ENV_NAME";
+  public static final String COLUMN_FK_DATACENTER_ID = "FK_DATACENTER_ID";
   public static final int LENGTH_ENV_NAME = 32;
 
   @Id
@@ -31,6 +34,10 @@ public class Environment
 
   @Column(name = COLUMN_ENV_NAME, nullable = false, unique = true, length = LENGTH_ENV_NAME)
   private String envName;
+
+  @ManyToOne
+  @JoinColumn(name = COLUMN_FK_DATACENTER_ID, nullable = false)
+  private Datacenter datacenter; //FIELD_DATACENTER
 
   @OneToMany(mappedBy = LogicalDatabase.FIELD_ENVIRONMENT, cascade = CascadeType.ALL)
   private List<LogicalDatabase> logicalDatabases;
@@ -56,6 +63,14 @@ public class Environment
   public void setEnvName(String envName)
   {
     this.envName = envName;
+  }
+
+  public Datacenter getDatacenter() {
+    return datacenter;
+  }
+
+  public void setDatacenter(Datacenter datacenter) {
+    this.datacenter = datacenter;
   }
 
   public List<LogicalDatabase> getLogicalDatabases()
@@ -114,7 +129,7 @@ public class Environment
   }
 
   /**
-   * Equality based solely on database identity.
+   * Equality based solely on environment ID identity.
    */
   @Override
   public boolean equals(Object obj)
@@ -128,7 +143,7 @@ public class Environment
   }
 
   /**
-   * Hashcode based solely on database identity.
+   * Hashcode based solely on environment ID
    */
   @Override
   public int hashCode()
@@ -145,6 +160,8 @@ public class Environment
     sb.append(envId);
     sb.append(", envName: ");
     sb.append(envName);
+    sb.append(", datacenter: ");
+    sb.append(datacenter.toString());
     sb.append(", logicalDatabases: ");
     sb.append(logicalDatabases == null ? "null" : logicalDatabases.toString());
     sb.append(", applicationVms: ");
