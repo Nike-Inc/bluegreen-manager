@@ -43,7 +43,7 @@ public class JobFactory
   public static final String PARAMNAME_NOOP = "noop";
   public static final String PARAMNAME_FORCE = "force";
 
-  private static final long MAX_AGE_RELEVANT_PRIOR_JOB = 1000L * 60L * 60L * 24L; //1 day
+  private static final long MAX_AGE_RELEVANT_PRIOR_JOB = 1000L * 60L * 60L * 96L; //4 days
   static final int UNLIMITED_NUM_VALUES = -1;
 
   @Autowired
