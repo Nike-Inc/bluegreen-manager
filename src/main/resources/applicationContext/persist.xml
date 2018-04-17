@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx" xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+  <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+  <tx:annotation-driven/>
+
+  <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+    <property name="packagesToScan" value="bluegreen.manager.model"/>
+    <property name="jpaProperties">
+      <value>
+        hibernate.use_sql_comments=true
+        #hibernate.show_sql=true
+        hibernate.format_sql=true
+        #org.hibernate.SQL.level=FINEST #show sql stmts
+        #org.hibernate.type.level=FINEST #show bind param values
+        #hibernate.hbm2ddl.auto=create
+        #hibernate.generate_statistics=true
+        hibernate.archive.autodetection=class
+        hibernate.cache.use_second_level_cache=false
+        hibernate.cache.use_query_cache=false
+      </value>
+    </property>
+  </bean>
+
+  <bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+    <property name="showSql" value="false"/>
+    <property name="generateDdl" value="false"/>
+    <property name="databasePlatform" value="org.hibernate.dialect.MySQLDialect"/>
+  </bean>
+
+  <bean id="dataSource" class="org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy">
+    <property name="targetDataSource" ref="dataSourceTarget"/>
+  </bean>
+
+  <bean id="dataSourceTarget" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+    <property name="url" value="${bluegreen.datasource.discovery.url}"/>
+    <property name="username" value="${bluegreen.datasource.discovery.username}"/>
+    <property name="password" value="${bluegreen.datasource.discovery.password}"/>
+  </bean>
+
+  <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+    <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    <property name="dataSource" ref="dataSource"/>
+  </bean>
+
+</beans>
